@@ -12,13 +12,14 @@ probes:
 global:
   vault:
     serviceAccountName: "am-backend-sa"
+  image:
+    imagePullSecrets:
+      - name: github-registry-secret
 
 image:
   repository: am-document-processor
   pullPolicy: Always
   tag: "latest"
-  imagePullSecrets:
-    - name: github-registry-secret
 
 ingress:
   enabled: false

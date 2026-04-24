@@ -6,13 +6,14 @@ language: flutter
 global:
   vault:
     serviceAccountName: "am-frontend-sa"
+  image:
+    imagePullSecrets:
+      - name: github-registry-secret
 
 image:
   repository: am-doc-viewer-ui
   pullPolicy: Always
   tag: "latest"
-  imagePullSecrets:
-    - name: github-registry-secret
 
 ingress:
   enabled: false
