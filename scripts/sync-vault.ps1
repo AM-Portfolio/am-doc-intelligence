@@ -1,8 +1,27 @@
 param(
-    [string]$RootToken = $env:VAULT_TOKEN,
-    [string]$BackupPath = "f:\am-repos\am-repos\am-auth\vault\backups\vps_vault_full_backup_20260422_000034.json",
-    [string]$KubeConfig = "f:\am-repos\am-repos\am-auth\kubeconfig.vps"
+    [string]$EnvPath = ".env"
 )
+
+# Load .env file if it exists
+if (Test-Path $EnvPath) {
+    Write-Host "Loading environment from $EnvPath..."
+    Get-Content $EnvPath | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $key, $value = $line.Split("=", 2)
+            [Environment]::SetEnvironmentVariable($key.Trim(), $value.Trim(), "Process")
+        }
+    }
+}
+
+$RootToken = $env:VAULT_ROOT_TOKEN
+$BackupPath = $env:BACKUP_PATH
+$KubeConfig = $env:KUBECONFIG_PATH
+
+if (-not $RootToken) {
+    Write-Error "VAULT_ROOT_TOKEN not found in environment or .env file"
+    exit 1
+}
 
 if (-not (Test-Path $BackupPath)) {
     Write-Error "Backup file not found at $BackupPath"
@@ -54,26 +73,26 @@ foreach ($Path in $InfraPaths) {
 Write-Host "Syncing App Specific Secrets..."
 
 # Cloudinary
-$CloudinaryData = [PSCustomObject]@{
-    CLOUDINARY_CLOUD_NAME = "dr6crhham"
-    CLOUDINARY_API_KEY = "712557573888213"
-    CLOUDINARY_API_SECRET = "eKoN0tAMCCNMnXtxiFdOsHDP69Y"
+if ($env:CLOUDINARY_CLOUD_NAME) {
+    $CloudinaryData = [PSCustomObject]@{
+        CLOUDINARY_CLOUD_NAME = $env:CLOUDINARY_CLOUD_NAME
+        CLOUDINARY_API_KEY = $env:CLOUDINARY_API_KEY
+        CLOUDINARY_API_SECRET = $env:CLOUDINARY_API_SECRET
+    }
+    Write-VaultData "secret/preprod/apps/docs/cloudinary" $CloudinaryData
 }
-Write-VaultData "secret/preprod/apps/docs/cloudinary" $CloudinaryData
 
 # Google
 $GoogleData = [PSCustomObject]@{
-    GOOGLE_CLIENT_ID = "placeholder"
-    GOOGLE_CLIENT_SECRET = "placeholder"
+    GOOGLE_CLIENT_ID = ($env:GOOGLE_CLIENT_ID -or "placeholder")
+    GOOGLE_CLIENT_SECRET = ($env:GOOGLE_CLIENT_SECRET -or "placeholder")
 }
 Write-VaultData "secret/preprod/apps/docs/google" $GoogleData
 
 # JWT
-if ($Secrets."secret/preprod/apps/auth/jwt") {
-    $JwtData = $Secrets."secret/preprod/apps/auth/jwt"
-    # Ensure key matches what app expects (JWT_SECRET)
+if ($env:JWT_SECRET) {
     $NewJwtData = [PSCustomObject]@{
-        JWT_SECRET = $JwtData.secret
+        JWT_SECRET = $env:JWT_SECRET
     }
     Write-VaultData "secret/preprod/apps/auth/jwt" $NewJwtData
 }
