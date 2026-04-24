@@ -10,11 +10,16 @@ probes:
     path: /actuator/health
 
 global:
-  vault:
-    serviceAccountName: "am-backend-sa"
   image:
+    registry: ghcr.io/am-portfolio
+    pullPolicy: Always
     imagePullSecrets:
-      - name: github-registry-secret
+      - name: regcred
+  vault:
+    enabled: true
+    role: "am-backend-role"
+    authPath: "auth/kubernetes"
+    serviceAccountName: "am-backend-sa"
 
 image:
   repository: am-document-processor
@@ -39,7 +44,7 @@ vault:
   enabled: true
   role: "am-backend-role"
   secretPaths:
-    mongodb: 
+    mongodb:
       path: "secret/data/preprod/infra/mongodb"
       template: |
         {{- with secret "secret/data/preprod/infra/mongodb" -}}
@@ -49,7 +54,7 @@ vault:
         export MONGODB_URL="mongodb://{{ .Data.data.MONGO_USER }}:{{ .Data.data.MONGO_PASSWORD }}@{{ .Data.data.MONGO_HOST }}:27017/{{ .Data.data.MONGODB_DATABASE }}?authSource=admin"
         export MONGODB_AUTHENTICATION_DATABASE="admin"
         {{- end }}
-    kafka: 
+    kafka:
       path: "secret/data/preprod/infra/kafka"
       template: |
         {{- with secret "secret/data/preprod/infra/kafka" -}}

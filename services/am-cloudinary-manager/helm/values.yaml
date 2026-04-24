@@ -10,11 +10,16 @@ probes:
     path: /actuator/health
 
 global:
-  vault:
-    serviceAccountName: "am-backend-sa"
   image:
+    registry: ghcr.io/am-portfolio
+    pullPolicy: Always
     imagePullSecrets:
-      - name: github-registry-secret
+      - name: regcred
+  vault:
+    enabled: true
+    role: "am-backend-role"
+    authPath: "auth/kubernetes"
+    serviceAccountName: "am-backend-sa"
 
 image:
   repository: am-cloudinary-manager
