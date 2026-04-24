@@ -1,0 +1,29 @@
+{
+  "name": "am-doc-intelligence",
+  "version": "1.0.0",
+  "description": "Document Intelligence Monorepo",
+  "scripts": {
+    "vault:sync": "powershell -ExecutionPolicy Bypass -File scripts/sync-vault.ps1",
+    "build:all": "npm run build:cloudinary && npm run build:processor && npm run build:email && npm run build:ui",
+    "build:cloudinary": "cd services/am-cloudinary-manager && mvn clean package -DskipTests",
+    "build:processor": "cd services/am-document-processor && mvn clean package -DskipTests",
+    "build:email": "cd services/am-email-extractor && pip install -r requirements.txt",
+    "build:ui": "cd apps/am-doc-viewer-ui && flutter build web --release --base-href /doc-ui/",
+    "run:cloudinary": "cd services/am-cloudinary-manager && mvn spring-boot:run",
+    "run:processor": "cd services/am-document-processor && mvn spring-boot:run",
+    "run:email": "cd services/am-email-extractor && python app_api.py",
+    "run:ui": "cd apps/am-doc-viewer-ui && flutter run -d chrome --web-renderer canvaskit",
+    "test:all": "npm run test:cloudinary && npm run test:processor",
+    "test:cloudinary": "cd services/am-cloudinary-manager && mvn test",
+    "test:processor": "cd services/am-document-processor && mvn test"
+  },
+  "keywords": [
+    "document-intelligence",
+    "microservices",
+    "flutter",
+    "spring-boot",
+    "flask"
+  ],
+  "author": "AM-Portfolio",
+  "license": "ISC"
+}
