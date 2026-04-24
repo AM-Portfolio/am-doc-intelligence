@@ -2,6 +2,12 @@ replicaCount: 1
 port: 8080
 healthPath: /actuator/health
 language: java
+entrypoint: "exec java -jar app.jar"
+probes:
+  liveness:
+    path: /actuator/health
+  readiness:
+    path: /actuator/health
 
 global:
   vault:
