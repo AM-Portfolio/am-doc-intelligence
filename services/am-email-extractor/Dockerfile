@@ -23,8 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create directory for user tokens
-RUN mkdir -p user_tokens
+# Create directory for user tokens and logs, and set permissions
+RUN mkdir -p user_tokens logs && chown -R 1000:1000 /app
+
+# Switch to non-root user
+USER 1000
 
 # Expose port
 EXPOSE 8080
