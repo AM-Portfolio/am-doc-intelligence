@@ -7,7 +7,7 @@ KAFKA_SASL_MECHANISM: PLAIN
 KAFKA_SASL_JAAS_CONFIG: #org.apache.kafka.common.security.plain.PlainLoginModule required username="kafkaUser" password="kafkaPassword123!";
 
 server:
-  port: 8089
+  port: 8080
 spring:  
   servlet:
     multipart:
