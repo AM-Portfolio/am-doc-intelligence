@@ -10,6 +10,8 @@ image:
   repository: am-email-extractor
   pullPolicy: Always
   tag: "latest"
+  imagePullSecrets:
+    - name: github-registry-secret
 
 ingress:
   enabled: false

@@ -10,6 +10,8 @@ image:
   repository: am-doc-viewer-ui
   pullPolicy: Always
   tag: "latest"
+  imagePullSecrets:
+    - name: github-registry-secret
 
 ingress:
   enabled: false
