@@ -23,5 +23,10 @@ EXPOSE 8080
 
 HEALTHCHECK --interval=15s --timeout=10s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
+# Create logs directory and set permissions
+RUN mkdir -p logs && chown -R 1000:1000 /app
+
+# Switch to non-root user
+USER 1000
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
