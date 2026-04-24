@@ -14,7 +14,7 @@ global:
     registry: ghcr.io/am-portfolio
     pullPolicy: Always
     imagePullSecrets:
-      - name: regcred
+      - name: github-registry-secret
   vault:
     enabled: true
     role: "am-backend-role"
