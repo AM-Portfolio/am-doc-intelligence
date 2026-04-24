@@ -1,5 +1,6 @@
 replicaCount: 1
 port: 8080
+healthPath: /api/v1/health
 language: python
 
 global:

@@ -1,43 +1,13 @@
 # ===============================
-# Stage 1: Build with Maven
-# ===============================
-FROM eclipse-temurin:17-jdk-jammy AS builder
-
-WORKDIR /app
-
-# Build arguments for GitHub Packages auth
-ARG GITHUB_PACKAGES_USERNAME
-ARG GITHUB_PACKAGES_TOKEN
-ENV GITHUB_PACKAGES_USERNAME=$GITHUB_PACKAGES_USERNAME
-ENV GITHUB_PACKAGES_TOKEN=$GITHUB_PACKAGES_TOKEN
-
-# Copy Maven Wrapper and configuration
-COPY .mvn/ .mvn
-COPY mvnw pom.xml mvn_settings.xml ./
-
-# Convert line endings for mvnw just in case
-RUN sed -i 's/\r$//' mvnw
-RUN chmod +x mvnw
-
-# Download dependencies (using settings for auth)
-RUN ./mvnw dependency:go-offline -s mvn_settings.xml
-
-# Copy source code
-COPY src ./src
-
-# Build the JAR
-RUN ./mvnw clean package -DskipTests -s mvn_settings.xml
-
-
-# ===============================
-# Stage 2: Runtime Image
+# Runtime Image
 # ===============================
 FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-# Copy JAR from builder stage
-COPY --from=builder /app/target/am-processor-*.jar app.jar
+# Copy JAR pre-built by the CI runner
+# Note: The JAR is built in target/ because it's a single-module project
+COPY target/am-processor-*.jar app.jar
 
 # Install curl for healthcheck
 RUN apt-get update && \

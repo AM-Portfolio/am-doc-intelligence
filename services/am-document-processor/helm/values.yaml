@@ -1,5 +1,6 @@
 replicaCount: 1
 port: 8080
+healthPath: /actuator/health
 language: java
 
 global:
