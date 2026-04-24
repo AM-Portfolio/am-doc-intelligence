@@ -24,8 +24,8 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Create logs directory and set permissions
-RUN mkdir -p logs && chown -R 1000:1000 /app
+# Set permissions for /app
+RUN chown -R 1000:1000 /app
 
 # Switch to non-root user
 USER 1000

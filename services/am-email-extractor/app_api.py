@@ -525,7 +525,6 @@ def internal_error(error):
 if __name__ == '__main__':
     # Ensure required directories exist
     os.makedirs('user_tokens', exist_ok=True)
-    os.makedirs('logs', exist_ok=True)
     
     # Run the app
     debug_mode = os.environ.get('FLASK_ENV') != 'production'
