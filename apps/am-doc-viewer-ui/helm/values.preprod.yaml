@@ -1,0 +1,8 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: doc-intelligence.local
+      paths:
+        - path: /doc-ui
+          pathType: Prefix

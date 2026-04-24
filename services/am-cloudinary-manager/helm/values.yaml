@@ -1,0 +1,43 @@
+replicaCount: 1
+port: 8080
+language: java
+
+global:
+  vault:
+    serviceAccountName: "am-backend-sa"
+
+image:
+  repository: am-cloudinary-manager
+  pullPolicy: Always
+  tag: "latest"
+
+ingress:
+  enabled: false
+
+security:
+  automountServiceAccountToken: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+vault:
+  enabled: true
+  role: "am-backend-role"
+  secretPaths:
+    cloudinary:
+      path: "secret/data/preprod/apps/docs/cloudinary"
+      template: |
+        {{- with secret "secret/data/preprod/apps/docs/cloudinary" -}}
+        export CLOUDINARY_CLOUD_NAME="{{ .Data.data.CLOUDINARY_CLOUD_NAME }}"
+        export CLOUDINARY_API_KEY="{{ .Data.data.CLOUDINARY_API_KEY }}"
+        export CLOUDINARY_API_SECRET="{{ .Data.data.CLOUDINARY_API_SECRET }}"
+        {{- end }}
+
+config:
+  app:
+    env: "preprod"

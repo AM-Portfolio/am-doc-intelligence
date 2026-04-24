@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Holdings Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .broker-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .broker-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .broker-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .broker-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+        
+        .broker-card h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .broker-card p {
+            color: #666;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .coming-soon {
+            opacity: 0.6;
+            cursor: default;
+        }
+        
+        .coming-soon:hover {
+            transform: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #ffa726;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info .user-icon {
+            font-size: 1.5em;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            padding: 6px 15px;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    {% if user_name %}
+    <div class="user-info">
+        <span class="user-icon">👤</span>
+        <span>{{ user_name }}</span>
+        <button class="logout-btn" onclick="location.href='/logout'">Logout</button>
+    </div>
+    {% endif %}
+    
+    <div class="container">
+        <div class="header">
+            <h1>📊 Portfolio Holdings Extractor</h1>
+            <p>Select your broker to extract portfolio data</p>
+        </div>
+        
+        <div class="broker-selection">
+            <a href="/groww" class="broker-card">
+                <div class="broker-icon">🟢</div>
+                <h2>Groww</h2>
+                <p>Extract holdings from Groww portfolio statements</p>
+            </a>
+            
+            <a href="/zerodha" class="broker-card">
+                <div class="broker-icon">🔵</div>
+                <h2>Zerodha</h2>
+                <p>Extract holdings from Zerodha portfolio statements</p>
+            </a>
+            
+            <a href="/angleone" class="broker-card">
+                <div class="broker-icon">🟠</div>
+                <h2>AngleOne</h2>
+                <p>Extract holdings from AngleOne portfolio statements</p>
+            </a>
+            
+            <a href="/dhan" class="broker-card">
+                <div class="broker-icon">🔷</div>
+                <h2>Dhan</h2>
+                <p>Extract holdings from Dhan portfolio statements</p>
+            </a>
+            
+            <a href="/mstock" class="broker-card">
+                <div class="broker-icon">⭐</div>
+                <h2>MSTOCK</h2>
+                <p>Extract holdings from MSTOCK portfolio statements</p>
+            </a>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <h2 style="color: white; margin-bottom: 20px;">Or Fetch Automatically from Email</h2>
+            <a href="/gmail" class="broker-card" style="display: inline-block; max-width: 400px;">
+                <div class="broker-icon">📧</div>
+                <h2 style="color: #667eea;">Gmail Auto-Import</h2>
+                <p>Automatically fetch statements from your Gmail inbox</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

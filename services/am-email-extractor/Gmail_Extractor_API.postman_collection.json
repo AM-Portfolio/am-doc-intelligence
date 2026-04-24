@@ -1,0 +1,382 @@
+ {
+  "info": {
+    "name": "Gmail Extractor API",
+    "_postman_id": "gmail-extractor-api-collection",
+    "description": "API collection for testing Gmail Extractor microservice with JWT authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdC11c2VyLTEyMyIsImlhdCI6MTYxNjIzOTAyMn0.placeholder",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the API is running. No authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "List Supported Brokers",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/brokers",
+              "host": ["{{base_url}}"],
+              "path": ["brokers"]
+            },
+            "description": "Get list of supported brokers. No authentication required."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Gmail OAuth",
+      "item": [
+        {
+          "name": "Connect Gmail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gmail/connect",
+              "host": ["{{base_url}}"],
+              "path": ["gmail", "connect"]
+            },
+            "description": "Start Gmail OAuth flow. Returns authorization URL to open in browser.\n\nRequires: JWT token in Authorization header"
+          },
+          "response": []
+        },
+        {
+          "name": "Gmail Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gmail/status",
+              "host": ["{{base_url}}"],
+              "path": ["gmail", "status"]
+            },
+            "description": "Check if Gmail is connected for the authenticated user.\n\nRequires: JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect Gmail",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gmail/disconnect",
+              "host": ["{{base_url}}"],
+              "path": ["gmail", "disconnect"]
+            },
+            "description": "Revoke Gmail access for the authenticated user.\n\nRequires: JWT token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Extract Holdings",
+      "item": [
+        {
+          "name": "Extract from Gmail - Groww",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/extract/gmail/groww?pan=ABCDE1234F",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "gmail", "groww"],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "ABCDE1234F",
+                  "description": "PAN number (uppercase)"
+                }
+              ]
+            },
+            "description": "Fetch latest statement from Gmail and extract holdings for Groww.\n\nRequires:\n- JWT token\n- PAN number in query parameter\n- Gmail must be connected"
+          },
+          "response": []
+        },
+        {
+          "name": "Extract from Gmail - Zerodha",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/extract/gmail/zerodha?pan=ABCDE1234F",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "gmail", "zerodha"],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "ABCDE1234F"
+                }
+              ]
+            },
+            "description": "Fetch latest statement from Gmail and extract holdings for Zerodha."
+          },
+          "response": []
+        },
+        {
+          "name": "Extract from Gmail - AngelOne",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/extract/gmail/angleone?pan=",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "gmail", "angleone"],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "",
+                  "description": "Optional - AngelOne Excel files don't require password"
+                }
+              ]
+            },
+            "description": "Fetch latest statement from Gmail and extract holdings for AngelOne.\n\nNote: PAN is optional for AngelOne as Excel files are not password-protected."
+          },
+          "response": []
+        },
+        {
+          "name": "Extract from Gmail - Dhan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/extract/gmail/dhan?pan=ABCDE1234F",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "gmail", "dhan"],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "ABCDE1234F"
+                }
+              ]
+            },
+            "description": "Fetch latest statement from Gmail and extract holdings for Dhan."
+          },
+          "response": []
+        },
+        {
+          "name": "Extract from Gmail - Mstock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/extract/gmail/mstock?pan=ABCDE1234F",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "gmail", "mstock"],
+              "query": [
+                {
+                  "key": "pan",
+                  "value": "ABCDE1234F"
+                }
+              ]
+            },
+            "description": "Fetch latest statement from Gmail and extract holdings for Mstock."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload File - Groww",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload PDF file"
+                },
+                {
+                  "key": "password",
+                  "value": "ABCDE1234F",
+                  "type": "text",
+                  "description": "PAN number (password)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/extract/upload/groww",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "upload", "groww"]
+            },
+            "description": "Upload a portfolio statement file and extract holdings for Groww.\n\nRequires:\n- JWT token\n- File in form-data (key: 'file')\n- Password in form-data (key: 'password')"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload File - Zerodha",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "password",
+                  "value": "ABCDE1234F",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/extract/upload/zerodha",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "upload", "zerodha"]
+            },
+            "description": "Upload a portfolio statement file and extract holdings for Zerodha."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload File - AngelOne",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload Excel file"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text",
+                  "description": "Usually not required for AngelOne"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/extract/upload/angleone",
+              "host": ["{{base_url}}"],
+              "path": ["extract", "upload", "angleone"]
+            },
+            "description": "Upload a portfolio statement file and extract holdings for AngelOne."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

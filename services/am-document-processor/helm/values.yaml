@@ -1,0 +1,53 @@
+replicaCount: 1
+port: 8080
+language: java
+
+global:
+  vault:
+    serviceAccountName: "am-backend-sa"
+
+image:
+  repository: am-document-processor
+  pullPolicy: Always
+  tag: "latest"
+
+ingress:
+  enabled: false
+
+security:
+  automountServiceAccountToken: true
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+vault:
+  enabled: true
+  role: "am-backend-role"
+  secretPaths:
+    mongodb: 
+      path: "secret/data/preprod/infra/mongodb"
+      template: |
+        {{- with secret "secret/data/preprod/infra/mongodb" -}}
+        export MONGODB_USERNAME="{{ .Data.data.MONGO_USER }}"
+        export MONGODB_PASSWORD="{{ .Data.data.MONGO_PASSWORD }}"
+        export MONGODB_DATABASE="{{ .Data.data.MONGODB_DATABASE }}"
+        export MONGODB_URL="mongodb://{{ .Data.data.MONGO_USER }}:{{ .Data.data.MONGO_PASSWORD }}@{{ .Data.data.MONGO_HOST }}:27017/{{ .Data.data.MONGODB_DATABASE }}?authSource=admin"
+        export MONGODB_AUTHENTICATION_DATABASE="admin"
+        {{- end }}
+    kafka: 
+      path: "secret/data/preprod/infra/kafka"
+      template: |
+        {{- with secret "secret/data/preprod/infra/kafka" -}}
+        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ if index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ else }}kafka.infra.svc.cluster.local:9092{{ end }}"
+        {{- end }}
+
+config:
+  app:
+    SPRING_KAFKA_CONSUMER_GROUP_ID: "am-doc-intelligence"
+    APP_KAFKA_TOPIC_DOCUMENT_UPLOADED: "document.uploaded"
+    APP_KAFKA_TOPIC_DOCUMENT_PROCESSED: "document.processed"

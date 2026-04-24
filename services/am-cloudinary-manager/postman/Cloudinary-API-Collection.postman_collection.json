@@ -1,0 +1,562 @@
+{
+	"info": {
+		"_postman_id": "cloudinary-api-collection",
+		"name": "Cloudinary API Collection",
+		"description": "API collection for Cloudinary resource management operations including upload, retrieve, list, delete, and signature generation.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "cloudinary-api"
+	},
+	"item": [
+		{
+			"name": "Upload File",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response has required fields\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('publicId');",
+							"    pm.expect(jsonData).to.have.property('url');",
+							"    pm.expect(jsonData).to.have.property('secureUrl');",
+							"});",
+							"",
+							"// Save publicId for subsequent requests",
+							"if (pm.response.code === 201) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"publicId\", jsonData.publicId);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fileContent\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"filename\": \"sample-image.png\",\n  \"folder\": \"uploads\",\n  \"overwrite\": false,\n  \"resourceType\": \"auto\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/cloudinary/upload",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cloudinary",
+						"upload"
+					]
+				},
+				"description": "Upload a file to Cloudinary using base64 encoded content. The file content should include the data URI prefix (e.g., data:image/png;base64,...)"
+			},
+			"response": [
+				{
+					"name": "Successful Upload",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileContent\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"filename\": \"sample-image.png\",\n  \"folder\": \"uploads\",\n  \"overwrite\": false,\n  \"resourceType\": \"auto\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cloudinary/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cloudinary",
+								"upload"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"publicId\": \"uploads/sample-image\",\n  \"url\": \"http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png\",\n  \"secureUrl\": \"https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png\",\n  \"originalFilename\": \"sample-image.png\",\n  \"format\": \"png\",\n  \"bytes\": 95,\n  \"resourceType\": \"image\",\n  \"createdAt\": \"2025-11-29T10:30:00Z\",\n  \"metadata\": {\n    \"width\": 1,\n    \"height\": 1\n  }\n}"
+				}
+			]
+		},
+		{
+			"name": "Get Resource Details",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has required fields\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('publicId');",
+							"    pm.expect(jsonData).to.have.property('url');",
+							"    pm.expect(jsonData).to.have.property('secureUrl');",
+							"    pm.expect(jsonData).to.have.property('resourceType');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/cloudinary/resources/:publicId?resourceType=image",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cloudinary",
+						"resources",
+						":publicId"
+					],
+					"query": [
+						{
+							"key": "resourceType",
+							"value": "image",
+							"description": "Type of resource (image, video, raw, etc.)"
+						}
+					],
+					"variable": [
+						{
+							"key": "publicId",
+							"value": "{{publicId}}",
+							"description": "Public ID of the resource (can include folder path)"
+						}
+					]
+				},
+				"description": "Retrieve detailed information about a specific Cloudinary resource by its public ID."
+			},
+			"response": [
+				{
+					"name": "Successful Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cloudinary/resources/uploads/sample-image?resourceType=image",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cloudinary",
+								"resources",
+								"uploads",
+								"sample-image"
+							],
+							"query": [
+								{
+									"key": "resourceType",
+									"value": "image"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"publicId\": \"uploads/sample-image\",\n  \"url\": \"http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png\",\n  \"secureUrl\": \"https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png\",\n  \"format\": \"png\",\n  \"bytes\": 95,\n  \"width\": 1,\n  \"height\": 1,\n  \"resourceType\": \"image\",\n  \"createdAt\": \"2025-11-29T10:30:00Z\",\n  \"folder\": \"uploads\",\n  \"metadata\": {\n    \"etag\": \"abc123def456\",\n    \"signature\": \"xyz789\"\n  }\n}"
+				}
+			]
+		},
+		{
+			"name": "List Resources",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response is an array\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Resources have required properties\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.length > 0) {",
+							"        pm.expect(jsonData[0]).to.have.property('publicId');",
+							"        pm.expect(jsonData[0]).to.have.property('url');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/cloudinary/resources?folder=uploads&resourceType=image&maxResults=10",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cloudinary",
+						"resources"
+					],
+					"query": [
+						{
+							"key": "folder",
+							"value": "uploads",
+							"description": "Folder path in Cloudinary"
+						},
+						{
+							"key": "resourceType",
+							"value": "image",
+							"description": "Type of resource (image, video, raw, etc.)"
+						},
+						{
+							"key": "maxResults",
+							"value": "10",
+							"description": "Maximum number of results to return (minimum: 1)"
+						}
+					]
+				},
+				"description": "List resources in a specified Cloudinary folder with pagination support."
+			},
+			"response": [
+				{
+					"name": "Successful Response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cloudinary/resources?folder=uploads&resourceType=image&maxResults=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cloudinary",
+								"resources"
+							],
+							"query": [
+								{
+									"key": "folder",
+									"value": "uploads"
+								},
+								{
+									"key": "resourceType",
+									"value": "image"
+								},
+								{
+									"key": "maxResults",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "[\n  {\n    \"publicId\": \"uploads/sample-image-1\",\n    \"url\": \"http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image-1.png\",\n    \"secureUrl\": \"https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image-1.png\",\n    \"format\": \"png\",\n    \"bytes\": 95,\n    \"width\": 100,\n    \"height\": 100,\n    \"resourceType\": \"image\",\n    \"createdAt\": \"2025-11-29T10:30:00Z\",\n    \"folder\": \"uploads\",\n    \"metadata\": {}\n  },\n  {\n    \"publicId\": \"uploads/sample-image-2\",\n    \"url\": \"http://res.cloudinary.com/demo/image/upload/v1234567891/uploads/sample-image-2.jpg\",\n    \"secureUrl\": \"https://res.cloudinary.com/demo/image/upload/v1234567891/uploads/sample-image-2.jpg\",\n    \"format\": \"jpg\",\n    \"bytes\": 2048,\n    \"width\": 200,\n    \"height\": 150,\n    \"resourceType\": \"image\",\n    \"createdAt\": \"2025-11-29T11:00:00Z\",\n    \"folder\": \"uploads\",\n    \"metadata\": {}\n  }\n]"
+				}
+			]
+		},
+		{
+			"name": "Delete Resource",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has result field\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('result');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/cloudinary/resources/:publicId?resourceType=image",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cloudinary",
+						"resources",
+						":publicId"
+					],
+					"query": [
+						{
+							"key": "resourceType",
+							"value": "image",
+							"description": "Type of resource (image, video, raw, etc.)"
+						}
+					],
+					"variable": [
+						{
+							"key": "publicId",
+							"value": "{{publicId}}",
+							"description": "Public ID of the resource to delete"
+						}
+					]
+				},
+				"description": "Delete a specific resource from Cloudinary by its public ID."
+			},
+			"response": [
+				{
+					"name": "Successful Deletion",
+					"originalRequest": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cloudinary/resources/uploads/sample-image?resourceType=image",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cloudinary",
+								"resources",
+								"uploads",
+								"sample-image"
+							],
+							"query": [
+								{
+									"key": "resourceType",
+									"value": "image"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"result\": \"ok\",\n  \"publicId\": \"uploads/sample-image\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Generate Upload Signature",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has required signature fields\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('signature');",
+							"    pm.expect(jsonData).to.have.property('timestamp');",
+							"    pm.expect(jsonData).to.have.property('apiKey');",
+							"    pm.expect(jsonData).to.have.property('cloudName');",
+							"    pm.expect(jsonData).to.have.property('uploadUrl');",
+							"});",
+							"",
+							"// Save signature details for client-side upload",
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"signature\", jsonData.signature);",
+							"    pm.environment.set(\"timestamp\", jsonData.timestamp);",
+							"    pm.environment.set(\"apiKey\", jsonData.apiKey);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"publicId\": \"uploads/my-custom-id\",\n  \"folder\": \"uploads\",\n  \"resourceType\": \"auto\",\n  \"timestamp\": null,\n  \"params\": {\n    \"eager\": \"w_400,h_300,c_pad\",\n    \"tags\": \"sample,client-upload\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/cloudinary/signature",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cloudinary",
+						"signature"
+					]
+				},
+				"description": "Generate a cryptographic signature for client-side uploads to Cloudinary. This allows secure direct uploads from the browser without exposing your API secret."
+			},
+			"response": [
+				{
+					"name": "Successful Signature Generation",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"publicId\": \"uploads/my-custom-id\",\n  \"folder\": \"uploads\",\n  \"resourceType\": \"auto\",\n  \"timestamp\": null,\n  \"params\": {\n    \"eager\": \"w_400,h_300,c_pad\",\n    \"tags\": \"sample,client-upload\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/cloudinary/signature",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"cloudinary",
+								"signature"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"apiKey\": \"123456789012345\",\n  \"publicId\": \"uploads/my-custom-id\",\n  \"timestamp\": 1732878600,\n  \"signature\": \"a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0\",\n  \"cloudName\": \"demo\",\n  \"folder\": \"uploads\",\n  \"resourceType\": \"auto\",\n  \"uploadUrl\": \"https://api.cloudinary.com/v1_1/demo/auto/upload\",\n  \"params\": {\n    \"eager\": \"w_400,h_300,c_pad\",\n    \"tags\": \"sample,client-upload\"\n  }\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "publicId",
+			"value": "uploads/sample-image",
+			"type": "string"
+		}
+	]
+}

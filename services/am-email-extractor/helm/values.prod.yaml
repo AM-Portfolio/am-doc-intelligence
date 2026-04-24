@@ -1,0 +1,42 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: api.amportfolio.com
+      paths:
+        - path: /api/v1/extractor
+          pathType: Prefix
+
+vault:
+  secretPaths:
+    mongodb: 
+      path: "secret/data/prod/infra/mongodb"
+      template: |
+        {{- with secret "secret/data/prod/infra/mongodb" -}}
+        export MONGODB_DATABASE="{{ .Data.data.MONGODB_DATABASE }}"
+        export MONGO_DATABASE="{{ .Data.data.MONGODB_DATABASE }}"
+        export MONGODB_URL="mongodb://{{ .Data.data.MONGO_USER }}:{{ .Data.data.MONGO_PASSWORD }}@{{ .Data.data.MONGO_HOST }}:27017/{{ .Data.data.MONGODB_DATABASE }}?authSource=admin"
+        {{- end }}
+    kafka: 
+      path: "secret/data/prod/infra/kafka"
+      template: |
+        {{- with secret "secret/data/prod/infra/kafka" -}}
+        export KAFKA_BOOTSTRAP_SERVERS="{{ if index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ else }}kafka.infra.svc.cluster.local:9092{{ end }}"
+        {{- end }}
+    jwt:
+      path: "secret/data/prod/apps/auth/jwt"
+      template: |
+        {{- with secret "secret/data/prod/apps/auth/jwt" -}}
+        export JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
+        {{- end }}
+    google:
+      path: "secret/data/prod/apps/docs/google"
+      template: |
+        {{- with secret "secret/data/prod/apps/docs/google" -}}
+        export GOOGLE_CLIENT_ID="{{ .Data.data.GOOGLE_CLIENT_ID }}"
+        export GOOGLE_CLIENT_SECRET="{{ .Data.data.GOOGLE_CLIENT_SECRET }}"
+        {{- end }}
+
+config:
+  app:
+    GMAIL_REDIRECT_URI: "https://api.amportfolio.com/api/v1/extractor/gmail/callback"

@@ -1,0 +1,65 @@
+# Gmail Portfolio Sync - UI Integration Guide
+
+## Overview
+This feature allows users to fetch their stock portfolio holdings directly from their Gmail statements (Zerodha, Groww, etc.) and save them to the backend.
+
+**Base URL**: `http://YOUR_API_URL` (e.g., `http://localhost:8080`)
+**Authentication**: All requests must have header `Authorization: Bearer <USER_JWT>`
+
+## Workflow 1: Check Connection Status
+**When**: On page load (Portfolio Screen).
+
+- **Endpoint**: `GET /api/v1/gmail/status`
+- **Response**:
+  ```json
+  {
+    "connected": true,      // true or false
+    "email": "user@gmail.com", // present if connected
+    "name": "John Doe"
+  }
+  ```
+- **UI Logic**:
+  - If `connected: false`: Show **"Connect Gmail"** button.
+  - If `connected: true`: Show **"Sync Portfolio"** button (and maybe "Connected as user@gmail.com").
+
+## Workflow 2: Connect Gmail (OAuth)
+**When**: User clicks "Connect Gmail".
+
+1.  **Get Auth URL**:
+    - **Endpoint**: `GET /api/v1/gmail/connect`
+    - **Response**: `{ "auth_url": "https://accounts.google.com/..." }`
+2.  **Redirect**:
+    - Open this URL in the browser/webview.
+    - User approves permissions.
+    - Google redirects back to your App (configured in Google Console).
+
+## Workflow 3: Sync/Fetch Portfolio
+**When**: User clicks "Sync Portfolio".
+
+**Recommended UI**: Show a modal to select Broker + Confirm PAN.
+
+- **Endpoint**: `GET /api/v1/extract/gmail/<broker>`
+  - `<broker>` options: [zerodha](file:///c:/Users/drabh/Documents/am-email-extractor-1/app.py#56-62), [groww](file:///c:/Users/drabh/Documents/am-email-extractor-1/app.py#48-54), [angleone](file:///c:/Users/drabh/Documents/am-email-extractor-1/app.py#64-70), [dhan](file:///c:/Users/drabh/Documents/am-email-extractor-1/app.py#72-78), [mstock](file:///c:/Users/drabh/Documents/am-email-extractor-1/app.py#80-86)
+- **Query Params**: `?pan=ABCD1234F` (Required for all except AngelOne)
+- **Response (Success - 200)**:
+  ```json
+  {
+    "success": true,
+    "broker": "zerodha",
+    "count": 50,           // Number of stocks found
+    "db_id": "65b2f...",   // ID of saved record in MongoDB
+    "holdings": [ ... ]    // Array of holdings (optional to display)
+  }
+  ```
+- **Response (Error)**:
+  - `401`: "Gmail not connected" -> Prompt user to connect again.
+  - `404`: "No recent emails found" -> "We couldn't find a Zerodha email in the last 6 months."
+  - `400`: "PAN required" or "Invalid broker".
+
+## UI States to Handle
+1.  **Loading**: The extraction takes **5-15 seconds**. Show a spinner saying "Scanning emails...".
+2.  **Success**: Show toast "Synced 50 holdings from Zerodha!". Refresh the portfolio view.
+3.  **Error**: Show clear error messages (e.g., "Check logic: Incorrect PAN" or "No Email Found").
+
+## Backend Hand-off (Kafka)
+Once you get a `200 OK` from the extraction API, the data is **already saved** in the backend database. You can immediately call your standard `GET /portfolio` (Main Backend) to fetch the updated charts.

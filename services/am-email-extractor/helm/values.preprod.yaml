@@ -1,0 +1,12 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: doc-intelligence.local
+      paths:
+        - path: /api/v1/extractor
+          pathType: Prefix
+
+config:
+  app:
+    GMAIL_REDIRECT_URI: "http://doc-intelligence.local/api/v1/extractor/gmail/callback"

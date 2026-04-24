@@ -1,0 +1,24 @@
+# Development-specific configuration
+
+# Enable developer tools
+spring:
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+# Development logging levels
+logging:
+  level:
+    root: INFO
+    '[org.springframework]': INFO
+    '[com.amportfolio.cloudinary]': DEBUG
+
+# Development Cloudinary settings (using environment variables or placeholders)
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dr6crhham}
+  api-key: ${CLOUDINARY_API_KEY:712557573888213}
+  api-secret: ${CLOUDINARY_API_SECRET:eKoN0tAMCCNMnXtxiFdOsHDP69Y}
+  secure: true
+  default-folder: dev-uploads

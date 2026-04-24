@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Document Processor API
+  description: API for processing portfolio documents from various brokers
+  version: 1.0.0
+  contact:
+    name: AM Portfolio Team
+
+servers:
+  - url: /api/v1
+    description: Base API path
+
+tags:
+  - name: Documents
+    description: Document processing operations
+
+paths:
+  /documents/process:
+    post:
+      tags:
+        - Documents
+      summary: Process a single document
+      description: Upload and process a single portfolio document
+      operationId: processDocument
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Portfolio document file to process
+                documentType:
+                  type: string
+                  enum: [STOCK_PORTFOLIO, MUTUAL_FUND_PORTFOLIO]
+                  description: Type of document being processed
+              required:
+                - file
+                - documentType
+      responses:
+        '200':
+          description: Document processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentProcessResponse'
+        '400':
+          description: Invalid input parameters
+        '500':
+          description: Internal server error
+
+  /documents/batch-process:
+    post:
+      tags:
+        - Documents
+      summary: Process multiple documents
+      description: Upload and process multiple portfolio documents
+      operationId: processBatchDocuments
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: List of portfolio document files to process
+                documentType:
+                  type: string
+                  enum: [STOCK_PORTFOLIO, MUTUAL_FUND_PORTFOLIO]
+                  description: Type of documents being processed
+              required:
+                - files
+                - documentType
+      responses:
+        '200':
+          description: Documents processed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentProcessResponse'
+        '400':
+          description: Invalid input parameters
+        '500':
+          description: Internal server error
+
+  /documents/status/{processId}:
+    get:
+      tags:
+        - Documents
+      summary: Get document processing status
+      description: Retrieve the current status of a document processing request
+      operationId: getProcessingStatus
+      parameters:
+        - name: processId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the processing request
+      responses:
+        '200':
+          description: Processing status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingStatus'
+        '404':
+          description: Process ID not found
+        '500':
+          description: Internal server error
+
+  /documents/types:
+    get:
+      tags:
+        - Documents
+      summary: Get supported document types
+      description: Retrieve list of supported document types
+      operationId: getSupportedDocumentTypes
+      responses:
+        '200':
+          description: Document types retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    DocumentProcessResponse:
+      type: object
+      properties:
+        processId:
+          type: string
+          format: uuid
+          description: Unique identifier for the processing request
+        documentType:
+          type: string
+          description: Type of document that was processed
+        fileName:
+          type: string
+          description: Name of the processed file
+        status:
+          $ref: '#/components/schemas/ProcessingStatus'
+      required:
+        - processId
+        - documentType
+        - fileName
+        - status
+
+    ProcessingStatus:
+      type: string
+      enum:
+        - QUEUED
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+      description: Status of the document processing request

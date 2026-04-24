@@ -1,0 +1,19 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: api.amportfolio.com
+      paths:
+        - path: /api/v1/cloudinary
+          pathType: Prefix
+
+vault:
+  secretPaths:
+    cloudinary:
+      path: "secret/data/prod/apps/docs/cloudinary"
+      template: |
+        {{- with secret "secret/data/prod/apps/docs/cloudinary" -}}
+        export CLOUDINARY_CLOUD_NAME="{{ .Data.data.CLOUDINARY_CLOUD_NAME }}"
+        export CLOUDINARY_API_KEY="{{ .Data.data.CLOUDINARY_API_KEY }}"
+        export CLOUDINARY_API_SECRET="{{ .Data.data.CLOUDINARY_API_SECRET }}"
+        {{- end }}

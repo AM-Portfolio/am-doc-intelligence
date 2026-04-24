@@ -1,0 +1,22 @@
+
+api:
+  enabled: true
+
+spring:
+  application:
+    name: am-cloudinary
+  profiles:
+    active: dev
+    include: common
+
+server:
+  port: 8040
+  servlet:
+    context-path: /
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  api-docs:
+    path: /api-docs

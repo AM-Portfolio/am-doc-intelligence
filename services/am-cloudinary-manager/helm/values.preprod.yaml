@@ -1,0 +1,8 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: doc-intelligence.local
+      paths:
+        - path: /api/v1/cloudinary
+          pathType: Prefix

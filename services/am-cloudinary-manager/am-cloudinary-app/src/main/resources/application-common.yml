@@ -1,0 +1,31 @@
+# Common configuration shared across all environments
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging configuration
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    '[org.springframework]': INFO
+    '[com.amportfolio.cloudinary]': INFO
+
+# Default Cloudinary settings (overridden in profile-specific configs)
+cloudinary:
+  defaultFolder: uploads
+  secure: true

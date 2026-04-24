@@ -1,0 +1,39 @@
+version: '3.8'
+
+
+services:
+  am-cloudinary-service:
+    container_name: am-cloudinary-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-dr6crhham}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-712557573888213}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-eKoN0tAMCCNMnXtxiFdOsHDP69Y}
+      - TZ=Asia/Kolkata
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - |
+        echo "=== AM Cloudinary Service Environment Variables ==="
+        echo "Cloud Name: $$CLOUDINARY_CLOUD_NAME"
+        echo "API Key: $$CLOUDINARY_API_KEY"
+        echo "Profile: $$SPRING_PROFILES_ACTIVE"
+        echo "=== Starting AM Cloudinary Service ==="
+        java -jar app.jar
+    ports:
+      - "8074:8080"
+    networks:
+      - market-data-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  market-data-network:
+    driver: bridge

@@ -1,0 +1,48 @@
+name: Manual Deploy (Doc Intelligence)
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: "Select Service to Deploy"
+        required: true
+        default: "am-cloudinary-manager"
+        type: choice
+        options:
+          - am-cloudinary-manager
+          - am-document-processor
+          - am-email-extractor
+          - am-doc-viewer-ui
+      image_tag:
+        description: "Select Image Tag"
+        required: true
+        default: "latest"
+        type: choice
+        options:
+          - latest
+          - custom
+      custom_tag:
+        description: "If 'custom' selected, enter tag here"
+        required: false
+        type: string
+      environment:
+        description: "Target Environment"
+        required: true
+        default: "preprod"
+        type: choice
+        options:
+          - preprod
+          - prod
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.event.inputs.service_name }} to ${{ github.event.inputs.environment }}
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@main
+    with:
+      service_name: ${{ github.event.inputs.service_name }}
+      working_directory: ${{ github.event.inputs.service_name == 'am-doc-viewer-ui' && 'apps/am-doc-viewer-ui' || format('services/{0}', github.event.inputs.service_name) }}
+      language: ${{ github.event.inputs.service_name == 'am-email-extractor' && 'python' || (github.event.inputs.service_name == 'am-doc-viewer-ui' && 'flutter' || 'java') }}
+      environment: ${{ github.event.inputs.environment }}
+      image_tag: ${{ github.event.inputs.image_tag == 'custom' && github.event.inputs.custom_tag || github.event.inputs.image_tag }}
+      namespace: ${{ github.event.inputs.environment == 'prod' && 'am-apps-prod' || 'am-apps-preprod' }}
+    secrets: inherit

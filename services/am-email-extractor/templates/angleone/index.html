@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AngleOne Portfolio Holdings Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+        
+        .upload-section {
+            text-align: center;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragging {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .password-section {
+            margin: 20px 0;
+        }
+        
+        .password-section input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-left: 10px;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-section.show {
+            display: block;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 150px;
+            margin: 10px;
+        }
+        
+        .stat-box h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-box p {
+            opacity: 0.9;
+        }
+        
+        .holdings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .holdings-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .holdings-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .holdings-table tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .json-view {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c33;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .view-toggle {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .toggle-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .file-name {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🟠 AngleOne Portfolio Holdings Extractor</h1>
+            <p>Extract ISIN, Company Name, Balance, Rate, and Value from your AngleOne portfolio documents</p>
+            <a href="/" style="color: white; text-decoration: none; opacity: 0.8; margin-top: 10px; display: inline-block;">← Back to Broker Selection</a>
+        </div>
+        
+        <div class="card">
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <h2>Click or drag to upload Excel/PDF</h2>
+                    <p>Supports AngleOne holdings Excel files (.xlsx) and PDFs</p>
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf,.xlsx">
+                </div>
+                <div class="file-name" id="fileName"></div>
+                
+                <div class="password-section">
+                    <label for="password"><strong>Document Password (if required):</strong></label>
+                    <input type="password" id="password" placeholder="Enter PDF password">
+                </div>
+                
+                <button class="btn" id="extractBtn" disabled>Extract Holdings Data</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px;">Extracting data...</p>
+            </div>
+            
+            <div id="error"></div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="card">
+                <h2 style="margin-bottom: 20px;">📈 Extraction Results</h2>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <h3 id="holdingsCount">0</h3>
+                        <p>Total Holdings</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="btn btn-download" id="downloadBtn">Download JSON</button>
+                </div>
+                
+                <div class="view-toggle">
+                    <button class="toggle-btn active" onclick="showView('table')">Table View</button>
+                    <button class="toggle-btn" onclick="showView('json')">JSON View</button>
+                </div>
+                
+                <div id="tableView">
+                    <div style="overflow-x: auto;">
+                        <table class="holdings-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>ISIN Code</th>
+                                    <th>Company Name</th>
+                                    <th>Current Balance</th>
+                                    <th>Rate</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="jsonView" style="display: none;">
+                    <pre class="json-view" id="jsonContent"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentHoldings = [];
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const extractBtn = document.getElementById('extractBtn');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorDiv = document.getElementById('error');
+        
+        // Upload area click
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = `Selected: ${file.name}`;
+                extractBtn.disabled = false;
+            }
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = `Selected: ${file.name}`;
+                extractBtn.disabled = false;
+            }
+        });
+        
+        // Extract button
+        extractBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('password', document.getElementById('password').value);
+            
+            // Show loading
+            loading.classList.add('show');
+            extractBtn.disabled = true;
+            errorDiv.innerHTML = '';
+            resultsSection.classList.remove('show');
+            
+            try {
+                const response = await fetch('/extract/angleone', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Display results
+                currentHoldings = data.holdings;
+                displayResults(data.holdings);
+                
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+            } finally {
+                loading.classList.remove('show');
+                extractBtn.disabled = false;
+            }
+        });
+        
+        function displayResults(holdings) {
+            // Update stats
+            document.getElementById('holdingsCount').textContent = holdings.length;
+            
+            // Update table
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            holdings.forEach((holding, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${holding.isin_code}</td>
+                    <td>${holding.company_name}</td>
+                    <td>${holding.current_bal}</td>
+                    <td>${holding.rate}</td>
+                    <td>${holding.value}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Update JSON view
+            document.getElementById('jsonContent').textContent = JSON.stringify(holdings, null, 2);
+            
+            // Show results
+            resultsSection.classList.add('show');
+        }
+        
+        function showView(view) {
+            const tableView = document.getElementById('tableView');
+            const jsonView = document.getElementById('jsonView');
+            const buttons = document.querySelectorAll('.toggle-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            if (view === 'table') {
+                tableView.style.display = 'block';
+                jsonView.style.display = 'none';
+                buttons[0].classList.add('active');
+            } else {
+                tableView.style.display = 'none';
+                jsonView.style.display = 'block';
+                buttons[1].classList.add('active');
+            }
+        }
+        
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ holdings: currentHoldings, broker: 'angleone' })
+                });
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'portfolio_holdings.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('Download failed: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

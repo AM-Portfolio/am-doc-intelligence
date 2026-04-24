@@ -1,0 +1,439 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cloudinary API Schemas",
+  "description": "JSON Schema definitions for Cloudinary API request and response models",
+  "definitions": {
+    "UploadRequest": {
+      "type": "object",
+      "description": "Request model for uploading files to Cloudinary",
+      "required": ["fileContent", "filename"],
+      "properties": {
+        "fileContent": {
+          "type": "string",
+          "description": "Base64 encoded file content with data URI prefix (e.g., data:image/png;base64,...)",
+          "minLength": 1,
+          "pattern": "^data:[^;]+;base64,.*$"
+        },
+        "filename": {
+          "type": "string",
+          "description": "Filename with extension",
+          "minLength": 1,
+          "examples": ["image.png", "document.pdf", "video.mp4"]
+        },
+        "folder": {
+          "type": "string",
+          "description": "Folder path in Cloudinary where the file should be stored",
+          "examples": ["uploads", "images/profile", "documents/2025"]
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "Whether to overwrite existing file with same public ID",
+          "default": false
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type (image, video, raw, auto)",
+          "enum": ["image", "video", "raw", "auto"],
+          "default": "auto"
+        }
+      },
+      "examples": [
+        {
+          "fileContent": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          "filename": "sample-image.png",
+          "folder": "uploads",
+          "overwrite": false,
+          "resourceType": "auto"
+        }
+      ]
+    },
+    "UploadResponse": {
+      "type": "object",
+      "description": "Response model for Cloudinary upload operations",
+      "properties": {
+        "publicId": {
+          "type": "string",
+          "description": "Public ID of the uploaded resource",
+          "examples": ["uploads/sample-image", "images/profile/user-123"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the uploaded resource (HTTP)",
+          "examples": ["http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+        },
+        "secureUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Secure URL of the uploaded resource (HTTPS)",
+          "examples": ["https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+        },
+        "originalFilename": {
+          "type": "string",
+          "description": "Original filename",
+          "examples": ["sample-image.png"]
+        },
+        "format": {
+          "type": "string",
+          "description": "Format of the uploaded resource",
+          "examples": ["png", "jpg", "pdf", "mp4"]
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "Size of the uploaded resource in bytes",
+          "minimum": 0,
+          "examples": [95, 2048, 1048576]
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type (image, video, raw)",
+          "enum": ["image", "video", "raw"],
+          "examples": ["image"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp in ISO 8601 format",
+          "examples": ["2025-11-29T10:30:00Z"]
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata returned by Cloudinary",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "width": 1920,
+              "height": 1080,
+              "etag": "abc123def456"
+            }
+          ]
+        }
+      },
+      "examples": [
+        {
+          "publicId": "uploads/sample-image",
+          "url": "http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "originalFilename": "sample-image.png",
+          "format": "png",
+          "bytes": 95,
+          "resourceType": "image",
+          "createdAt": "2025-11-29T10:30:00Z",
+          "metadata": {
+            "width": 1,
+            "height": 1
+          }
+        }
+      ]
+    },
+    "SignatureRequest": {
+      "type": "object",
+      "description": "Request model for generating upload signatures",
+      "properties": {
+        "publicId": {
+          "type": "string",
+          "description": "Public ID to use for the resource",
+          "examples": ["uploads/my-custom-id", "profile/user-123"]
+        },
+        "folder": {
+          "type": "string",
+          "description": "Folder path in Cloudinary where the file should be stored",
+          "examples": ["uploads", "images/profile"]
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type (image, video, raw, auto)",
+          "enum": ["image", "video", "raw", "auto"],
+          "default": "auto"
+        },
+        "params": {
+          "type": "object",
+          "description": "Additional parameters for the upload (transformations, tags, etc.)",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "eager": "w_400,h_300,c_pad",
+              "tags": "sample,client-upload",
+              "context": "alt=Sample Image|caption=A test upload"
+            }
+          ]
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Timestamp for the signature in seconds since epoch. If not provided, current time will be used",
+          "minimum": 0,
+          "examples": [1732878600]
+        }
+      },
+      "examples": [
+        {
+          "publicId": "uploads/my-custom-id",
+          "folder": "uploads",
+          "resourceType": "auto",
+          "timestamp": null,
+          "params": {
+            "eager": "w_400,h_300,c_pad",
+            "tags": "sample,client-upload"
+          }
+        }
+      ]
+    },
+    "SignatureResponse": {
+      "type": "object",
+      "description": "Response model for Cloudinary upload signatures",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "description": "API key for Cloudinary",
+          "examples": ["123456789012345"]
+        },
+        "publicId": {
+          "type": "string",
+          "description": "Public ID to use for the resource",
+          "examples": ["uploads/my-custom-id"]
+        },
+        "timestamp": {
+          "type": "integer",
+          "description": "Timestamp used for the signature (in seconds since epoch)",
+          "minimum": 0,
+          "examples": [1732878600]
+        },
+        "signature": {
+          "type": "string",
+          "description": "Generated SHA-256 signature for the upload",
+          "examples": ["a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"]
+        },
+        "cloudName": {
+          "type": "string",
+          "description": "Cloudinary cloud name",
+          "examples": ["demo"]
+        },
+        "folder": {
+          "type": "string",
+          "description": "Folder path in Cloudinary where the file should be stored",
+          "examples": ["uploads"]
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type (image, video, raw, auto)",
+          "enum": ["image", "video", "raw", "auto"],
+          "examples": ["auto"]
+        },
+        "uploadUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Upload URL for the resource type",
+          "examples": ["https://api.cloudinary.com/v1_1/demo/auto/upload"]
+        },
+        "params": {
+          "type": "object",
+          "description": "Additional parameters for the upload",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "eager": "w_400,h_300,c_pad",
+              "tags": "sample,client-upload"
+            }
+          ]
+        }
+      },
+      "examples": [
+        {
+          "apiKey": "123456789012345",
+          "publicId": "uploads/my-custom-id",
+          "timestamp": 1732878600,
+          "signature": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+          "cloudName": "demo",
+          "folder": "uploads",
+          "resourceType": "auto",
+          "uploadUrl": "https://api.cloudinary.com/v1_1/demo/auto/upload",
+          "params": {
+            "eager": "w_400,h_300,c_pad",
+            "tags": "sample,client-upload"
+          }
+        }
+      ]
+    },
+    "CloudinaryResource": {
+      "type": "object",
+      "description": "Model representing a Cloudinary resource",
+      "properties": {
+        "publicId": {
+          "type": "string",
+          "description": "Public ID of the resource",
+          "examples": ["uploads/sample-image"]
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the resource (HTTP)",
+          "examples": ["http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+        },
+        "secureUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Secure URL of the resource (HTTPS)",
+          "examples": ["https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+        },
+        "format": {
+          "type": "string",
+          "description": "Format of the resource",
+          "examples": ["png", "jpg", "pdf", "mp4"]
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "Size of the resource in bytes",
+          "minimum": 0,
+          "examples": [95, 2048]
+        },
+        "width": {
+          "type": "integer",
+          "description": "Width of the resource (for images and videos)",
+          "minimum": 0,
+          "examples": [1920, 100]
+        },
+        "height": {
+          "type": "integer",
+          "description": "Height of the resource (for images and videos)",
+          "minimum": 0,
+          "examples": [1080, 100]
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "Resource type",
+          "enum": ["image", "video", "raw"],
+          "examples": ["image"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp in ISO 8601 format",
+          "examples": ["2025-11-29T10:30:00Z"]
+        },
+        "folder": {
+          "type": "string",
+          "description": "Folder path in Cloudinary",
+          "examples": ["uploads", "images/profile"]
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "etag": "abc123def456",
+              "signature": "xyz789"
+            }
+          ]
+        }
+      },
+      "examples": [
+        {
+          "publicId": "uploads/sample-image",
+          "url": "http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "format": "png",
+          "bytes": 95,
+          "width": 1,
+          "height": 1,
+          "resourceType": "image",
+          "createdAt": "2025-11-29T10:30:00Z",
+          "folder": "uploads",
+          "metadata": {
+            "etag": "abc123def456",
+            "signature": "xyz789"
+          }
+        }
+      ]
+    },
+    "DeleteResponse": {
+      "type": "object",
+      "description": "Response model for delete operations",
+      "properties": {
+        "result": {
+          "type": "string",
+          "description": "Result of the delete operation",
+          "enum": ["ok", "not found"],
+          "examples": ["ok"]
+        },
+        "publicId": {
+          "type": "string",
+          "description": "Public ID of the deleted resource",
+          "examples": ["uploads/sample-image"]
+        }
+      },
+      "examples": [
+        {
+          "result": "ok",
+          "publicId": "uploads/sample-image"
+        }
+      ]
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "description": "Standard error response model",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the error",
+          "examples": ["2025-11-29T10:30:00Z"]
+        },
+        "status": {
+          "type": "integer",
+          "description": "HTTP status code",
+          "examples": [400, 404, 500]
+        },
+        "error": {
+          "type": "string",
+          "description": "Error type",
+          "examples": ["Bad Request", "Not Found", "Internal Server Error"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Error message",
+          "examples": ["File content is required", "Resource not found", "Failed to upload file"]
+        },
+        "path": {
+          "type": "string",
+          "description": "API path that generated the error",
+          "examples": ["/api/v1/cloudinary/upload"]
+        }
+      },
+      "examples": [
+        {
+          "timestamp": "2025-11-29T10:30:00Z",
+          "status": 400,
+          "error": "Bad Request",
+          "message": "File content is required",
+          "path": "/api/v1/cloudinary/upload"
+        }
+      ]
+    }
+  },
+  "examples": {
+    "uploadRequestExample": {
+      "summary": "Sample upload request with image",
+      "value": {
+        "fileContent": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "filename": "sample-image.png",
+        "folder": "uploads",
+        "overwrite": false,
+        "resourceType": "auto"
+      }
+    },
+    "signatureRequestExample": {
+      "summary": "Sample signature request with transformations",
+      "value": {
+        "publicId": "uploads/my-custom-id",
+        "folder": "uploads",
+        "resourceType": "auto",
+        "params": {
+          "eager": "w_400,h_300,c_pad|w_260,h_200,c_crop",
+          "tags": "sample,client-upload,profile",
+          "context": "alt=User Profile Picture|caption=Uploaded via client"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+# Production-specific configuration
+
+# Disable developer tools in production
+spring:
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
+
+# Production logging levels - more restrictive
+logging:
+  level:
+    root: WARN
+    '[org.springframework]': WARN
+    '[com.amportfolio.cloudinary]': INFO
+  # Log to file in production
+  file:
+    name: logs/cloudinary-service.log
+    max-size: 10MB
+    max-history: 10
+
+# Production Cloudinary settings (using environment variables)
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
+  secure: true
+  default-folder: production
+
+# Server configuration
+server:
+  port: 8080
+  compression:
+    enabled: true
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

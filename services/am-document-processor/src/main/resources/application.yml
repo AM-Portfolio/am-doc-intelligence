@@ -1,0 +1,110 @@
+MONGODB_URL: mongodb://admin:password123@localhost:27017/portfolio?authSource=admin
+
+# Kafka Configuration
+KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+KAFKA_SASL_MECHANISM: PLAIN
+KAFKA_SASL_JAAS_CONFIG: #org.apache.kafka.common.security.plain.PlainLoginModule required username="kafkaUser" password="kafkaPassword123!";
+
+server:
+  port: 8089
+spring:  
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  application:
+    name: document-processor-data
+  profiles:
+    include:
+      - lot-sizes
+  data:
+    mongodb:
+      uri: ${MONGODB_URL}
+      database: portfolio
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    properties:
+      security.protocol: ${KAFKA_SECURITY_PROTOCOL}
+      sasl.mechanism: ${KAFKA_SASL_MECHANISM}
+      sasl.jaas.config: ${KAFKA_SASL_JAAS_CONFIG}
+    consumer:
+      group-id: am-document-processor-group
+      auto-offset-reset: earliest
+    listener:
+      missing-topics-fatal: false
+
+app:
+  kafka:
+    enabled: false
+    portfolio-topic: am-portfolio
+    trade-topic: am-trade
+
+
+# ═══════════════════════════════════════════════════════════════
+# ✅ JWT AUTHENTICATION CONFIGURATION (NEW)
+# ═══════════════════════════════════════════════════════════════
+auth:
+  jwt:
+    # User JWT (signed by am-auth-tokens service)
+    secret: ${JWT_SECRET:user-secret-key-min-32-characters-long-required-here}
+    # Service JWT (for inter-service communication with API Gateway)
+    internal-secret: ${INTERNAL_JWT_SECRET:internal-secret-key-min-32-characters-long-required-here}
+    # Token expiration times
+    expiration: 3600              # User token: 1 hour
+    refresh-expiration: 86400     # Refresh token: 24 hours
+    service-expiration: 900       # Service token: 15 minutes (shorter for security)
+    algorithm: HS256
+  
+  # Service identification (for logging and debugging)
+  service:
+    id: document-processor
+    name: Document Processor Service
+    version: 1.0.0
+# ═══════════════════════════════════════════════════════════════
+# LOGGING CONFIGURATION
+# ═══════════════════════════════════════════════════════════════
+logging:
+  level:
+    root: INFO
+    org.am.mypotrfolio: DEBUG
+    org.springframework: INFO
+    org.hibernate: INFO
+    org.hibernate.SQL: INFO
+    '[org.hibernate.type.descriptor.sql.BasicBinder]': TRACE
+    '[org.springframework.data.mongodb.core.MongoTemplate]': DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# ═══════════════════════════════════════════════════════════════
+# Management/Actuator Configuration
+# ═══════════════════════════════════════════════════════════════
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      validate-group-membership: false
+      group:
+        readiness:
+          include: diskSpace,mongodb,redis,kafka
+        liveness:
+          include: diskSpace,mongodb,redis,kafka
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+    mongo:
+      enabled: true
+    redis:
+      enabled: true
+    kafka:
+      enabled: true

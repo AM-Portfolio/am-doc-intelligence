@@ -1,0 +1,32 @@
+# Docker-specific configuration
+
+# Docker logging levels
+logging:
+  level:
+    root: INFO
+    '[org.springframework]': INFO
+    '[com.amportfolio.cloudinary]': DEBUG
+
+# Docker Cloudinary settings (using environment variables)
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dr6crhham}
+  api-key: ${CLOUDINARY_API_KEY:712557573888213}
+  api-secret: ${CLOUDINARY_API_SECRET:eKoN0tAMCCNMnXtxiFdOsHDP69Y}
+  secure: true
+  default-folder: docker-uploads
+
+# Server configuration for Docker
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
