@@ -6,6 +6,8 @@ vault:
     kafka:
       mappings:
         KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
+        KAFKA_USERNAME: "username"
+        KAFKA_PASSWORD: "password"
     jwt:
       mappings:
         JWT_SECRET: "secret"

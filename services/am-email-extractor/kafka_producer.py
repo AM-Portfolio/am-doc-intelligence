@@ -13,13 +13,28 @@ class NotificationProducer:
 
     def _setup_producer(self):
         try:
-            self.producer = KafkaProducer(
-                bootstrap_servers=self.bootstrap_servers,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                key_serializer=lambda k: k.encode('utf-8') if k else None,
-                retries=3
-            )
-            logging.info(f"Connected to Kafka at {self.bootstrap_servers}")
+            username = os.environ.get('KAFKA_USERNAME')
+            password = os.environ.get('KAFKA_PASSWORD')
+            
+            kwargs = {
+                'bootstrap_servers': self.bootstrap_servers,
+                'value_serializer': lambda v: json.dumps(v).encode('utf-8'),
+                'key_serializer': lambda k: k.encode('utf-8') if k else None,
+                'retries': 3
+            }
+            
+            if username and password:
+                kwargs.update({
+                    'security_protocol': 'SASL_PLAINTEXT',
+                    'sasl_mechanism': 'SCRAM-SHA-256',
+                    'sasl_plain_username': username,
+                    'sasl_plain_password': password
+                })
+                logging.info(f"Connecting to Kafka at {self.bootstrap_servers} using SASL_PLAINTEXT")
+            else:
+                logging.info(f"Connecting to Kafka at {self.bootstrap_servers} without SASL")
+
+            self.producer = KafkaProducer(**kwargs)
         except Exception as e:
             logging.error(f"Failed to connect to Kafka: {e}")
             self.producer = None

@@ -54,3 +54,5 @@ vault:
 config:
   app:
     JWT_ALGORITHM: "HS256"
+    MONGO_DATABASE: "am-doc-intelligence"
+    KAFKA_TOPIC: "am-portfolio"
