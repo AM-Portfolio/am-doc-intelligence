@@ -115,4 +115,4 @@ class Database:
 db_instance = Database()
 
 def get_db():
-    return db_instance
+    return db_instance.get_db()

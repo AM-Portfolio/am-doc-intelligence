@@ -119,6 +119,7 @@ def health_check():
         db.client.admin.command('ping')
         health_status['infrastructure']['mongodb'] = 'connected'
     except Exception as e:
+        logger.error(f"Health check MongoDB failure: {str(e)}")
         health_status['infrastructure']['mongodb'] = f'disconnected: {str(e)}'
         is_healthy = False
 
@@ -129,9 +130,11 @@ def health_check():
         if producer.producer:
             health_status['infrastructure']['kafka'] = 'connected'
         else:
+            logger.error("Health check Kafka failure: producer not initialized")
             health_status['infrastructure']['kafka'] = 'disconnected'
             is_healthy = False
     except Exception as e:
+        logger.error(f"Health check Kafka error: {str(e)}")
         health_status['infrastructure']['kafka'] = f'error: {str(e)}'
         is_healthy = False
 
