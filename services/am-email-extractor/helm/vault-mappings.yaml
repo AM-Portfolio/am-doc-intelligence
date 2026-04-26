@@ -3,14 +3,13 @@ vault:
     mongodb:
       mappings:
         MONGODB_URL: "url"
-        MONGODB_DATABASE: "database"
     kafka:
       mappings:
         KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
-        KAFKA_JAAS_CONFIG: "__jaas__"
     jwt:
       mappings:
-        JWT_SECRET: "JWT_SECRET"
+        JWT_SECRET: "secret"
+        SESSION_SECRET: "secret"
     google:
       mappings:
         GOOGLE_CLIENT_ID: "GOOGLE_CLIENT_ID"

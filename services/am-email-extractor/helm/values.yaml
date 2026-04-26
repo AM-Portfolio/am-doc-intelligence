@@ -43,9 +43,9 @@ vault:
   role: "am-backend-role"
   secretPaths:
     mongodb:
-      path: "secret/data/preprod/infra/mongodb"
+      path: "apps/data/preprod/infra/mongodb"
     kafka:
-      path: "secret/data/preprod/infra/kafka"
+      path: "apps/data/preprod/infra/kafka"
     jwt:
       path: "secret/data/preprod/apps/auth/jwt"
     google:
