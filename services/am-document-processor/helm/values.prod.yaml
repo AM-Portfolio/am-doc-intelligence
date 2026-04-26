@@ -11,17 +11,7 @@ vault:
   secretPaths:
     mongodb: 
       path: "secret/data/prod/infra/mongodb"
-      template: |
-        {{- with secret "secret/data/prod/infra/mongodb" -}}
-        export MONGODB_USERNAME="{{ .Data.data.MONGO_USER }}"
-        export MONGODB_PASSWORD="{{ .Data.data.MONGO_PASSWORD }}"
-        export MONGODB_DATABASE="{{ .Data.data.MONGODB_DATABASE }}"
-        export MONGODB_URL="mongodb://{{ .Data.data.MONGO_USER }}:{{ .Data.data.MONGO_PASSWORD }}@{{ .Data.data.MONGO_HOST }}:27017/{{ .Data.data.MONGODB_DATABASE }}?authSource=admin"
-        export MONGODB_AUTHENTICATION_DATABASE="admin"
-        {{- end }}
     kafka: 
       path: "secret/data/prod/infra/kafka"
-      template: |
-        {{- with secret "secret/data/prod/infra/kafka" -}}
-        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ if index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ else }}kafka.infra.svc.cluster.local:9092{{ end }}"
-        {{- end }}
+    auth:
+      path: "secret/data/prod/services/am-auth"

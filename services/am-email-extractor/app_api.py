@@ -103,12 +103,43 @@ def require_jwt(f):
 
 @app.route(f'/api/{API_VERSION}/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
-    return jsonify({
+    """Health check endpoint checking infrastructure"""
+    health_status = {
         'status': 'healthy',
         'version': '1.0.0',
-        'service': 'gmail-extractor-api'
-    })
+        'service': 'gmail-extractor-api',
+        'infrastructure': {}
+    }
+    is_healthy = True
+
+    # 1. Check MongoDB
+    try:
+        db = database.get_db()
+        # Ping the database
+        db.client.admin.command('ping')
+        health_status['infrastructure']['mongodb'] = 'connected'
+    except Exception as e:
+        health_status['infrastructure']['mongodb'] = f'disconnected: {str(e)}'
+        is_healthy = False
+
+    # 2. Check Kafka
+    try:
+        producer = kafka_producer.get_producer()
+        # Verify producer is initialized
+        if producer.producer:
+            health_status['infrastructure']['kafka'] = 'connected'
+        else:
+            health_status['infrastructure']['kafka'] = 'disconnected'
+            is_healthy = False
+    except Exception as e:
+        health_status['infrastructure']['kafka'] = f'error: {str(e)}'
+        is_healthy = False
+
+    if not is_healthy:
+        health_status['status'] = 'unhealthy'
+        return jsonify(health_status), 503
+        
+    return jsonify(health_status)
 
 
 @app.route(f'/api/{API_VERSION}/brokers', methods=['GET'])

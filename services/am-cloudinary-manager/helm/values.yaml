@@ -44,12 +44,6 @@ vault:
   secretPaths:
     cloudinary:
       path: "secret/data/preprod/apps/docs/cloudinary"
-      template: |
-        {{- with secret "secret/data/preprod/apps/docs/cloudinary" -}}
-        export CLOUDINARY_CLOUD_NAME="{{ .Data.data.CLOUDINARY_CLOUD_NAME }}"
-        export CLOUDINARY_API_KEY="{{ .Data.data.CLOUDINARY_API_KEY }}"
-        export CLOUDINARY_API_SECRET="{{ .Data.data.CLOUDINARY_API_SECRET }}"
-        {{- end }}
 
 config:
   app:

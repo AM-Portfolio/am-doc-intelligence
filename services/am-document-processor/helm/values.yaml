@@ -44,20 +44,10 @@ vault:
   secretPaths:
     mongodb:
       path: "secret/data/preprod/infra/mongodb"
-      template: |
-        {{- with secret "secret/data/preprod/infra/mongodb" -}}
-        export MONGODB_USERNAME="{{ .Data.data.username }}"
-        export MONGODB_PASSWORD="{{ .Data.data.password }}"
-        export MONGODB_DATABASE="{{ if .Data.data.database }}{{ .Data.data.database }}{{ else }}am_doc_intelligence{{ end }}"
-        export MONGODB_URL="mongodb://{{ .Data.data.username }}:{{ .Data.data.password }}@{{ if .Data.data.host }}{{ .Data.data.host }}{{ else }}mongodb.infra.svc.cluster.local{{ end }}:27017/{{ if .Data.data.database }}{{ .Data.data.database }}{{ else }}am_doc_intelligence{{ end }}?authSource=admin"
-        export MONGODB_AUTHENTICATION_DATABASE="admin"
-        {{- end }}
     kafka:
       path: "secret/data/preprod/infra/kafka"
-      template: |
-        {{- with secret "secret/data/preprod/infra/kafka" -}}
-        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ if index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ index .Data.data "KAFKA_BOOTSTRAP_SERVERS" }}{{ else }}kafka.infra.svc.cluster.local:9092{{ end }}"
-        {{- end }}
+    auth:
+      path: "secret/data/preprod/services/am-auth"
 
 config:
   app:

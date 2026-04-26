@@ -21,7 +21,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URL}
-      database: portfolio
+      database: ${MONGODB_DATABASE:am_doc_intelligence}
       auto-index-creation: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
