@@ -40,7 +40,7 @@ import java.util.UUID;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/documents")
+@RequestMapping("/v1/documents")
 @Tag(name = "Documents", description = "Document processing operations (internal service - via API Gateway only)")
 public class DocumentProcessorController {
 

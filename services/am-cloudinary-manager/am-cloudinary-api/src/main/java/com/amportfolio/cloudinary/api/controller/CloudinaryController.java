@@ -31,7 +31,7 @@ import java.util.Map;
  * REST controller for Cloudinary operations
  */
 @RestController
-@RequestMapping("/api/v1/cloudinary")
+@RequestMapping("/v1/cloudinary")
 @RequiredArgsConstructor
 @Validated
 @Slf4j

@@ -1,11 +1,11 @@
 replicaCount: 1
 port: 8080
-healthPath: /api/v1/health
+healthPath: /v1/health
 language: python
 entrypoint: "exec python app_api.py"
 probes:
   liveness:
-    path: /api/v1/health
+    path: /v1/health
   readiness:
     path: /api/v1/health
 

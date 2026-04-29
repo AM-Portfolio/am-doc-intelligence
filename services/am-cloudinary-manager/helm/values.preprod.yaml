@@ -4,5 +4,5 @@ ingress:
   hosts:
     - host: doc-intelligence.local
       paths:
-        - path: /api/v1/cloudinary
+        - path: /v1/cloudinary
           pathType: Prefix
