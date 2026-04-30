@@ -53,5 +53,20 @@ am-doc-intelligence/
 └── .env.example                # Shared environment variables template
 ```
 
+## CI/CD and Dependencies
+
+### Common JARs
+This repository depends on several common libraries hosted on GitHub Packages:
+- `am-common-data-mongo`
+- `am-common-data-model`
+- `am-common-data-service`
+
+To build locally, you must ensure your `~/.m2/settings.xml` has a server entry for `github` and `github-investment` with your GitHub Personal Access Token (PAT).
+
+### CI/CD Pipeline
+The services in this repository use the central pipeline defined in `AM-Portfolio/am-pipelines`.
+- **Workflows**: Located in `.github/workflows/`
+- **Maven Authentication**: Handled automatically in CI via `GITHUB_TOKEN` secrets and a dynamically generated `settings.xml`.
+
 ## License
 Private / AM Portfolio
