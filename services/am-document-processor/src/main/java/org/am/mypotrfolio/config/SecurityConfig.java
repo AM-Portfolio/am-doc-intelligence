@@ -51,7 +51,7 @@ public class SecurityConfig {
                                                 // ✅ PUBLIC ENDPOINTS - No authentication required
                                                 // Can be accessed by anyone (API Gateway forwards these)
                                                 .requestMatchers(
-                                                                "/api/v1/documents/types", // Get supported document
+                                                                "/v1/documents/types", // Get supported document
                                                                                            // types (public info)
                                                                 "/actuator/health", // Docker health check
                                                                 "/actuator/health/live", // Kubernetes liveness probe
@@ -65,10 +65,10 @@ public class SecurityConfig {
                                                 // Per coding instructions: API Gateway handles user JWT validation
                                                 // and generates service JWT before forwarding
                                                 .requestMatchers(
-                                                                "/api/v1/documents/process", // Process single document
-                                                                "/api/v1/documents/batch-process", // Process multiple
+                                                                "/v1/documents/process", // Process single document
+                                                                "/v1/documents/batch-process", // Process multiple
                                                                                                    // documents
-                                                                "/api/v1/documents/status/**" // Get processing status
+                                                                "/v1/documents/status/**" // Get processing status
                                                 ).authenticated() // Spring Security checks Authorization header exists
 
                                                 // ❌ Deny all other endpoints (fail secure)
@@ -100,7 +100,7 @@ public class SecurityConfig {
         public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
                 org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
                 configuration.setAllowedOrigins(
-                                java.util.Arrays.asList("http://localhost:3000", "http://localhost:9004"));
+                                java.util.Arrays.asList("http://localhost:3000", "http://localhost:9004", "https://am.asrax.in"));
                 configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
                 configuration.setAllowCredentials(true);

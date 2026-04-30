@@ -10,4 +10,4 @@ vault:
     auth:
       mappings:
         JWT_SECRET: "JWT_SECRET"
-        INTERNAL_JWT_SECRET: "JWT_SECRET"
+        INTERNAL_JWT_SECRET: "SECRET_KEY"
