@@ -37,7 +37,7 @@ spring:
 
 app:
   kafka:
-    enabled: false
+    enabled: true
     portfolio-topic: am-portfolio
     trade-topic: am-trade
 
