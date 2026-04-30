@@ -49,8 +49,8 @@ vault:
     auth:
       path: "apps/data/preprod/services/am-auth"
 
-config:
-  app:
-    SPRING_KAFKA_CONSUMER_GROUP_ID: "am-doc-intelligence"
-    APP_KAFKA_TOPIC_DOCUMENT_UPLOADED: "document.uploaded"
-    APP_KAFKA_TOPIC_DOCUMENT_PROCESSED: "document.processed"
+env:
+  KAFKA_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
+  KAFKA_SASL_MECHANISM: "SCRAM-SHA-256"
+  APP_KAFKA_PORTFOLIO_TOPIC: "am-portfolio"
+  APP_KAFKA_TRADE_TOPIC: "am-trade"
