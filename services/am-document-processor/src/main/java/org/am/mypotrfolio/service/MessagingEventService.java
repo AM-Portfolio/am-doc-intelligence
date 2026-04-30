@@ -28,25 +28,32 @@ public class MessagingEventService {
 
     public void sendStockPortfolioMessage(List<EquityModel> assetModels, UUID processId, BrokerType brokerType,
             String portfolioId, String userId) {
+        log.info("[ProcessId: {}] Preparing to send stock portfolio update for user: {} and portfolio: {} (Count: {})", 
+                processId, userId, portfolioId, assetModels.size());
         var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
         portfolioUpdateEvent.setEquities(assetModels);
-        // kafkaProducerService.sendMessage(portfolioUpdateEvent);
+        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+        log.info("[ProcessId: {}] Successfully published stock portfolio update event to Kafka", processId);
     }
 
     public void sendMutualFundPortfolioMessage(List<MutualFundModel> mFundModels, UUID processId, BrokerType brokerType,
             String portfolioId, String userId) {
+        log.info("[ProcessId: {}] Preparing to send mutual fund update for user: {} and portfolio: {} (Count: {})", 
+                processId, userId, portfolioId, mFundModels.size());
         var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
         portfolioUpdateEvent.setMutualFunds(mFundModels);
-        // kafkaProducerService.sendMessage(portfolioUpdateEvent);
+        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+        log.info("[ProcessId: {}] Successfully published mutual fund update event to Kafka", processId);
     }
 
     public void sendTradeFnoMessage(List<TradeModel> trades, UUID processId, BrokerType brokerType, String portfolioId,
             String userId) {
+        log.info("[ProcessId: {}] Preparing to send F&O trade updates for user: {} and portfolio: {} (Count: {})", 
+                processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
         tradeUpdateEvent.setTrades(trades);
-        // kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
-        // log.info("[ProcessId: {}] Successfully sent F&O trade update event with {}
-        // trades", processId, trades.size());
+        kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
+        log.info("[ProcessId: {}] Successfully published F&O trade update event to Kafka", processId);
     }
 
     private FNOTradeType extractTradeType(List<TradeModel> trades) {
@@ -65,19 +72,19 @@ public class MessagingEventService {
 
     public void sendTradeEqMessage(List<TradeModel> trades, UUID processId, BrokerType brokerType, String portfolioId,
             String userId) {
+        log.info("[ProcessId: {}] Preparing to send Equity trade updates for user: {} and portfolio: {} (Count: {})", 
+                processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
         tradeUpdateEvent.setTrades(trades);
-        // kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
-        // log.info("[ProcessId: {}] Successfully sent equity trade update event with {}
-        // trades", processId, trades.size());
+        kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
+        log.info("[ProcessId: {}] Successfully published equity trade update event to Kafka", processId);
     }
 
     public void sendMessage(PortfolioUpdateEvent portfolioUpdateEvent, UUID processId, BrokerType brokerType) {
         log.info("[ProcessId: {}] Preparing to send portfolio update event and payload {}", processId,
                 ObjectUtils.convertToJson(portfolioUpdateEvent));
-        // kafkaProducerService.sendMessage(portfolioUpdateEvent);
-        // log.info("[ProcessId: {}] Successfully sent portfolio update event",
-        // processId);
+        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+        log.info("[ProcessId: {}] Successfully sent portfolio update event", processId);
     }
 
     private PortfolioUpdateEvent buildPortfolioUpdateEvent(UUID processId, BrokerType brokerType, String portfolioId,
