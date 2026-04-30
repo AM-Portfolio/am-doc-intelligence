@@ -9,6 +9,8 @@ import org.am.mypotrfolio.service.MessagingEventService;
 import org.am.mypotrfolio.service.NseService;
 import org.am.mypotrfolio.service.PortfolioService;
 import org.am.mypotrfolio.service.TradeService;
+import org.am.mypotrfolio.repository.DocumentProcessingRecordRepository;
+import org.am.mypotrfolio.model.DocumentProcessingRecord;
 import org.springframework.stereotype.Component;
 
 import com.am.common.amcommondata.model.asset.equity.EquityModel;
@@ -26,6 +28,7 @@ public class DocumentProcessorImpl implements DocumentProcessor {
     private final NseService nseService;
     private final MessagingEventService messagingEventService;
     private final TradeService tradeService;
+    private final DocumentProcessingRecordRepository processingRecordRepository;
 
     @Override
     public DocumentProcessResponse processDocument(DocumentRequest documentRequest, String portfolioId, String userId) {
@@ -68,6 +71,9 @@ public class DocumentProcessorImpl implements DocumentProcessor {
     private List<EquityModel> processEquityPortfolio(DocumentRequest documentRequest, String portfolioId,
             String userId) {
         List<EquityModel> assets = portfolioService.processEquityFile(documentRequest);
+        
+        saveProcessingRecord(documentRequest, portfolioId, userId, assets);
+        
         messagingEventService.sendStockPortfolioMessage(assets, documentRequest.getRequestId(),
                 documentRequest.getBrokerType(), portfolioId, userId);
         return assets;
@@ -83,6 +89,9 @@ public class DocumentProcessorImpl implements DocumentProcessor {
     private List<MutualFundModel> processMutualFundsPortfolio(DocumentRequest documentRequest, String portfolioId,
             String userId) {
         List<MutualFundModel> mutualFunds = portfolioService.processMutualFundFile(documentRequest);
+        
+        saveProcessingRecord(documentRequest, portfolioId, userId, mutualFunds);
+        
         messagingEventService.sendMutualFundPortfolioMessage(mutualFunds, documentRequest.getRequestId(),
                 documentRequest.getBrokerType(), portfolioId, userId);
         return mutualFunds;
@@ -90,6 +99,9 @@ public class DocumentProcessorImpl implements DocumentProcessor {
 
     private List<TradeModel> processTradeFno(DocumentRequest documentRequest, String portfolioId, String userId) {
         List<TradeModel> trades = tradeService.processTradeFile(documentRequest);
+        
+        saveProcessingRecord(documentRequest, portfolioId, userId, trades);
+        
         messagingEventService.sendTradeFnoMessage(trades, documentRequest.getRequestId(),
                 documentRequest.getBrokerType(), portfolioId, userId);
         return trades;
@@ -97,6 +109,9 @@ public class DocumentProcessorImpl implements DocumentProcessor {
 
     private List<TradeModel> processTradeEq(DocumentRequest documentRequest, String portfolioId, String userId) {
         List<TradeModel> trades = tradeService.processTradeFile(documentRequest);
+        
+        saveProcessingRecord(documentRequest, portfolioId, userId, trades);
+        
         messagingEventService.sendTradeEqMessage(trades, documentRequest.getRequestId(),
                 documentRequest.getBrokerType(), portfolioId, userId);
         return trades;
@@ -108,10 +123,32 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         // For now, mapping to sendTradeMfMessage (if exists) or generic trade message.
         // Let's assume tradeService can process it and we send a new event type.
         List<TradeModel> trades = tradeService.processTradeFile(documentRequest);
+        
+        saveProcessingRecord(documentRequest, portfolioId, userId, trades);
+        
         // Fallback to EQ message for now until MF message is added to interface
         messagingEventService.sendTradeEqMessage(trades, documentRequest.getRequestId(),
                 documentRequest.getBrokerType(), portfolioId, userId);
         return trades;
+    }
+
+    private void saveProcessingRecord(DocumentRequest documentRequest, String portfolioId, String userId, List<?> data) {
+        try {
+            DocumentProcessingRecord record = DocumentProcessingRecord.builder()
+                    .processId(documentRequest.getRequestId().toString())
+                    .userId(userId)
+                    .portfolioId(portfolioId)
+                    .brokerType(documentRequest.getBrokerType())
+                    .documentType(documentRequest.getDocumentType().name())
+                    .fileName(documentRequest.getFile().getOriginalFilename())
+                    .totalRecords(data.size())
+                    .data(data)
+                    .build();
+            processingRecordRepository.save(record);
+        } catch (Exception e) {
+            // Log but don't fail processing if DB tracking fails
+            System.err.println("Failed to save processing record to MongoDB: " + e.getMessage());
+        }
     }
 
     @Override

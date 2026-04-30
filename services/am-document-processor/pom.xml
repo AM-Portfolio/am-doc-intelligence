@@ -32,9 +32,9 @@
 		<spring.boot.version>3.4.1</spring.boot.version>
 		
 		<!-- AM Common -->
-		<am.common.data.mongo.version>1.3.0-SNAPSHOT</am.common.data.mongo.version>
-		<am.common.data.model.version>1.3.0-SNAPSHOT</am.common.data.model.version>
-		<am.common.data.service.version>1.3.0-SNAPSHOT</am.common.data.service.version>
+		<am.common.data.mongo.version>1.4.0-SNAPSHOT</am.common.data.mongo.version>
+		<am.common.data.model.version>1.4.0-SNAPSHOT</am.common.data.model.version>
+		<am.common.data.service.version>1.4.0-SNAPSHOT</am.common.data.service.version>
 		
 		<!-- Utility Libraries -->
 		<jackson.databind.version>2.15.2</jackson.databind.version>

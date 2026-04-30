@@ -26,14 +26,20 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+        @Value("${auth.enabled:true}")
+        private boolean authEnabled;
 
         @Value("${auth.jwt.secret}")
         private String jwtSecret;
 
         @Bean
+        @ConditionalOnProperty(name = "auth.enabled", havingValue = "true", matchIfMissing = true)
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
                                 // Enable CORS
@@ -91,6 +97,18 @@ public class SecurityConfig {
         }
 
         @Bean
+        @ConditionalOnProperty(name = "auth.enabled", havingValue = "false")
+        public SecurityFilterChain bypassFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                                .httpBasic(basic -> basic.disable())
+                                .formLogin(form -> form.disable());
+                return http.build();
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "auth.enabled", havingValue = "true", matchIfMissing = true)
         public JwtDecoder jwtDecoder() {
                 SecretKey key = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
                 return NimbusJwtDecoder.withSecretKey(key).build();

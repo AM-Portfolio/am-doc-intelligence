@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
     @ComponentScan("org.am.mypotrfolio.service.mapper"),
     @ComponentScan("com.am.common.amcommondata.mapper")
 })
-@EnableMongoRepositories(basePackages = "com.am.common.amcommondata.repository")
+@EnableMongoRepositories(basePackages = { "com.am.common.amcommondata.repository", "org.am.mypotrfolio.repository" })
 public class DocumentProcessingApplication {
 
     public static void main(String[] args) {

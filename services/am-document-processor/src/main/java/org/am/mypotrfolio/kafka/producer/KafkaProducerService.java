@@ -12,8 +12,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true")
 public class KafkaProducerService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;

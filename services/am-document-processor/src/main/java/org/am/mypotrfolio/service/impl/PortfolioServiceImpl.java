@@ -121,9 +121,9 @@ public class PortfolioServiceImpl implements PortfolioService {
                 .fundHouse(mutualFund.getAmc())
                 .category(mutualFund.getCategory())
                 .subCategory(mutualFund.getSubCategory())
-                .quantity(quantity)
-                .investmentValue(investedValue)
-                .currentValue(currentValue);
+                .quantity(round(quantity))
+                .investmentValue(round(investedValue))
+                .currentValue(round(currentValue));
         return assetBuilder.build();
     }
 
@@ -168,9 +168,9 @@ public class PortfolioServiceImpl implements PortfolioService {
                 .assetType(AssetType.EQUITY)
                 .isin(stock.getIsin())
                 .symbol(stock.getSymbol())
-                .avgBuyingPrice(avgBuyingPrice)
-                .quantity(quantity)
-                .investmentValue(investedValue)
+                .avgBuyingPrice(round(avgBuyingPrice))
+                .quantity(round(quantity))
+                .investmentValue(round(investedValue))
                 .name(stock.getName());
 
         if (useDb && brokerType != null

@@ -58,7 +58,57 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
     @Override
     protected List<Map<String, String>> parseDhanFile(MultipartFile file) throws Exception {
-        return parseExcelFile(file, 0, 0, 0);
+        int headerRow = 0;
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            headerRow = findHeaderRow(sheet, "Scrip Name", "Quantity");
+            if (headerRow == -1) {
+                headerRow = findHeaderRow(sheet, "Scrip Name", "ISIN Code");
+            }
+            if (headerRow == -1) {
+                log.warn("Dhan header not found, defaulting to row 0");
+                headerRow = 0;
+            }
+        }
+
+        List<Map<String, String>> rows = parseExcelFile(file, headerRow, headerRow, 0);
+        List<Map<String, String>> cleanedRows = new ArrayList<>();
+
+        for (Map<String, String> row : rows) {
+            String scripName = row.getOrDefault("Scrip Name", "");
+            if (scripName == null || scripName.trim().isEmpty())
+                continue;
+
+            // Skip footer/summary rows
+            if (scripName.equalsIgnoreCase("Investment") || 
+                scripName.equalsIgnoreCase("Current Value") ||
+                scripName.contains("P&L") ||
+                scripName.contains("NOTE :")) {
+                continue;
+            }
+
+            // Handle older Dhan format with split quantity
+            if (row.containsKey("Free Holding") && !row.containsKey("Quantity")) {
+                try {
+                    double free = Double.parseDouble(sanitizeNumeric(row.getOrDefault("Free Holding", "0")));
+                    double locked = Double.parseDouble(sanitizeNumeric(row.getOrDefault("Locked In", "0")));
+                    double mtf = Double.parseDouble(sanitizeNumeric(row.getOrDefault("MTF Pledge", "0")));
+                    double margin = Double.parseDouble(sanitizeNumeric(row.getOrDefault("Margin Pledge", "0")));
+                    row.put("Quantity", String.valueOf(free + locked + mtf + margin));
+                } catch (Exception e) {
+                    row.put("Quantity", row.get("Free Holding"));
+                }
+            }
+            
+            // Map "Avg. Buy Rate" to "Average Price" for Dhan Format B
+            if (row.containsKey("Avg. Buy Rate") && !row.containsKey("Average Price")) {
+                row.put("Average Price", row.get("Avg. Buy Rate"));
+            }
+
+            cleanedRows.add(row);
+        }
+        return cleanedRows;
     }
 
     @Override

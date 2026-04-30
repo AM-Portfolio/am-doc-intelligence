@@ -22,12 +22,20 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MessagingEventService {
     private final KafkaProducerService kafkaProducerService;
 
+    public MessagingEventService(
+            @org.springframework.beans.factory.annotation.Autowired(required = false) KafkaProducerService kafkaProducerService) {
+        this.kafkaProducerService = kafkaProducerService;
+    }
+
     public void sendStockPortfolioMessage(List<EquityModel> assetModels, UUID processId, BrokerType brokerType,
             String portfolioId, String userId) {
+        if (kafkaProducerService == null) {
+            log.info("[ProcessId: {}] Kafka is disabled. Skipping stock portfolio update for user: {}", processId, userId);
+            return;
+        }
         log.info("[ProcessId: {}] Preparing to send stock portfolio update for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, assetModels.size());
         var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
@@ -38,6 +46,10 @@ public class MessagingEventService {
 
     public void sendMutualFundPortfolioMessage(List<MutualFundModel> mFundModels, UUID processId, BrokerType brokerType,
             String portfolioId, String userId) {
+        if (kafkaProducerService == null) {
+            log.info("[ProcessId: {}] Kafka is disabled. Skipping mutual fund update for user: {}", processId, userId);
+            return;
+        }
         log.info("[ProcessId: {}] Preparing to send mutual fund update for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, mFundModels.size());
         var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
@@ -48,6 +60,10 @@ public class MessagingEventService {
 
     public void sendTradeFnoMessage(List<TradeModel> trades, UUID processId, BrokerType brokerType, String portfolioId,
             String userId) {
+        if (kafkaProducerService == null) {
+            log.info("[ProcessId: {}] Kafka is disabled. Skipping F&O trade update for user: {}", processId, userId);
+            return;
+        }
         log.info("[ProcessId: {}] Preparing to send F&O trade updates for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
@@ -72,6 +88,10 @@ public class MessagingEventService {
 
     public void sendTradeEqMessage(List<TradeModel> trades, UUID processId, BrokerType brokerType, String portfolioId,
             String userId) {
+        if (kafkaProducerService == null) {
+            log.info("[ProcessId: {}] Kafka is disabled. Skipping equity trade update for user: {}", processId, userId);
+            return;
+        }
         log.info("[ProcessId: {}] Preparing to send Equity trade updates for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
@@ -81,6 +101,10 @@ public class MessagingEventService {
     }
 
     public void sendMessage(PortfolioUpdateEvent portfolioUpdateEvent, UUID processId, BrokerType brokerType) {
+        if (kafkaProducerService == null) {
+            log.info("[ProcessId: {}] Kafka is disabled. Skipping generic message send.", processId);
+            return;
+        }
         log.info("[ProcessId: {}] Preparing to send portfolio update event and payload {}", processId,
                 ObjectUtils.convertToJson(portfolioUpdateEvent));
         kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
