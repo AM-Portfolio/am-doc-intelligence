@@ -52,7 +52,7 @@ public class MessagingEventService {
                 processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
         tradeUpdateEvent.setTrades(trades);
-        kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
+        kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
         log.info("[ProcessId: {}] Successfully published F&O trade update event to Kafka", processId);
     }
 
@@ -76,7 +76,7 @@ public class MessagingEventService {
                 processId, userId, portfolioId, trades.size());
         var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
         tradeUpdateEvent.setTrades(trades);
-        kafkaProducerService.sendTradeUpdateEvent(tradeUpdateEvent);
+        kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
         log.info("[ProcessId: {}] Successfully published equity trade update event to Kafka", processId);
     }
 
