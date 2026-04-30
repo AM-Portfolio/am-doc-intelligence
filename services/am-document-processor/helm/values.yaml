@@ -47,7 +47,7 @@ vault:
     kafka:
       path: "apps/data/preprod/infra/kafka"
     auth:
-      path: "secret/data/preprod/apps/auth/jwt"
+      path: "apps/data/preprod/services/am-auth"
 
 config:
   app:
