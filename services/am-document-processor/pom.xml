@@ -122,18 +122,18 @@
 		</dependency>
 		<!-- AM Common Dependencies -->
 		<dependency>
-			<groupId>com.am.common</groupId>
+			<groupId>com.portfolio</groupId>
 			<artifactId>am-common-data-mongo</artifactId>
 			<version>${am.common.data.mongo.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.am.common</groupId>
+			<groupId>com.portfolio</groupId>
 			<artifactId>am-common-data-model</artifactId>
 			<version>${am.common.data.model.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.am.common</groupId>
+			<groupId>com.portfolio</groupId>
 			<artifactId>am-common-data-service</artifactId>
 			<version>${am.common.data.service.version}</version>
 		</dependency>
