@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:am_common_ui/am_common_ui.dart';
+import 'package:am_auth_ui/am_auth_ui.dart';
+import 'package:am_design_system/am_design_system.dart';
 import 'features/document_processor/document_processor_view.dart';
 import 'features/email_extractor/email_extractor_view.dart';
 
@@ -18,6 +19,7 @@ class MyApp extends StatelessWidget {
       providers: AuthProviders.providers,
       child: MaterialApp(
         title: 'AM Doc Parser Util',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF6750A4),
@@ -55,25 +57,34 @@ class _DocParserShellState extends State<DocParserShell> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthenticatedLayout(
+    return UnifiedSidebarScaffold(
       title: 'Doc Parser',
-      activeNavItem: _activeNavItem,
-      sidebarItems: [
-        SidebarItem(
+      subtitle: 'Intelligence Service',
+      icon: Icons.analytics_outlined,
+      accentColor: const Color(0xFF6750A4),
+      items: [
+        SecondarySidebarItem(
           title: 'Doc Processor',
           icon: Icons.description_outlined,
+          isSelected: _activeNavItem == 'Doc Processor',
+          onTap: () {
+            setState(() {
+              _activeNavItem = 'Doc Processor';
+            });
+          },
         ),
-        SidebarItem(
+        SecondarySidebarItem(
           title: 'Email Extractor',
           icon: Icons.email_outlined,
+          isSelected: _activeNavItem == 'Email Extractor',
+          onTap: () {
+            setState(() {
+              _activeNavItem = 'Email Extractor';
+            });
+          },
         ),
       ],
-      onNavigate: (navItem) {
-        setState(() {
-          _activeNavItem = navItem;
-        });
-      },
-      child: _activeNavItem == 'Doc Processor'
+      body: _activeNavItem == 'Doc Processor'
           ? const DocumentProcessorView()
           : const EmailExtractorView(),
     );
