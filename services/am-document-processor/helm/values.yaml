@@ -44,10 +44,18 @@ vault:
   secretPaths:
     mongodb:
       path: "apps/data/preprod/infra/mongodb"
+      template: |
+        export MONGODB_URL="{{ index .Data.data "url" }}"
     kafka:
       path: "apps/data/preprod/infra/kafka"
+      template: |
+        export KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
+        export KAFKA_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
     auth:
       path: "apps/data/preprod/services/am-auth"
+      template: |
+        export INTERNAL_JWT_SECRET="{{ index .Data.data "SECRET_KEY" }}"
+        export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
 
 env:
   KAFKA_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
