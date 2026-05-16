@@ -51,8 +51,8 @@ vault:
     kafka:
       path: "apps/data/preprod/infra/kafka"
       template: |
-        export KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export KAFKA_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
+        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
+        export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
     auth:
       path: "apps/data/preprod/services/am-auth"
       template: |
@@ -60,7 +60,7 @@ vault:
         export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
 
 env:
-  KAFKA_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
-  KAFKA_SASL_MECHANISM: "SCRAM-SHA-256"
+  SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
+  SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-256"
   APP_PORTFOLIO_TOPIC: "am-portfolio"
   APP_TRADE_TOPIC: "am-trade"
