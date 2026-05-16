@@ -40,8 +40,6 @@ dependencies:
   google_fonts: ^6.3.3
   flutter_bloc: ^9.1.1
   get_it: ^9.1.1
-  am_common_ui:
-    path: ../../../am_common_ui
 
 dev_dependencies:
   flutter_test:
