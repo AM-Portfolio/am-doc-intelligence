@@ -5,9 +5,9 @@ import 'package:http/http.dart' as http;
 // import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  // Ports from docker-compose
-  static const String docProcessorBaseUrl = 'http://localhost:8082/api/v1'; // am-document-processor
-  static const String emailExtractorBaseUrl = 'http://localhost:8080/api/v1'; // gmail-extractor
+  // VPS URLs
+  static const String docProcessorBaseUrl = 'https://am.asrax.in/doc/processor/v1'; 
+  static const String emailExtractorBaseUrl = 'https://am.asrax.in/doc/processor/v1'; // Assuming same proxy for now
 
   // Headers (Simulating Gateway/Auth if needed, or allowing bypass if dev)
   // For internal testing, we might need to mock headers if the services expect them
@@ -60,7 +60,7 @@ class ApiService {
 
   Future<bool> checkDocProcessorHealth() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:8082/actuator/health'));
+      final response = await http.get(Uri.parse('https://am.asrax.in/doc/processor/actuator/health'));
       return response.statusCode == 200;
     } catch (e) {
       return false;

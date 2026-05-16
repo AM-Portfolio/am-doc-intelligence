@@ -38,10 +38,14 @@ public class MessagingEventService {
         }
         log.info("[ProcessId: {}] Preparing to send stock portfolio update for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, assetModels.size());
-        var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
-        portfolioUpdateEvent.setEquities(assetModels);
-        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
-        log.info("[ProcessId: {}] Successfully published stock portfolio update event to Kafka", processId);
+        try {
+            var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
+            portfolioUpdateEvent.setEquities(assetModels);
+            kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+            log.info("[ProcessId: {}] Successfully published stock portfolio update event to Kafka", processId);
+        } catch (Exception e) {
+            log.error("[ProcessId: {}] Failed to publish stock portfolio update to Kafka. Data is still safe in DB.", processId, e);
+        }
     }
 
     public void sendMutualFundPortfolioMessage(List<MutualFundModel> mFundModels, UUID processId, BrokerType brokerType,
@@ -52,10 +56,14 @@ public class MessagingEventService {
         }
         log.info("[ProcessId: {}] Preparing to send mutual fund update for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, mFundModels.size());
-        var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
-        portfolioUpdateEvent.setMutualFunds(mFundModels);
-        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
-        log.info("[ProcessId: {}] Successfully published mutual fund update event to Kafka", processId);
+        try {
+            var portfolioUpdateEvent = buildPortfolioUpdateEvent(processId, brokerType, portfolioId, userId);
+            portfolioUpdateEvent.setMutualFunds(mFundModels);
+            kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+            log.info("[ProcessId: {}] Successfully published mutual fund update event to Kafka", processId);
+        } catch (Exception e) {
+            log.error("[ProcessId: {}] Failed to publish mutual fund update to Kafka. Data is still safe in DB.", processId, e);
+        }
     }
 
     public void sendTradeFnoMessage(List<TradeModel> trades, UUID processId, BrokerType brokerType, String portfolioId,
@@ -66,10 +74,14 @@ public class MessagingEventService {
         }
         log.info("[ProcessId: {}] Preparing to send F&O trade updates for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, trades.size());
-        var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
-        tradeUpdateEvent.setTrades(trades);
-        kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
-        log.info("[ProcessId: {}] Successfully published F&O trade update event to Kafka", processId);
+        try {
+            var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
+            tradeUpdateEvent.setTrades(trades);
+            kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
+            log.info("[ProcessId: {}] Successfully published F&O trade update event to Kafka", processId);
+        } catch (Exception e) {
+            log.error("[ProcessId: {}] Failed to publish F&O trade update to Kafka. Data is still safe in DB.", processId, e);
+        }
     }
 
     private FNOTradeType extractTradeType(List<TradeModel> trades) {
@@ -94,10 +106,14 @@ public class MessagingEventService {
         }
         log.info("[ProcessId: {}] Preparing to send Equity trade updates for user: {} and portfolio: {} (Count: {})", 
                 processId, userId, portfolioId, trades.size());
-        var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
-        tradeUpdateEvent.setTrades(trades);
-        kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
-        log.info("[ProcessId: {}] Successfully published equity trade update event to Kafka", processId);
+        try {
+            var tradeUpdateEvent = buildTradeUpdateEvent(processId, brokerType, portfolioId, userId);
+            tradeUpdateEvent.setTrades(trades);
+            kafkaProducerService.sendTradeUpdate(tradeUpdateEvent);
+            log.info("[ProcessId: {}] Successfully published equity trade update event to Kafka", processId);
+        } catch (Exception e) {
+            log.error("[ProcessId: {}] Failed to publish equity trade update to Kafka. Data is still safe in DB.", processId, e);
+        }
     }
 
     public void sendMessage(PortfolioUpdateEvent portfolioUpdateEvent, UUID processId, BrokerType brokerType) {
@@ -107,8 +123,12 @@ public class MessagingEventService {
         }
         log.info("[ProcessId: {}] Preparing to send portfolio update event and payload {}", processId,
                 ObjectUtils.convertToJson(portfolioUpdateEvent));
-        kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
-        log.info("[ProcessId: {}] Successfully sent portfolio update event", processId);
+        try {
+            kafkaProducerService.sendPortfolioUpdate(portfolioUpdateEvent);
+            log.info("[ProcessId: {}] Successfully sent portfolio update event", processId);
+        } catch (Exception e) {
+            log.error("[ProcessId: {}] Failed to send generic portfolio update to Kafka.", processId, e);
+        }
     }
 
     private PortfolioUpdateEvent buildPortfolioUpdateEvent(UUID processId, BrokerType brokerType, String portfolioId,

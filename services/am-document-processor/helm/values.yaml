@@ -51,6 +51,10 @@ vault:
     kafka:
       path: "apps/data/preprod/infra/kafka"
       template: |
+        export KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
+        export KAFKA_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
+        export KAFKA_PASSWORD="{{ index .Data.data "password" }}"
+        export KAFKA_USERNAME="{{ index .Data.data "username" }}"
         export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
         export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
     auth:

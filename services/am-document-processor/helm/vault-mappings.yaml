@@ -1,13 +1,16 @@
 vault:
   secretPaths:
     mongodb:
-      mappings:
-        MONGODB_URL: "url"
+      path: "apps/data/preprod/infra/mongodb"
+      template: |
+        export MONGODB_URL="{{ index .Data.data "url" }}"
     kafka:
-      mappings:
-        KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
-        KAFKA_SASL_JAAS_CONFIG: "__jaas__"
+      path: "apps/data/preprod/infra/kafka"
+      template: |
+        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
+        export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
     auth:
-      mappings:
-        JWT_SECRET: "JWT_SECRET"
-        INTERNAL_JWT_SECRET: "SECRET_KEY"
+      path: "apps/data/preprod/services/am-auth"
+      template: |
+        export INTERNAL_JWT_SECRET="{{ index .Data.data "SECRET_KEY" }}"
+        export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
