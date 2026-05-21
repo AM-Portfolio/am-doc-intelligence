@@ -87,7 +87,6 @@ class _DocParserShellState extends State<DocParserShell> {
             });
           },
         ),
-        const SidebarDivider(),
         SecondarySidebarItem(
           title: 'Environment: ${apiProvider.environment == AppEnvironment.local ? "Local" : "Preprod"}',
           icon: apiProvider.environment == AppEnvironment.local ? Icons.lan_outlined : Icons.cloud_outlined,

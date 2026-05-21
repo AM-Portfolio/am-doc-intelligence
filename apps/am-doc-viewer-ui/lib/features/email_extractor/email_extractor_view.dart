@@ -117,7 +117,7 @@ class _EmailExtractorViewState extends State<EmailExtractorView> {
             ),
             const SizedBox(height: 16),
             if (_loading)
-               const ShimmerLoading(height: 200, width: double.infinity)
+               const ShimmerLoading(child: SkeletonBox(height: 200, width: double.infinity))
             else
                _buildBrokerList(isConnected),
             const SizedBox(height: 32),
@@ -198,9 +198,9 @@ class _EmailExtractorViewState extends State<EmailExtractorView> {
             const Text('Email service is unreachable', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             AppButton(
-              label: 'Retry Connection',
+              text: 'Retry Connection',
               onPressed: _checkHealthAndLoad,
-              variant: AppButtonVariant.primary,
+              type: AppButtonType.primary,
             ),
           ],
         ),
@@ -243,16 +243,16 @@ class _EmailExtractorViewState extends State<EmailExtractorView> {
               ),
             ),
             AppButton(
-              label: isConnected ? 'Disconnect' : 'Connect Gmail',
+              text: isConnected ? 'Disconnect' : 'Connect Gmail',
               onPressed: () {},
-              variant: isConnected ? AppButtonVariant.secondary : AppButtonVariant.primary,
-              size: AppButtonSize.small,
+              type: isConnected ? AppButtonType.secondary : AppButtonType.primary,
             ),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildBrokerList(bool isConnected) {
     return GridView.builder(
