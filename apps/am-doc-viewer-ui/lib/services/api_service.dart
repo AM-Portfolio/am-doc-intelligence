@@ -1,130 +1,200 @@
-
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-// import 'package:http_parser/http_parser.dart';
+import 'package:http/browser_client.dart';
+
+enum AppEnvironment { local, preprod }
 
 class ApiService {
-  // VPS URLs
-  static const String docProcessorBaseUrl = 'https://am.asrax.in/doc/processor/v1'; 
-  static const String emailExtractorBaseUrl = 'https://am.asrax.in/doc/processor/v1'; // Assuming same proxy for now
+  AppEnvironment environment = AppEnvironment.preprod;
 
-  // Headers (Simulating Gateway/Auth if needed, or allowing bypass if dev)
-  // For internal testing, we might need to mock headers if the services expect them
+  // Create a BrowserClient with withCredentials = false
+  // This ensures the browser doesn't send cookies/credentials,
+  // allowing the server's "Access-Control-Allow-Origin: *" to work.
+  http.Client _makeClient() {
+    if (kIsWeb) {
+      final client = BrowserClient()..withCredentials = false;
+      return client;
+    }
+    return http.Client();
+  }
+
+  // Base URLs — matching test_api.py exactly
+  String get _docBase {
+    if (environment == AppEnvironment.local) {
+      return 'http://localhost:8080/v1';
+    }
+    return kIsWeb ? '/doc/processor/v1' : 'https://am.asrax.in/doc/processor/v1';
+  }
+
+  String get _emailBase {
+    if (environment == AppEnvironment.local) {
+      return 'http://localhost:8080/api/v1';
+    }
+    return kIsWeb ? '/email/api/v1' : 'https://am.asrax.in/email/api/v1';
+  }
+
+  // Credentials — matching test_api.py exactly
+  static const String _authToken =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzkwMDcyNzUsImlhdCI6MTc3ODkyMDg3NSwic3ViIjoiYjc1NzQzYzktZmUwZS00YzU0LThlZTAtOGRhMzUwY2MyN2IzIiwidXNlcm5hbWUiOiJzc2QyNjU4QGdtYWlsLmNvbSIsImVtYWlsIjoic3NkMjY1OEBnbWFpbC5jb20iLCJzY29wZXMiOlsicmVhZCIsIndyaXRlIl19.uqaDH_iDEZeSgnjOD7Q5gnG3MrE8jnxzhrPgYQjUUpU";
+  static const String _userId = "b75743c9-fe0e-4c54-8ee0-8da350cc27b3";
+
   Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'X-User-ID': 'test-user-123', // Mock User ID for testing
-    'Authorization': 'Bearer test-token', // Mock Token
-  };
+        'Authorization': 'Bearer $_authToken',
+        'X-User-ID': _userId,
+      };
+
+  final List<String> brokerTypes = [
+    'ZERODHA',
+    'UPSTOX',
+    'GROWW',
+    'ICICI_DIRECT',
+    'HDFC_SECURITIES',
+    'ANGEL_ONE',
+    'OTHER',
+  ];
 
   // --- Document Processor endpoints ---
 
   Future<List<String>> getSupportedDocumentTypes() async {
-    final response = await http.get(Uri.parse('$docProcessorBaseUrl/documents/types'));
-    if (response.statusCode == 200) {
-      return List<String>.from(jsonDecode(response.body));
-    } else {
-      throw Exception('Failed to load document types: ${response.body}');
+    final url = '$_docBase/documents/types';
+    debugPrint('[ApiService] GET $url');
+    final client = _makeClient();
+    try {
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      debugPrint('[ApiService] types: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        return List<String>.from(jsonDecode(response.body));
+      }
+      throw Exception('types failed: ${response.statusCode} ${response.body}');
+    } catch (e) {
+      debugPrint('[ApiService] types error: $e');
+      throw Exception('Connection error: $e');
+    } finally {
+      client.close();
     }
   }
 
   Future<Map<String, dynamic>> processDocument(
-      Uint8List fileBytes, String filename, String docType) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$docProcessorBaseUrl/documents/process'),
-    );
-    
-    request.headers.addAll({
-      'X-User-ID': 'test-user-123',
-    });
-
+      Uint8List fileBytes, String filename, String docType,
+      {String brokerType = 'ZERODHA'}) async {
+    final url = '$_docBase/documents/process';
+    debugPrint('[ApiService] POST $url (type=$docType, broker=$brokerType)');
+    var request = http.MultipartRequest('POST', Uri.parse(url));
+    request.headers.addAll(_headers);
+    request.fields['brokerType'] = brokerType;
     request.fields['documentType'] = docType;
-    request.files.add(http.MultipartFile.fromBytes(
-      'file',
-      fileBytes,
-      filename: filename,
-    ));
+    request.files
+        .add(http.MultipartFile.fromBytes('file', fileBytes, filename: filename));
 
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to process document: ${response.body}');
+    final client = _makeClient();
+    try {
+      final streamedResponse = await client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      debugPrint('[ApiService] process: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception(
+          'Process failed: ${response.statusCode}\n${response.body}');
+    } finally {
+      client.close();
     }
   }
 
   // --- Health Checks ---
 
   Future<bool> checkDocProcessorHealth() async {
+    final url = '$_docBase/documents/types';
+    debugPrint('[ApiService] Health -> GET $url');
+    final client = _makeClient();
     try {
-      final response = await http.get(Uri.parse('https://am.asrax.in/doc/processor/actuator/health'));
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      debugPrint('[ApiService] Health: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      debugPrint('[ApiService] Health failed: $e');
       return false;
+    } finally {
+      client.close();
     }
   }
 
   Future<bool> checkEmailExtractorHealth() async {
+    final url = '$_emailBase/health';
+    debugPrint('[ApiService] Email health -> GET $url');
+    final client = _makeClient();
     try {
-      final response = await http.get(Uri.parse('$emailExtractorBaseUrl/health'));
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      debugPrint('[ApiService] Email health: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      debugPrint('[ApiService] Email health failed: $e');
       return false;
+    } finally {
+      client.close();
     }
   }
 
   // --- Email Extractor endpoints ---
 
   Future<Map<String, dynamic>> checkGmailStatus() async {
-    // Requires mocked JWT for now or dev mode
-    // The python service validates JWT. We set JWT_SECRET=dev-secret-key-12345
-    // We need to generate a valid JWT signed with that secret if we want to test properly.
-    // Or we rely on the service being in a mode that accepts our token?
-    // The service verifies signature.
-    // We might need to implement a simple JWT generator or just handle 401.
-    final response = await http.get(
-      Uri.parse('$emailExtractorBaseUrl/gmail/status'),
-      headers: _headers, 
-    );
-     // If auth fails, we'll see 401
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else if (response.statusCode == 401) {
-       return {'connected': false, 'error': 'Auth failed (need valid JWT)'};
-    }
-     else {
-      throw Exception('Failed to check status: ${response.body}');
+    final url = '$_emailBase/gmail/status';
+    debugPrint('[ApiService] GET $url');
+    final client = _makeClient();
+    try {
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      debugPrint('[ApiService] gmail/status: ${response.statusCode}');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return {'connected': false, 'error': 'Status ${response.statusCode}'};
+    } catch (e) {
+      debugPrint('[ApiService] gmail/status error: $e');
+      return {'connected': false, 'error': '$e'};
+    } finally {
+      client.close();
     }
   }
-  
+
   Future<Map<String, dynamic>> getBrokers() async {
-      final response = await http.get(Uri.parse('$emailExtractorBaseUrl/brokers'));
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to load brokers');
-      }
+    final url = '$_emailBase/brokers';
+    debugPrint('[ApiService] GET $url');
+    final client = _makeClient();
+    try {
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 10));
+      debugPrint('[ApiService] brokers: ${response.statusCode}');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      throw Exception('Failed to load brokers: ${response.statusCode}');
+    } finally {
+      client.close();
+    }
   }
-  
-   Future<Map<String, dynamic>> extractFromGmail(String broker) async {
-      final response = await http.get(
-        Uri.parse('$emailExtractorBaseUrl/extract/gmail/$broker?pan=PANK1234F'), // Dummy PAN
-        headers: _headers,
-      );
-      
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-         try {
-             final err = jsonDecode(response.body);
-             throw Exception(err['error'] ?? 'Extraction failed');
-         } catch(_) {
-             throw Exception('Extraction failed: ${response.body}');
-         }
-      }
+
+  Future<Map<String, dynamic>> extractFromGmail(String broker) async {
+    final url = '$_emailBase/extract/gmail/$broker?pan=PANK1234F';
+    debugPrint('[ApiService] GET $url');
+    final client = _makeClient();
+    try {
+      final response = await client
+          .get(Uri.parse(url), headers: _headers)
+          .timeout(const Duration(seconds: 30));
+      debugPrint('[ApiService] extract: ${response.statusCode}');
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      throw Exception(
+          'Extraction failed: ${response.statusCode}\n${response.body}');
+    } finally {
+      client.close();
+    }
   }
 }
 
