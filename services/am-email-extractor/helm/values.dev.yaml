@@ -26,7 +26,7 @@ vault:
 
 config:
   app:
-    GMAIL_REDIRECT_URI: "https://am-dev.asrax.in/v1/extractor/gmail/callback"
+    GMAIL_REDIRECT_URI: "https://am-dev.asrax.in/email/api/v1/gmail/callback"
 
 ingress:
   enabled: true
@@ -34,9 +34,11 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: am-apps-dev-dev-global-cors@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-dev-dev-global-cors@kubernetescrd,
+      am-apps-dev-dev-strip-prefix@kubernetescrd
   hosts:
     - host: am-dev.asrax.in
       paths:
-        - path: /v1/extractor
+        - path: /email
           pathType: Prefix
