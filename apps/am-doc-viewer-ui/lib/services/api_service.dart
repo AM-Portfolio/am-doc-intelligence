@@ -21,39 +21,28 @@ class ApiService {
   }
 
   // Base URLs — matching test_api.py exactly
-  String get _docBase {
-    if (environment == AppEnvironment.local) {
-      return 'http://localhost:8080/v1';
-    }
-    return kIsWeb ? '/doc/processor/v1' : 'https://am.asrax.in/doc/processor/v1';
-  }
+  String get _docBase => environment == AppEnvironment.local
+      ? 'http://localhost:8080/v1'
+      : 'https://am.asrax.in/doc/processor/v1';
 
-  String get _emailBase {
-    if (environment == AppEnvironment.local) {
-      return 'http://localhost:8080/api/v1';
-    }
-    return kIsWeb ? '/email/api/v1' : 'https://am.asrax.in/email/api/v1';
-  }
+  String get _emailBase => environment == AppEnvironment.local
+      ? 'http://localhost:8080/api/v1'
+      : 'https://am.asrax.in/email/api/v1';
 
   // Credentials — matching test_api.py exactly
   static const String _authToken =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzkwMDcyNzUsImlhdCI6MTc3ODkyMDg3NSwic3ViIjoiYjc1NzQzYzktZmUwZS00YzU0LThlZTAtOGRhMzUwY2MyN2IzIiwidXNlcm5hbWUiOiJzc2QyNjU4QGdtYWlsLmNvbSIsImVtYWlsIjoic3NkMjY1OEBnbWFpbC5jb20iLCJzY29wZXMiOlsicmVhZCIsIndyaXRlIl19.uqaDH_iDEZeSgnjOD7Q5gnG3MrE8jnxzhrPgYQjUUpU";
   static const String _userId = "b75743c9-fe0e-4c54-8ee0-8da350cc27b3";
 
-  Map<String, String> get _headers => {
-        'Authorization': 'Bearer $_authToken',
-        'X-User-ID': _userId,
-      };
-
-  final List<String> brokerTypes = [
-    'ZERODHA',
-    'UPSTOX',
-    'GROWW',
-    'ICICI_DIRECT',
-    'HDFC_SECURITIES',
-    'ANGEL_ONE',
-    'OTHER',
-  ];
+  Map<String, String> get _headers {
+    final headers = {
+      'Authorization': 'Bearer $_authToken',
+    };
+    if (environment == AppEnvironment.local) {
+      headers['X-User-ID'] = _userId;
+    }
+    return headers;
+  }
 
   // --- Document Processor endpoints ---
 
