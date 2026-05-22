@@ -1,0 +1,46 @@
+# Dev environment overrides for am-document-processor
+environment: dev
+
+replicaCount: 1
+
+# Minimal resources for shared dev namespace
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+vault:
+  enabled: true
+  secretPaths:
+    mongodb:
+      path: "apps/data/dev/infra/mongodb"
+    kafka:
+      path: "apps/data/dev/infra/kafka"
+    auth:
+      path: "apps/data/dev/services/am-auth"
+
+env:
+  SPRING_PROFILES_ACTIVE: "dev"
+
+hostAliases:
+  - ip: "203.174.22.129"
+    hostnames:
+      - "redis.asrax.in"
+      - "mongodb.asrax.in"
+      - "kafka.asrax.in"
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: am-apps-dev-dev-global-cors@kubernetescrd
+  hosts:
+    - host: am-dev.asrax.in
+      paths:
+        - path: /v1/processor
+          pathType: Prefix
