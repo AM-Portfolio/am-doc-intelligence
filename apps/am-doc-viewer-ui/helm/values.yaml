@@ -1,5 +1,7 @@
 replicaCount: 1
 port: 80
+service:
+  port: 80
 healthPath: /doc-ui/
 language: flutter
 
