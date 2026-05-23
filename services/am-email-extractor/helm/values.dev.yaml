@@ -12,6 +12,9 @@ resources:
     cpu: 100m
     memory: 256Mi
 
+env:
+  PORT: "8080"
+
 vault:
   enabled: true
   secretPaths:

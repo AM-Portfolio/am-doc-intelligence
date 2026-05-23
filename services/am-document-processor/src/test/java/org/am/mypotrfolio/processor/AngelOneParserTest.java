@@ -14,7 +14,7 @@ class AngelOneParserTest {
         @Test
         void testParseAngelOneFile() throws Exception {
                 // Use the actual file path
-                String filePath = "/Users/munishm/Documents/AM-Repos/backend/am-doc-parser/am-document-processor/70f16987-c096-467a-bbd9-e4c5b2d4b04a.xlsx";
+                String filePath = "70f16987-c096-467a-bbd9-e4c5b2d4b04a.xlsx";
                 FileInputStream inputStream = new FileInputStream(filePath);
                 MockMultipartFile file = new MockMultipartFile("file", "test.xlsx",
                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", inputStream);

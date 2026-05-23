@@ -37,7 +37,7 @@ public class CsvFileProcessor extends AbstractFileProcessor {
 
     @Override
     protected List<Map<String, String>> parseZerodhaFile(MultipartFile file) throws Exception {
-        return parseCsvFile(file, 22);
+        return parseCsvWithHeaderDetection(file, new String[] { "Instrument", "Qty.", "Avg. cost" });
     }
 
     @Override

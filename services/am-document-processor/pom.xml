@@ -195,7 +195,7 @@
 			<version>${validation.api.version}</version>
 		</dependency>
 
-		<!-- Machine Learning Dependencies -->
+		<!-- Machine Learning Dependencies
 		<dependency>
 			<groupId>org.tensorflow</groupId>
 			<artifactId>tensorflow</artifactId>
@@ -206,6 +206,7 @@
 			<artifactId>tensorflow-core-platform</artifactId>
 			<version>${tensorflow.core.platform.version}</version>
 		</dependency>
+		-->
 
 		<!-- Cloud & Integration Dependencies -->
 		<dependency>
