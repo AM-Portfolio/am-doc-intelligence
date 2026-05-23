@@ -1,5 +1,6 @@
 # Multi-stage build for Flutter Web
-FROM am-flutter-base:latest AS build-env
+ARG BASE_REGISTRY=""
+FROM ${BASE_REGISTRY}am-flutter-base:latest AS build-env
 
 # Set working directory
 WORKDIR /app

@@ -1,5 +1,7 @@
 replicaCount: 1
 port: 8080
+service:
+  port: 8080
 healthPath: /v1/health
 language: python
 entrypoint: "exec python app_api.py"

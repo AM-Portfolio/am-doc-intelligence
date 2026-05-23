@@ -1,5 +1,7 @@
 replicaCount: 1
 port: 8080
+service:
+  port: 8080
 healthPath: /actuator/health
 language: java
 entrypoint: "exec java -jar app.jar"

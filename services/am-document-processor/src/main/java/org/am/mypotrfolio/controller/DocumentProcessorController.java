@@ -25,6 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
+import org.am.mypotrfolio.security.CustomJwtAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Document Processor REST Controller (Internal Service)
@@ -100,21 +102,33 @@ public class DocumentProcessorController {
             @Parameter(description = "Type of document being processed", required = true) @RequestParam("documentType") DocumentType documentType,
             @Parameter(description = "Portfolio ID (optional)", required = false) @RequestParam(value = "portfolioId", required = false) String portfolioId,
             @Parameter(description = "Explicit Broker Type (optional)", required = false) @RequestParam(value = "brokerType", required = false) BrokerType brokerType,
-            @RequestHeader(value = "X-User-ID", required = true) String userId, // ← API Gateway provides this
+            @RequestHeader(value = "X-User-ID", required = false) String userIdHeader, // Optional: API Gateway injects this; UI can pass it directly
             @Parameter(description = "Document Password (optional)", required = false) @RequestParam(value = "password", required = false) String password) {
+
+        // Resolve user ID: prefer X-User-ID header, fall back to JWT sub claim
+        String userId = userIdHeader;
+        if (userId == null || userId.isBlank()) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof CustomJwtAuthenticationToken jwtAuth) {
+                userId = jwtAuth.getUserContext().getUserId();
+            }
+        }
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Cannot determine user identity"));
+        }
 
         log.info("Processing document for user: {}, type: {}, portfolio: {}, broker: {}",
                 userId, documentType, portfolioId, brokerType);
 
         try {
-            // ✅ Just call service with user_id from header (API Gateway already validated)
             DocumentProcessResponse response = documentProcessorService.processDocument(
                     file,
                     documentType,
                     portfolioId,
-                    brokerType, // Pass explicit broker type
-                    userId, // ← Directly from API Gateway header
-                    password // Pass password
+                    brokerType,
+                    userId,
+                    password
             );
 
             return ResponseEntity.ok(response);
@@ -147,7 +161,18 @@ public class DocumentProcessorController {
             @Parameter(description = "List of portfolio document files to process", required = true) @RequestParam("files") List<MultipartFile> files,
             @Parameter(description = "Type of documents being processed", required = true) @RequestParam("documentType") DocumentType documentType,
             @Parameter(description = "Portfolio ID (optional)", required = false) @RequestParam(value = "portfolioId", required = false) String portfolioId,
-            @RequestHeader(value = "X-User-ID", required = true) String userId) {
+            @RequestHeader(value = "X-User-ID", required = false) String userIdHeader) {
+
+        String userId = userIdHeader;
+        if (userId == null || userId.isBlank()) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof CustomJwtAuthenticationToken jwtAuth) {
+                userId = jwtAuth.getUserContext().getUserId();
+            }
+        }
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Cannot determine user identity"));
+        }
 
         log.info("Batch processing {} documents for user: {}, type: {}",
                 files.size(), userId, documentType);

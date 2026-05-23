@@ -1,0 +1,26 @@
+# Dev environment overrides for am-doc-viewer-ui
+environment: dev
+
+replicaCount: 1
+
+# Minimal resources for shared dev namespace
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: am-apps-dev-dev-global-cors@kubernetescrd
+  hosts:
+    - host: am-dev.asrax.in
+      paths:
+        - path: /doc-ui
+          pathType: Prefix

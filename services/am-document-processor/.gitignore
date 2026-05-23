@@ -53,5 +53,7 @@ replay_pid*
 Thumbs.db
 
 # Environment Variables
+# Local environment config
+src/main/resources/application-local-dev.yml
 .env
 settings.xml

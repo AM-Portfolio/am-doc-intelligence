@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:am_design_system/am_design_system.dart';
 import '../../services/api_service.dart';
 
 class EmailExtractorView extends StatefulWidget {
@@ -69,8 +70,7 @@ class _EmailExtractorViewState extends State<EmailExtractorView> {
         _gmailStatus = status;
       });
     } catch (e) {
-       // Ignore error for now or log
-       print('Gmail check error: $e');
+       debugPrint('Gmail check error: $e');
     }
   }
 
@@ -93,119 +93,243 @@ class _EmailExtractorViewState extends State<EmailExtractorView> {
     bool isConnected = _gmailStatus?['connected'] == true;
     String email = _gmailStatus?['email'] ?? 'Not Connected';
     
-    Color statusColor;
-    String statusText;
-    
-    if (_checkingHealth) {
-      statusColor = Colors.grey;
-      statusText = 'Checking Service...';
-    } else if (_isServiceConnected == true) {
-      statusColor = Colors.green;
-      statusText = 'Service Connected';
-    } else {
-      statusColor = Colors.red;
-      statusText = 'Service Disconnected';
-    }
-
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Email Extractor',
-                style: Theme.of(context).textTheme.headlineMedium,
+          _buildHeader(),
+          const SizedBox(height: 32),
+          
+          if (_checkingHealth)
+            const LinearProgressIndicator()
+          else if (_isServiceConnected == false)
+             _buildConnectionError()
+          else ...[
+            _buildGmailStatusCard(isConnected, email),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Icon(Icons.list_alt_outlined, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 12),
+                Text('Available Brokers', style: Theme.of(context).textTheme.titleLarge),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_loading)
+               const ShimmerLoading(child: SkeletonBox(height: 200, width: double.infinity))
+            else
+               _buildBrokerList(isConnected),
+            const SizedBox(height: 32),
+            _buildStatusLog(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    Color statusColor = _isServiceConnected == true ? Colors.green : (_isServiceConnected == false ? Colors.red : Colors.grey);
+    String statusText = _isServiceConnected == true ? 'Online' : (_isServiceConnected == false ? 'Offline' : 'Checking...');
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Email Extractor',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
               ),
+            ),
+            Text(
+              'Extract portfolio data directly from your email',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: statusColor.withOpacity(0.5)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                width: 10,
+                height: 10,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: statusColor),
+                  color: statusColor,
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.circle, size: 12, color: statusColor),
-                    const SizedBox(width: 8),
-                    Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
-                  ],
+              ),
+              const SizedBox(width: 10),
+              Text(
+                statusText,
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
                 ),
-              )
+              ),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          if (_isServiceConnected == false)
-             Card(
-              color: Theme.of(context).colorScheme.errorContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline),
-                    const SizedBox(width: 16),
-                    const Text('Backend service is unreachable. Is Docker running?'),
-                    const Spacer(),
-                    TextButton(onPressed: _checkHealthAndLoad, child: const Text('Retry'))
-                  ],
-                ),
-              ),
-             ),
+        )
+      ],
+    );
+  }
 
-          const SizedBox(height: 16),
-          
-          Card(
-            child: ListTile(
-              leading: Icon(
-                isConnected ? Icons.check_circle : Icons.warning,
+  Widget _buildConnectionError() {
+    return GlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 48, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 16),
+            const Text('Email service is unreachable', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            AppButton(
+              text: 'Retry Connection',
+              onPressed: _checkHealthAndLoad,
+              type: AppButtonType.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGmailStatusCard(bool isConnected, String email) {
+    return GlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (isConnected ? Colors.green : Colors.orange).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isConnected ? Icons.mark_email_read_outlined : Icons.mail_lock_outlined,
                 color: isConnected ? Colors.green : Colors.orange,
+                size: 32,
               ),
-              title: Text('Gmail Status: $email'),
-              trailing: isConnected 
-                ? OutlinedButton(onPressed: () {}, child: const Text('Disconnect'))
-                : FilledButton(onPressed: () {}, child: const Text('Connect')),
             ),
-          ),
-          const SizedBox(height: 24),
-          if (_loading && _checkingHealth == false && _isServiceConnected == true)
-            const CircularProgressIndicator()
-          else if (_isServiceConnected == true)
+            const SizedBox(width: 20),
             Expanded(
-              child: ListView.builder(
-                itemCount: _brokers.length,
-                itemBuilder: (context, index) {
-                  final broker = _brokers[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(broker['name']),
-                      subtitle: Text('Format: ${broker['format']}'),
-                      trailing: FilledButton.tonal(
-                        onPressed: isConnected ? () => _extract(broker['id']) : null,
-                        child: const Text('Extract'),
-                      ),
-                    ),
-                  );
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isConnected ? 'Gmail Connected' : 'Gmail Not Connected',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    isConnected ? email : 'Connect your account to extract data',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ],
               ),
             ),
-          const SizedBox(height: 16),
-          const Divider(),
-          Text('Log:', style: Theme.of(context).textTheme.titleMedium),
-          Container(
-            padding: const EdgeInsets.all(12),
-            width: double.infinity,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+            AppButton(
+              text: isConnected ? 'Disconnect' : 'Connect Gmail',
+              onPressed: () {},
+              type: isConnected ? AppButtonType.secondary : AppButtonType.primary,
             ),
-            child: SingleChildScrollView(child: Text(_status)),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildBrokerList(bool isConnected) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 3,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: _brokers.length,
+      itemBuilder: (context, index) {
+        final broker = _brokers[index];
+        return GlassCard(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.account_balance_outlined, color: Theme.of(context).colorScheme.primary, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(broker['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('Format: ${broker['format']}', style: const TextStyle(fontSize: 11)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: isConnected ? () => _extract(broker['id']) : null,
+                  icon: Icon(Icons.download_for_offline_outlined, color: isConnected ? Theme.of(context).colorScheme.primary : Colors.grey),
+                  tooltip: 'Extract Data',
+                ),
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusLog() {
+    if (_status.isEmpty) return const SizedBox.shrink();
+    
+    bool isError = _status.toLowerCase().contains('error');
+    Color statusColor = isError ? Colors.red : Theme.of(context).colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(isError ? Icons.error_outline : Icons.info_outline, color: statusColor, size: 20),
+              const SizedBox(width: 12),
+              const Text('Extraction Status', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(_status, style: TextStyle(color: statusColor)),
         ],
       ),
     );

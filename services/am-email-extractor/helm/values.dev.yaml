@@ -1,4 +1,4 @@
-# Dev environment overrides for am-document-processor
+# Dev environment overrides for am-email-extractor
 environment: dev
 
 replicaCount: 1
@@ -9,7 +9,7 @@ resources:
     cpu: 500m
     memory: 512Mi
   requests:
-    cpu: 200m
+    cpu: 100m
     memory: 256Mi
 
 vault:
@@ -19,18 +19,14 @@ vault:
       path: "apps/data/dev/infra/mongodb"
     kafka:
       path: "apps/data/dev/infra/kafka"
-    auth:
-      path: "apps/data/dev/services/am-auth"
+    jwt:
+      path: "secret/data/dev/apps/auth/jwt"
+    google:
+      path: "secret/data/dev/apps/docs/google"
 
-env:
-  SPRING_PROFILES_ACTIVE: "dev"
-
-hostAliases:
-  - ip: "203.174.22.129"
-    hostnames:
-      - "redis.asrax.in"
-      - "mongodb.asrax.in"
-      - "kafka.asrax.in"
+config:
+  app:
+    GMAIL_REDIRECT_URI: "https://am-dev.asrax.in/email/api/v1/gmail/callback"
 
 ingress:
   enabled: true
@@ -44,5 +40,7 @@ ingress:
   hosts:
     - host: am-dev.asrax.in
       paths:
-        - path: /doc/processor
+        - path: /email
+          pathType: Prefix
+        - path: /gmail
           pathType: Prefix
