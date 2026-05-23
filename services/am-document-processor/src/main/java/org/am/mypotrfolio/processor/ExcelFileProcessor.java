@@ -727,72 +727,69 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             Sheet sheet = workbook.getSheetAt(0);
 
             log.debug("Reading sheet: {}", sheet.getSheetName());
-            Iterator<Row> rowIterator = sheet.iterator();
-
+            
             List<String> headers = new ArrayList<>();
             int rowCount = 0;
 
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-                if (row.getRowNum() < skipRows)
-                    continue;
+            // Get header row first to know how many columns we are dealing with
+            Row hr = sheet.getRow(headerRow);
+            if (hr == null) {
+                log.warn("Header row {} is null", headerRow);
+                return jsonList;
+            }
+            
+            int lastCellNum = hr.getLastCellNum();
+            for (int c = 0; c < lastCellNum; c++) {
+                Cell cell = hr.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                cell.setCellType(CellType.STRING);
+                String header = cell.getStringCellValue().trim();
+                // Remove BOM if present
+                if (headers.isEmpty() && header.startsWith("\uFEFF")) {
+                    header = header.substring(1);
+                }
+                headers.add(header);
+            }
 
-                if (row.getRowNum() == headerRow) {
-                    for (Cell cell : row) {
-                        cell.setCellType(CellType.STRING);
-                        String header = cell.getStringCellValue().trim();
-                        // Skip empty header cells
-                        if (header.isEmpty()) {
-                            continue;
-                        }
-                        // Remove BOM if present
-                        if (headers.isEmpty() && header.startsWith("\uFEFF")) {
-                            header = header.substring(1);
-                        }
-                        headers.add(header);
-                    }
+            // Normalize headers to match StockAsset fields
+            for (int i = 0; i < headers.size(); i++) {
+                String h = headers.get(i);
+                if ("Quantity Available".equalsIgnoreCase(h)) {
+                    headers.set(i, "Quantity");
+                }
+            }
 
-                    // Normalize headers to match StockAsset fields
-                    for (int i = 0; i < headers.size(); i++) {
-                        String h = headers.get(i);
-                        if ("Quantity Available".equalsIgnoreCase(h)) {
-                            headers.set(i, "Quantity");
-                        }
-                    }
+            // Adjust headers list if we need to skip columns
+            List<String> finalHeaders = headers;
+            if (skipColumns > 0 && skipColumns < headers.size()) {
+                finalHeaders = headers.subList(skipColumns, headers.size());
+            }
 
-                    // Adjust headers list if we need to skip columns
-                    if (skipColumns > 0) {
-                        headers = headers.subList(skipColumns, headers.size());
-                    }
-                    // Filter out any remaining empty headers after processing
-                    headers = headers.stream()
-                            .filter(h -> h != null && !h.trim().isEmpty())
-                            .collect(Collectors.toList());
+            // Iterate over data rows
+            for (int r = skipRows + 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) {
                     continue;
                 }
 
-                if (headers.isEmpty())
-                    continue;
-
-                String[] values = new String[headers.size()];
+                String[] values = new String[finalHeaders.size()];
                 int valueIndex = 0;
-                int cellsToSkip = skipColumns; // Skip first cell + skipColumns
-                int cellIndex = 0;
+                int startCol = skipColumns;
 
-                for (Cell cell : row) {
+                for (int c = startCol; c < lastCellNum && valueIndex < values.length; c++) {
+                    Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                     cell.setCellType(CellType.STRING);
-                    // Skip first cell and skipColumns
-                    if (cellIndex >= cellsToSkip && valueIndex < values.length) {
-                        values[valueIndex] = cell.getStringCellValue();
-                        valueIndex++;
-                    }
-                    cellIndex++;
+                    values[valueIndex] = cell.getStringCellValue().trim();
+                    valueIndex++;
                 }
 
-                Map<String, String> rowData = createRowData(headers.toArray(new String[0]), values);
+                Map<String, String> rowData = createRowData(finalHeaders.toArray(new String[0]), values);
                 if (rowData != null) {
-                    jsonList.add(rowData);
-                    rowCount++;
+                    // Check if row has any actual content to avoid empty rows
+                    boolean hasContent = rowData.values().stream().anyMatch(v -> v != null && !v.trim().isEmpty());
+                    if (hasContent) {
+                        jsonList.add(rowData);
+                        rowCount++;
+                    }
                 }
             }
             log.info("Successfully parsed {} rows from Excel file", rowCount);

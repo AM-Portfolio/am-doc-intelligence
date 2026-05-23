@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class StockAsset {
 
     @JsonProperty("Name")
-    @JsonAlias({ "Name", "prop1", "company_name", "Company Name" })
+    @JsonAlias({ "Name", "prop1", "company_name", "Company Name", "Stock Name", "Stock name", "Scrip Name", "Scrip name" })
     private String name;
 
     @JsonProperty("ISIN")
