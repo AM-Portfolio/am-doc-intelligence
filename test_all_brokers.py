@@ -14,7 +14,7 @@ DOCS_DIR = "f:/am-repos/am-repos/am-doc-intelligence/services/am-document-proces
 def get_jwt_secret():
     try:
         cmd = [
-            "kubectl", "--kubeconfig", "f:/am-repos/am-repos/VPS-Infra/kubeconfig.vps", "-n", "am-apps-dev",
+            "kubectl", "--kubeconfig", "f:/am-repos/am-repos/VPS-Infra/kubeconfig.vps", "-n", "am-apps-preprod",
             "exec", "deploy/am-document-processor", "-c", "am-document-processor", "--", "cat", "/vault/secrets/auth"
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -39,6 +39,8 @@ def generate_token(secret, user_id):
 
 # 3. List of files to test mapped to correct broker & docType
 TEST_FILES = [
+    {"file": "Stocks_Holdings_Statement_3060484652_2026-05-23.xlsx", "broker": "GROW", "type": "STOCK_PORTFOLIO"},
+    {"file": "Holdings_Statement_2026-05-24.xlsx", "broker": "GROW", "type": "MUTUAL_FUND"},
     {"file": "Dhan_Portfolio_EQ_01-05-2026.xlsx", "broker": "DHAN", "type": "STOCK_PORTFOLIO"},
     {"file": "Dhan_Portfolio_ETF_01-05-2026.xlsx", "broker": "DHAN", "type": "STOCK_PORTFOLIO"},
     {"file": "Stocks_Holdings_Statement_3060484652_2026-01-21_1769102041357.xlsx", "broker": "GROW", "type": "STOCK_PORTFOLIO"},
