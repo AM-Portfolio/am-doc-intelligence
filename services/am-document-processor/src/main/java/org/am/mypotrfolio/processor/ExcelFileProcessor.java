@@ -113,16 +113,42 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
     @Override
     protected List<Map<String, String>> parseGrowFile(MultipartFile file) throws Exception {
-        int headerRow = 0;
+        int headerRow = -1;
         try (InputStream is = file.getInputStream();
                 Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            headerRow = findHeaderRow(sheet, "Symbol", "Stock Name");
+            
+            // Try to find Stocks header: "Stock Name"
+            headerRow = findHeaderRow(sheet, "Stock Name");
+            
+            // If not found, try to find Mutual Funds header: "Scheme Name"
             if (headerRow == -1) {
-                headerRow = 0; // Default to 0 if not found
+                headerRow = findHeaderRow(sheet, "Scheme Name", "Folio No.", "Units");
+            }
+            
+            // Try legacy check "Symbol"
+            if (headerRow == -1) {
+                headerRow = findHeaderRow(sheet, "Symbol");
+            }
+            
+            if (headerRow == -1) {
+                log.warn("Groww header row not found, defaulting to 0");
+                headerRow = 0;
             }
         }
-        return parseExcelFile(file, headerRow, headerRow, 0);
+        
+        List<Map<String, String>> parsedRows = parseExcelFile(file, headerRow, headerRow, 0);
+        List<Map<String, String>> cleanedRows = new ArrayList<>();
+        
+        for (Map<String, String> row : parsedRows) {
+            // Normalize "Average buy price" to "Average Price" for StockAsset binding
+            if (row.containsKey("Average buy price") && !row.containsKey("Average Price")) {
+                row.put("Average Price", row.get("Average buy price"));
+            }
+            cleanedRows.add(row);
+        }
+        
+        return cleanedRows;
     }
 
     @Override

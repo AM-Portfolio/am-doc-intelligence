@@ -139,4 +139,23 @@ class BrokerParserTest {
         assertFalse(result.isEmpty(), "MStock trade history should not be empty");
         printResults("MStock Trade History", result);
     }
+
+    @Test
+    void testParseNewGrowwStocks() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Stocks_Holdings_Statement_3060484652_2026-05-23.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseGrowFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "New Groww stocks should not be empty");
+        printResults("New Groww Stocks", result);
+        assertTrue(result.get(0).containsKey("Average Price"), "Should map 'Average buy price' to 'Average Price'");
+    }
+
+    @Test
+    void testParseNewGrowwMutualFunds() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Holdings_Statement_2026-05-24.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseGrowFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "New Groww mutual funds should not be empty");
+        printResults("New Groww Mutual Funds", result);
+    }
 }
