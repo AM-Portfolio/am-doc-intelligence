@@ -1,5 +1,6 @@
-// Security configuration for the AM Document Processor service.
+// Security configuration for the AM Document Processor service. Retrigger deploy.
 package org.am.mypotrfolio.config;
+
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
