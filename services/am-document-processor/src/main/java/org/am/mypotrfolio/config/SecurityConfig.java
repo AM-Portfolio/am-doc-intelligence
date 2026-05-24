@@ -58,7 +58,7 @@ public class SecurityConfig {
                                                 // Can be accessed by anyone (API Gateway forwards these)
                                                 .requestMatchers(
                                                                 "/v1/documents/types", // Get supported document
-                                                                                           // types (public info)
+                                                                                       // types (public info)
                                                                 "/actuator/health", // Docker health check
                                                                 "/actuator/health/live", // Kubernetes liveness probe
                                                                 "/actuator/health/ready", // Kubernetes readiness probe
@@ -73,7 +73,7 @@ public class SecurityConfig {
                                                 .requestMatchers(
                                                                 "/v1/documents/process", // Process single document
                                                                 "/v1/documents/batch-process", // Process multiple
-                                                                                                   // documents
+                                                                                               // documents
                                                                 "/v1/documents/status/**" // Get processing status
                                                 ).authenticated() // Spring Security checks Authorization header exists
 
@@ -119,11 +119,11 @@ public class SecurityConfig {
                 org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
                 configuration.setAllowedOrigins(
                                 java.util.Arrays.asList(
-                                        "http://localhost:3000",
-                                        "http://localhost:9004",
-                                        "https://am-dev.asrax.in",
-                                        "https://am-preprod.asrax.in",
-                                        "https://am.asrax.in"));
+                                                "http://localhost:3000",
+                                                "http://localhost:9004",
+                                                "https://am-dev.asrax.in",
+                                                "https://am-preprod.asrax.in",
+                                                "https://am.asrax.in"));
                 configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
                 configuration.setAllowCredentials(true);
