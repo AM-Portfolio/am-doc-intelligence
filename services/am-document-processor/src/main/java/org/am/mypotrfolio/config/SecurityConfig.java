@@ -1,3 +1,4 @@
+// Security configuration for the AM Document Processor service.
 package org.am.mypotrfolio.config;
 
 import org.springframework.context.annotation.Bean;
