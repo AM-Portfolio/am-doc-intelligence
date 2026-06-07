@@ -2,11 +2,11 @@ name: AM Cloudinary Manager
 
 on:
   push:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-cloudinary-manager/**'
   pull_request:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-cloudinary-manager/**'
   workflow_dispatch:

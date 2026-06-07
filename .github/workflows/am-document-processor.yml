@@ -2,11 +2,11 @@ name: AM Document Processor
 
 on:
   push:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-document-processor/**'
   pull_request:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-document-processor/**'
   workflow_dispatch:

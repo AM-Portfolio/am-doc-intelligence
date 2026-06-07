@@ -2,11 +2,11 @@ name: AM Email Extractor
 
 on:
   push:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-email-extractor/**'
   pull_request:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-email-extractor/**'
   workflow_dispatch:
