@@ -123,6 +123,21 @@ class BrokerParserTest {
     }
 
     @Test
+    void testParseZerodhaTradebookEQ2() throws Exception {
+        MockMultipartFile file = createMockFile("docs/tradebook-BKJ665-EQ_2.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseZerodhaTradeFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Zerodha tradebook EQ 2 should not be empty");
+        printResults("Zerodha Tradebook EQ 2", result);
+        
+        // Assert that extracted columns contain new fields like Order ID
+        Map<String, String> firstRow = result.get(0);
+        assertTrue(firstRow.containsKey("Order ID"), "Parsed data should contain Order ID");
+        assertTrue(firstRow.containsKey("Trade ID"), "Parsed data should contain Trade ID");
+        assertTrue(firstRow.containsKey("ISIN"), "Parsed data should contain ISIN");
+    }
+
+    @Test
     void testParseZerodhaTradebookFO() throws Exception {
         MockMultipartFile file = createMockFile("docs/tradebook-BKJ665-FO.xlsx");
         List<Map<String, String>> result = excelProcessor.parseZerodhaTradeFile(file);
@@ -157,5 +172,31 @@ class BrokerParserTest {
         assertNotNull(result);
         assertFalse(result.isEmpty(), "New Groww mutual funds should not be empty");
         printResults("New Groww Mutual Funds", result);
+    }
+
+    @Test
+    void testParseGrowwStockTradeHistory() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Stocks_Order_History_3060484652_2026-04-01_2026-06-06-1.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseGrowTradeFile(file, org.am.mypotrfolio.domain.common.DocumentType.TRADE_EQ);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Groww stock trade history should not be empty");
+        printResults("Groww Stock Trade History", result);
+
+        Map<String, String> row = result.get(0);
+        assertTrue(row.containsKey("Symbol"), "Parsed row should contain Symbol");
+        assertTrue(row.containsKey("Price"), "Parsed row should contain Price");
+        assertTrue(row.containsKey("Trade Date"), "Parsed row should contain Trade Date");
+        assertEquals("2026-04-08", row.get("Trade Date"), "Parsed trade date should match execution date");
+    }
+
+    @Test
+    void testParseGrowwMfTradeHistory() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Mutual_Funds_Order_History_2025_2026.xlsx");
+        // Mutual_Funds_Order_History_2025_2026.xlsx contains "NO TRANSACTIONS FOUND"
+        // So the returned list will be empty, which is expected behavior
+        List<Map<String, String>> result = excelProcessor.parseGrowTradeFile(file, org.am.mypotrfolio.domain.common.DocumentType.TRADE_MF);
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "Groww MF trade history should be empty for a file with no transactions");
+        printResults("Groww MF Trade History (Empty)", result);
     }
 }

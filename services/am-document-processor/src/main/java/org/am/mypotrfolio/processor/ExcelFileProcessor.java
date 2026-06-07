@@ -3,6 +3,7 @@ package org.am.mypotrfolio.processor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.am.mypotrfolio.domain.common.DocumentType;
 import org.apache.poi.ss.usermodel.*;
 import java.util.stream.Collectors;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -152,6 +153,249 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     }
 
     @Override
+    protected List<Map<String, String>> parseGrowTradeFile(MultipartFile file, DocumentType docType)
+            throws Exception {
+        if (docType == DocumentType.TRADE_EQ) {
+            return parseGrowStockTradeFile(file);
+        } else if (docType == DocumentType.TRADE_MF) {
+            return parseGrowMfTradeFile(file);
+        }
+        return new ArrayList<>();
+    }
+
+    private List<Map<String, String>> parseGrowStockTradeFile(MultipartFile file) throws Exception {
+        List<Map<String, String>> jsonList = new ArrayList<>();
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Find Header Row (Look for "Stock name" or "Symbol")
+            int headerRowIdx = findHeaderRow(sheet, "Stock name", "Symbol");
+            if (headerRowIdx == -1) {
+                headerRowIdx = 4; // Default fallback
+                log.warn("Groww Stock Trade header not found, defaulting to row {}", headerRowIdx);
+            }
+
+            Row headerRow = sheet.getRow(headerRowIdx);
+            Map<String, Integer> colMap = new HashMap<>();
+
+            for (Cell cell : headerRow) {
+                String header = getCellValueAsString(cell).trim();
+                colMap.put(header.toLowerCase(), cell.getColumnIndex());
+            }
+            log.info("Groww Stock Trade Column Mapping: {}", colMap);
+
+            int symbolIdx = colMap.getOrDefault("symbol", -1);
+            int isinIdx = colMap.getOrDefault("isin", -1);
+            int typeIdx = colMap.getOrDefault("type", -1);
+            int qtyIdx = colMap.getOrDefault("quantity", -1);
+            int valueIdx = colMap.getOrDefault("value", -1);
+            int exchangeIdx = colMap.getOrDefault("exchange", -1);
+            int orderIdIdx = colMap.getOrDefault("exchange order id", -1);
+            int executionTimeIdx = colMap.getOrDefault("execution date and time", -1);
+            if (executionTimeIdx == -1) {
+                executionTimeIdx = colMap.getOrDefault("execution date", -1);
+            }
+
+            if (symbolIdx == -1 || qtyIdx == -1 || valueIdx == -1) {
+                log.error("Missing critical columns in Groww Stock Trade file. Found: {}", colMap.keySet());
+                throw new IllegalArgumentException("Invalid Groww Stock Trade File format. Found columns: " + colMap.keySet());
+            }
+
+            Iterator<Row> rowIterator = sheet.iterator();
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (row.getRowNum() <= headerRowIdx)
+                    continue;
+
+                String symbol = getCellValueAsString(row.getCell(symbolIdx));
+                if (symbol.isEmpty())
+                    continue;
+
+                String isin = (isinIdx != -1) ? getCellValueAsString(row.getCell(isinIdx)) : "";
+                String type = (typeIdx != -1) ? getCellValueAsString(row.getCell(typeIdx)) : "buy";
+                String qty = sanitizeNumeric(getCellValueAsString(row.getCell(qtyIdx)));
+                String value = sanitizeNumeric(getCellValueAsString(row.getCell(valueIdx)));
+                String exchange = (exchangeIdx != -1) ? getCellValueAsString(row.getCell(exchangeIdx)) : "NSE";
+                String orderId = (orderIdIdx != -1) ? getCellValueAsString(row.getCell(orderIdIdx)) : "";
+                String executionTimeRaw = (executionTimeIdx != -1) ? getCellValueAsString(row.getCell(executionTimeIdx)) : "";
+
+                // Date and Execution Time parsing
+                String dateStr = "";
+                String orderExecutionTime = "";
+                if (!executionTimeRaw.isEmpty()) {
+                    // Try parsing "dd-MM-yyyy hh:mm a"
+                    try {
+                        String cleanDateTime = executionTimeRaw.trim();
+                        // Sometimes there are multiple spaces, normalize
+                        cleanDateTime = cleanDateTime.replaceAll("\\s+", " ");
+                        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a", Locale.ENGLISH);
+                        java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(cleanDateTime, formatter);
+                        dateStr = ldt.toLocalDate().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                        orderExecutionTime = ldt.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    } catch (Exception e) {
+                        // Fallback: extract date part
+                        String datePart = executionTimeRaw.split(" ")[0];
+                        if (datePart.matches("\\d{2}-\\d{2}-\\d{4}")) {
+                            try {
+                                java.time.LocalDate d = java.time.LocalDate.parse(datePart,
+                                        java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                                dateStr = d.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                            } catch (Exception ex) {
+                                log.warn("Failed to parse fallback date: {}", datePart);
+                            }
+                        }
+                    }
+                }
+
+                // Calculate price
+                double priceVal = 0.0;
+                try {
+                    double quantityVal = Double.parseDouble(qty);
+                    double totalValue = Double.parseDouble(value);
+                    if (quantityVal > 0) {
+                        priceVal = totalValue / quantityVal;
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to calculate price for symbol {}: qty={}, value={}", symbol, qty, value);
+                }
+
+                Map<String, String> rowData = new HashMap<>();
+                rowData.put("Symbol", symbol);
+                rowData.put("Trade Date", dateStr);
+                rowData.put("Type", type.toLowerCase());
+                rowData.put("Quantity", qty);
+                rowData.put("Price", String.valueOf(priceVal));
+                rowData.put("Exchange", exchange);
+                rowData.put("Segment", "EQ");
+                rowData.put("ISIN", isin);
+                rowData.put("Order ID", orderId);
+                rowData.put("Order Execution Time", orderExecutionTime);
+
+                jsonList.add(rowData);
+            }
+        }
+        return jsonList;
+    }
+
+    private List<Map<String, String>> parseGrowMfTradeFile(MultipartFile file) throws Exception {
+        List<Map<String, String>> jsonList = new ArrayList<>();
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Find Header Row (Look for "Scheme Name" or "Transaction Type")
+            int headerRowIdx = findHeaderRow(sheet, "Scheme Name", "Transaction Type");
+            if (headerRowIdx == -1) {
+                headerRowIdx = 10; // Default fallback
+                log.warn("Groww MF Trade header not found, defaulting to row {}", headerRowIdx);
+            }
+
+            Row headerRow = sheet.getRow(headerRowIdx);
+            Map<String, Integer> colMap = new HashMap<>();
+
+            for (Cell cell : headerRow) {
+                String header = getCellValueAsString(cell).trim();
+                colMap.put(header.toLowerCase(), cell.getColumnIndex());
+            }
+            log.info("Groww MF Trade Column Mapping: {}", colMap);
+
+            int schemeIdx = colMap.getOrDefault("scheme name", -1);
+            int typeIdx = colMap.getOrDefault("transaction type", -1);
+            if (typeIdx == -1) {
+                typeIdx = colMap.getOrDefault("type", -1);
+            }
+            int unitsIdx = colMap.getOrDefault("units", -1);
+            int navIdx = colMap.getOrDefault("nav", -1);
+            int amountIdx = colMap.getOrDefault("amount", -1);
+            int dateIdx = colMap.getOrDefault("date", -1);
+
+            if (schemeIdx == -1 || dateIdx == -1) {
+                log.error("Missing critical columns in Groww MF Trade file. Found: {}", colMap.keySet());
+                throw new IllegalArgumentException("Invalid Groww MF Trade File format. Found columns: " + colMap.keySet());
+            }
+
+            Iterator<Row> rowIterator = sheet.iterator();
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                if (row.getRowNum() <= headerRowIdx)
+                    continue;
+
+                String scheme = getCellValueAsString(row.getCell(schemeIdx));
+                if (scheme.isEmpty() || scheme.equalsIgnoreCase("NO TRANSACTIONS FOUND"))
+                    continue;
+
+                String type = (typeIdx != -1) ? getCellValueAsString(row.getCell(typeIdx)) : "buy";
+                String units = (unitsIdx != -1) ? sanitizeNumeric(getCellValueAsString(row.getCell(unitsIdx))) : "0";
+                String nav = (navIdx != -1) ? sanitizeNumeric(getCellValueAsString(row.getCell(navIdx))) : "0";
+                String amount = (amountIdx != -1) ? sanitizeNumeric(getCellValueAsString(row.getCell(amountIdx))) : "0";
+                String dateRaw = getCellValueAsString(row.getCell(dateIdx));
+
+                // Date parsing
+                String dateStr = "";
+                if (!dateRaw.isEmpty()) {
+                    String cleanDate = dateRaw.trim();
+                    if (cleanDate.matches("\\d{2}-\\d{2}-\\d{4}")) {
+                        try {
+                            java.time.LocalDate d = java.time.LocalDate.parse(cleanDate,
+                                    java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                            dateStr = d.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                        } catch (Exception e) {
+                            log.warn("Failed to parse MF date: {}", cleanDate);
+                        }
+                    } else if (cleanDate.matches("\\d{2}-[A-Za-z]{3}-\\d{4}")) {
+                        try {
+                            java.time.LocalDate d = java.time.LocalDate.parse(cleanDate,
+                                    java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+                            dateStr = d.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                        } catch (Exception e) {
+                            log.warn("Failed to parse MF date: {}", cleanDate);
+                        }
+                    } else {
+                        try {
+                            java.time.LocalDate d = java.time.LocalDate.parse(cleanDate);
+                            dateStr = d.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                        } catch (Exception e) {
+                            log.warn("Unrecognized MF date format: {}", cleanDate);
+                        }
+                    }
+                }
+
+                // If units is 0 but amount and nav are present, calculate units
+                if (("0".equals(units) || units.isEmpty()) && !"0".equals(nav) && !"0".equals(amount)) {
+                    try {
+                        double totalAmt = Double.parseDouble(amount);
+                        double pricePerUnit = Double.parseDouble(nav);
+                        if (pricePerUnit > 0) {
+                            units = String.valueOf(totalAmt / pricePerUnit);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to calculate units for scheme {}: amt={}, nav={}", scheme, amount, nav);
+                    }
+                }
+
+                String standardizedType = "buy";
+                if (type.toLowerCase().contains("redempt") || type.toLowerCase().contains("sell") || type.toLowerCase().contains("withdraw")) {
+                    standardizedType = "sell";
+                }
+
+                Map<String, String> rowData = new HashMap<>();
+                rowData.put("Symbol", scheme);
+                rowData.put("Trade Date", dateStr);
+                rowData.put("Type", standardizedType);
+                rowData.put("Quantity", units);
+                rowData.put("Price", nav);
+                rowData.put("Segment", "MF");
+
+                jsonList.add(rowData);
+            }
+        }
+        return jsonList;
+    }
+
+    @Override
     protected List<Map<String, String>> parseNseSecurityFile(MultipartFile file) throws Exception {
         return parseExcelFile(file, 0, 0, 0);
     }
@@ -193,6 +437,12 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             int priceIdx = colMap.getOrDefault("price", -1);
             int exchangeIdx = colMap.getOrDefault("exchange", -1); // Usually 'NSE'/'BSE'
             int segmentIdx = colMap.getOrDefault("segment", -1); // 'EQ' / 'FO'
+            int isinIdx = colMap.getOrDefault("isin", -1);
+            int seriesIdx = colMap.getOrDefault("series", -1);
+            int auctionIdx = colMap.getOrDefault("auction", -1);
+            int tradeIdIdx = colMap.getOrDefault("trade id", -1);
+            int orderIdIdx = colMap.getOrDefault("order id", -1);
+            int orderExecutionTimeIdx = colMap.getOrDefault("order execution time", -1);
 
             if (symbolIdx == -1 || dateIdx == -1 || qtyIdx == -1) {
                 log.error("Missing critical columns in Zerodha file. Found: {}", colMap.keySet());
@@ -230,6 +480,12 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 String price = sanitizeNumeric(getCellValueAsString(row.getCell(priceIdx)));
                 String exchange = getCellValueAsString(row.getCell(exchangeIdx));
                 String segment = (segmentIdx != -1) ? getCellValueAsString(row.getCell(segmentIdx)) : "EQ";
+                String isin = (isinIdx != -1) ? getCellValueAsString(row.getCell(isinIdx)) : "";
+                String series = (seriesIdx != -1) ? getCellValueAsString(row.getCell(seriesIdx)) : "";
+                String auction = (auctionIdx != -1) ? getCellValueAsString(row.getCell(auctionIdx)) : "";
+                String tradeId = (tradeIdIdx != -1) ? getCellValueAsString(row.getCell(tradeIdIdx)) : "";
+                String orderId = (orderIdIdx != -1) ? getCellValueAsString(row.getCell(orderIdIdx)) : "";
+                String orderExecutionTime = (orderExecutionTimeIdx != -1) ? getCellValueAsString(row.getCell(orderExecutionTimeIdx)) : "";
 
                 Map<String, String> rowData = new HashMap<>();
                 rowData.put("Symbol", symbol);
@@ -239,6 +495,12 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 rowData.put("Price", price);
                 rowData.put("Exchange", exchange);
                 rowData.put("Segment", segment);
+                rowData.put("ISIN", isin);
+                rowData.put("Series", series);
+                rowData.put("Auction", auction);
+                rowData.put("Trade ID", tradeId);
+                rowData.put("Order ID", orderId);
+                rowData.put("Order Execution Time", orderExecutionTime);
 
                 jsonList.add(rowData);
             }

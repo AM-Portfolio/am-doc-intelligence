@@ -3,6 +3,7 @@ package org.am.mypotrfolio.processor;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.am.mypotrfolio.domain.common.DocumentType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,6 +44,12 @@ public class CsvFileProcessor extends AbstractFileProcessor {
     @Override
     protected List<Map<String, String>> parseGrowFile(MultipartFile file) throws Exception {
         return parseCsvFile(file, 20);
+    }
+
+    @Override
+    protected List<Map<String, String>> parseGrowTradeFile(MultipartFile file, DocumentType docType)
+            throws Exception {
+        return new ArrayList<>();
     }
 
     @Override

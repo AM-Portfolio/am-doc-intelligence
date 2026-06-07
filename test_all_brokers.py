@@ -47,6 +47,8 @@ TEST_FILES = [
     {"file": "Stocks_Holdings_Statement_3060484652_2026-02-07_1770558733163.xlsx", "broker": "GROW", "type": "STOCK_PORTFOLIO"},
     {"file": "Stocks_Order_History_3060484652_2020-04-01_2026-01-21_1769101861896.xlsx", "broker": "GROW", "type": "TRADE_EQ"},
     {"file": "Stocks_Order_History_3060484652_2020-04-01_2026-02-07_1770557386613.xlsx", "broker": "GROW", "type": "TRADE_EQ"},
+    {"file": "Stocks_Order_History_3060484652_2026-04-01_2026-06-06-1.xlsx", "broker": "GROW", "type": "TRADE_EQ"},
+    {"file": "Mutual_Funds_Order_History_2025_2026.xlsx", "broker": "GROW", "type": "TRADE_MF"},
     {"file": "holdings-BKJ665 (2).xlsx", "broker": "ZERODHA", "type": "STOCK_PORTFOLIO"},
     {"file": "holdings.csv", "broker": "ZERODHA", "type": "STOCK_PORTFOLIO"},
     {"file": "tradebook-BKJ665-EQ (1).xlsx", "broker": "ZERODHA", "type": "TRADE_EQ"},

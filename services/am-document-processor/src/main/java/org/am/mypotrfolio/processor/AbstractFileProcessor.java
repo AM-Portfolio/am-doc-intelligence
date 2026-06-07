@@ -35,7 +35,10 @@ public abstract class AbstractFileProcessor implements FileProcessor {
                 return parseDhanFile(file);
             } else if (brokerType.isGrow()) {
                 log.debug("Using Grow parser");
-                return parseGrowFile(file);
+                return (documentRequest.getDocumentType() == DocumentType.TRADE_EQ
+                        || documentRequest.getDocumentType() == DocumentType.TRADE_MF)
+                                ? parseGrowTradeFile(file, documentRequest.getDocumentType())
+                                : parseGrowFile(file);
             } else if (brokerType.isAngelOne()) {
                 log.debug("Using Angel One parser");
                 return parseAngelOneFile(file, documentRequest.getPassword());
@@ -57,6 +60,9 @@ public abstract class AbstractFileProcessor implements FileProcessor {
     protected abstract List<Map<String, String>> parseDhanFile(MultipartFile file) throws Exception;
 
     protected abstract List<Map<String, String>> parseGrowFile(MultipartFile file) throws Exception;
+
+    protected abstract List<Map<String, String>> parseGrowTradeFile(MultipartFile file, DocumentType docType)
+            throws Exception;
 
     protected abstract List<Map<String, String>> parseAngelOneFile(MultipartFile file, String password)
             throws Exception;

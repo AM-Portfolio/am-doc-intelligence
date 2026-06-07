@@ -31,6 +31,10 @@ public enum Segment {
             return UNKNOWN;
         }
         
+        if ("EQ".equalsIgnoreCase(value)) {
+            return EQUITY;
+        }
+        
         return Arrays.stream(values())
                 .filter(segment -> segment.value.equalsIgnoreCase(value))
                 .findFirst()
