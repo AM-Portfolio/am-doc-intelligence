@@ -20,9 +20,11 @@ from pathlib import Path
 load_dotenv()
 
 # Add am-platform-security library to PYTHONPATH dynamically
-security_lib_path = Path(__file__).resolve().parents[3] / "am-platform" / "libraries" / "am-platform-security"
-if security_lib_path.exists() and str(security_lib_path) not in sys.path:
-    sys.path.insert(0, str(security_lib_path))
+resolved_parents = Path(__file__).resolve().parents
+if len(resolved_parents) > 3:
+    security_lib_path = resolved_parents[3] / "am-platform" / "libraries" / "am-platform-security"
+    if security_lib_path.exists() and str(security_lib_path) not in sys.path:
+        sys.path.insert(0, str(security_lib_path))
 
 try:
     from am_platform_security import TokenValidator, get_security_settings, AuthContext
