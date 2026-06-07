@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Configuration
 @EnableWebSecurity
+@ConditionalOnProperty(prefix = "am.security", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class SecurityConfig {
 
         @Value("${auth.enabled:true}")

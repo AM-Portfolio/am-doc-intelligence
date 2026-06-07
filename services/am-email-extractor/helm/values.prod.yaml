@@ -17,6 +17,10 @@ vault:
       path: "secret/data/prod/apps/auth/jwt"
     google:
       path: "secret/data/prod/apps/docs/google"
+    identity-oidc:
+      path: "secret/data/prod/services/am-identity"
+    service-oauth:
+      path: "secret/data/prod/services/am-doc-intelligence"
 
 config:
   app:

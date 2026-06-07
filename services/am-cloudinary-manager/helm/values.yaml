@@ -46,6 +46,10 @@ vault:
   secretPaths:
     cloudinary:
       path: "secret/data/preprod/apps/docs/cloudinary"
+    identity-oidc:
+      path: "apps/data/preprod/services/am-identity"
+    service-oauth:
+      path: "apps/data/preprod/services/am-cloudinary-manager"
 
 config:
   app:

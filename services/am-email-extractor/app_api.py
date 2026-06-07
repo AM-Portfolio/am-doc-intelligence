@@ -13,9 +13,23 @@ import gmail_integration
 import database
 import kafka_producer
 import logging
+import sys
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
+
+# Add am-platform-security library to PYTHONPATH dynamically
+security_lib_path = Path(__file__).resolve().parents[3] / "am-platform" / "libraries" / "am-platform-security"
+if security_lib_path.exists() and str(security_lib_path) not in sys.path:
+    sys.path.insert(0, str(security_lib_path))
+
+try:
+    from am_platform_security import TokenValidator, get_security_settings, AuthContext
+    has_security_lib = True
+except ImportError:
+    has_security_lib = False
+    print("WARNING: am-platform-security library not found, falling back to symmetric JWT validation")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -55,7 +69,7 @@ def allowed_file(filename):
 
 
 def require_jwt(f):
-    """Decorator to require JWT authentication"""
+    """Decorator to require JWT authentication using am-platform-security"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Get JWT token from Authorization header
@@ -72,24 +86,28 @@ def require_jwt(f):
             
             token = token_parts[1]
             
-            # Decode and verify JWT
-            if not JWT_SECRET:
-                return jsonify({'error': 'JWT_SECRET not configured'}), 500
-            
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            
-            # Add user_id to request context
-            request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+            if has_security_lib:
+                settings = get_security_settings()
+                validator = TokenValidator(settings)
+                # validate() returns AuthContext and handles asymmetric validation via JWKS
+                auth_context = validator.validate(token)
+                request.user_id = auth_context.subject
+                request.jwt_payload = auth_context.claims
+                request.auth_context = auth_context
+            else:
+                # Fallback to symmetric validation if security library not present
+                if not JWT_SECRET:
+                    return jsonify({'error': 'JWT_SECRET not configured and security library missing'}), 500
+                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+                request.jwt_payload = payload
             
             if not request.user_id:
                 return jsonify({'error': 'User ID not found in token'}), 401
             
-            # Store full payload for additional claims if needed
-            request.jwt_payload = payload
-            
-        except jwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token has expired'}), 401
-        except jwt.InvalidTokenError as e:
+        except Exception as e:
+            if hasattr(e, 'status_code') and hasattr(e, 'detail'):
+                return jsonify({'error': getattr(e, 'detail')}), getattr(e, 'status_code')
             return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         
         return f(*args, **kwargs)
