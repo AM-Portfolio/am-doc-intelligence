@@ -1,16 +1,43 @@
+# vault-mappings.yaml — am-document-processor
+#
+# PURPOSE: Maps application environment variable names to Vault secret keys.
+# This file is ENVIRONMENT-AGNOSTIC — identical for dev, preprod, and prod.
+# Vault paths are defined in values.{env}.yaml.
+#
+# Format:
+#   <AppEnvVariable>: "<VaultKeyName>"    — direct key mapping
+#   <AppEnvVariable>: "__jaas__"          — special: auto-builds Kafka SCRAM login config
+#
+# Vault key names verified against: vps_vault_full_backup_20260422
+#   apps/*/infra/mongodb  → host, password, port, url, username
+#   apps/*/infra/kafka    → bootstrap_servers, password, username
+#   apps/*/services/am-auth → SECRET_KEY, JWT_SECRET
+#   apps/*/services/am-identity → OIDC_JWKS_URL, OIDC_ISSUER
+
 vault:
   secretPaths:
     mongodb:
-      path: "apps/data/preprod/infra/mongodb"
-      template: |
-        export MONGODB_URL="{{ index .Data.data "url" }}"
+      mappings:
+        MONGODB_URL: "url"
+
     kafka:
-      path: "apps/data/preprod/infra/kafka"
-      template: |
-        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
+      mappings:
+        SPRING_KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
+        KAFKA_USERNAME: "username"
+        KAFKA_PASSWORD: "password"
+        SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "__jaas__"
+
     auth:
-      path: "apps/data/preprod/services/am-auth"
-      template: |
-        export INTERNAL_JWT_SECRET="{{ index .Data.data "SECRET_KEY" }}"
-        export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
+      mappings:
+        INTERNAL_JWT_SECRET: "SECRET_KEY"
+        JWT_SECRET: "JWT_SECRET"
+
+    identity-oidc:
+      mappings:
+        OIDC_JWKS_URI: "OIDC_JWKS_URL"
+        OIDC_ISSUER_URI: "OIDC_ISSUER"
+
+    service-oauth:
+      mappings:
+        OAUTH2_CLIENT_ID: "AM_DOCUMENT_PROCESSOR_CLIENT_ID"
+        OAUTH2_CLIENT_SECRET: "AM_DOCUMENT_PROCESSOR_CLIENT_SECRET"

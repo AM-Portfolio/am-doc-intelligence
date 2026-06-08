@@ -7,7 +7,7 @@ spring:
     name: am-cloudinary
   profiles:
     active: dev
-    include: common
+    include: common,security
 
 server:
   port: 8040

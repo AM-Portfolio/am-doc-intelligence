@@ -4,7 +4,7 @@ ingress:
   hosts:
     - host: api.amportfolio.com
       paths:
-        - path: /v1/processor
+        - path: /doc/processor
           pathType: Prefix
 
 vault:
@@ -15,3 +15,10 @@ vault:
       path: "secret/data/prod/infra/kafka"
     auth:
       path: "secret/data/prod/services/am-auth"
+    identity-oidc:
+      path: "secret/data/prod/services/am-identity"
+    service-oauth:
+      path: "secret/data/prod/services/am-document-processor"
+
+env:
+  SPRING_PROFILES_ACTIVE: "prod,security"

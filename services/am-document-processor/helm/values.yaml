@@ -43,27 +43,12 @@ resources:
 vault:
   enabled: true
   role: "am-backend-role"
-  secretPaths:
-    mongodb:
-      path: "apps/data/preprod/infra/mongodb"
-      template: |
-        export MONGODB_URL="{{ index .Data.data "url" }}"
-    kafka:
-      path: "apps/data/preprod/infra/kafka"
-      template: |
-        export KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export KAFKA_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
-        export KAFKA_PASSWORD="{{ index .Data.data "password" }}"
-        export KAFKA_USERNAME="{{ index .Data.data "username" }}"
-        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
-    auth:
-      path: "apps/data/preprod/services/am-auth"
-      template: |
-        export INTERNAL_JWT_SECRET="{{ index .Data.data "SECRET_KEY" }}"
-        export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
+  # Paths are provided per-environment in values.{env}.yaml
+  # Mappings (env var → vault key) are in vault-mappings.yaml
+  secretPaths: {}
 
 env:
+  SPRING_PROFILES_ACTIVE: "preprod,security"
   SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
   SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-256"
   APP_PORTFOLIO_TOPIC: "am-portfolio"

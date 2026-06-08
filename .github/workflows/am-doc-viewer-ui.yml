@@ -2,11 +2,11 @@ name: AM Doc Viewer UI Publish
 
 on:
   push:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'apps/am-doc-viewer-ui/**'
   pull_request:
-    branches: ["main", "develop", "test/**", "fix/**", "hotfix/**"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'apps/am-doc-viewer-ui/**'
   workflow_dispatch:

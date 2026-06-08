@@ -16,3 +16,11 @@ vault:
       mappings:
         GOOGLE_CLIENT_ID: "GOOGLE_CLIENT_ID"
         GOOGLE_CLIENT_SECRET: "GOOGLE_CLIENT_SECRET"
+    identity-oidc:
+      mappings:
+        OIDC_JWKS_URL: "OIDC_JWKS_URL"
+        OIDC_ISSUER: "OIDC_ISSUER"
+    service-oauth:
+      mappings:
+        OAUTH2_CLIENT_ID: "AM_DOC_INTELLIGENCE_CLIENT_ID"
+        OAUTH2_CLIENT_SECRET: "AM_DOC_INTELLIGENCE_CLIENT_SECRET"

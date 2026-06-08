@@ -120,6 +120,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.am.libraries</groupId>
+			<artifactId>am-security-lib</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
 		<!-- AM Common Dependencies -->
 		<dependency>
 			<groupId>com.portfolio</groupId>

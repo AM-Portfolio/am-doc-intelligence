@@ -1,0 +1,21 @@
+am:
+  security:
+    enabled: true
+    proxy-name: "document-processor"
+    oidc:
+      jwk-set-uri: ${OIDC_JWKS_URI:http://localhost:8001/realms/am-realm/protocol/openid-connect/certs}
+      issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8001/realms/am-realm}
+      client-id: ${OAUTH2_CLIENT_ID:am-document-processor-client}
+      client-secret: ${OAUTH2_CLIENT_SECRET:secret}
+    public-paths:
+      - "/actuator/**"
+      - "/document-processor/actuator/**"
+      - "/v1/documents/types"
+    protected-paths:
+      - "/v1/documents/process"
+      - "/v1/documents/batch-process"
+      - "/v1/documents/status/**"
+  api:
+    core:
+      exception-handler:
+        enabled: true

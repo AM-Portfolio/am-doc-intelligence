@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,6 +18,7 @@ import java.util.Map;
  */
 @RestControllerAdvice
 @Slf4j
+@ConditionalOnProperty(prefix = "am.api.core.exception-handler", name = "enabled", havingValue = "false", matchIfMissing = true)
 public class GlobalExceptionHandler {
 
     /**

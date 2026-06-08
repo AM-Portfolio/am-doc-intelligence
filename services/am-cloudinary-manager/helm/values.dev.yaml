@@ -17,6 +17,10 @@ vault:
   secretPaths:
     cloudinary:
       path: "secret/data/dev/apps/docs/cloudinary"
+    identity-oidc:
+      path: "apps/data/dev/services/am-identity"
+    service-oauth:
+      path: "apps/data/dev/services/am-cloudinary-manager"
 
 config:
   app:

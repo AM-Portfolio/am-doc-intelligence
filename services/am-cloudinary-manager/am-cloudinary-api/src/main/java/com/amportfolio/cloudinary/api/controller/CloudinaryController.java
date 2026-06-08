@@ -58,7 +58,7 @@ public class CloudinaryController {
         }
     }
 
-    @GetMapping(value = "/resources/{publicId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/resources/{*publicId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get resource details", description = "Retrieves details of a specific resource by its public ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Resource details retrieved successfully",
@@ -98,7 +98,7 @@ public class CloudinaryController {
         }
     }
 
-    @DeleteMapping(value = "/resources/{publicId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/resources/{*publicId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Delete resource", description = "Deletes a resource by its public ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Resource deleted successfully"),
