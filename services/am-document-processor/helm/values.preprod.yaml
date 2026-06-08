@@ -1,8 +1,24 @@
+environment: preprod
+
+vault:
+  enabled: true
+  secretPaths:
+    mongodb:
+      path: "apps/data/preprod/infra/mongodb"
+    kafka:
+      path: "apps/data/preprod/infra/kafka"
+    auth:
+      path: "apps/data/preprod/services/am-auth"
+    identity-oidc:
+      path: "apps/data/preprod/services/am-identity"
+    service-oauth:
+      path: "apps/data/preprod/services/am-document-processor"
+
 ingress:
   enabled: true
   className: "nginx"
   hosts:
     - host: doc-intelligence.local
       paths:
-        - path: /v1/processor
+        - path: /doc/processor
           pathType: Prefix

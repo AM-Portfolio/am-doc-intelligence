@@ -4,7 +4,7 @@ ingress:
   hosts:
     - host: api.amportfolio.com
       paths:
-        - path: /v1/processor
+        - path: /doc/processor
           pathType: Prefix
 
 vault:

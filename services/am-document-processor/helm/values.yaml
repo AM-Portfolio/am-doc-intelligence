@@ -43,35 +43,9 @@ resources:
 vault:
   enabled: true
   role: "am-backend-role"
-  secretPaths:
-    mongodb:
-      path: "apps/data/preprod/infra/mongodb"
-      template: |
-        export MONGODB_URL="{{ index .Data.data "url" }}"
-    kafka:
-      path: "apps/data/preprod/infra/kafka"
-      template: |
-        export KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export KAFKA_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
-        export KAFKA_PASSWORD="{{ index .Data.data "password" }}"
-        export KAFKA_USERNAME="{{ index .Data.data "username" }}"
-        export SPRING_KAFKA_BOOTSTRAP_SERVERS="{{ index .Data.data "bootstrap_servers" }}"
-        export SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"{{ .Data.data.username }}\" password=\"{{ .Data.data.password }}\";"
-    auth:
-      path: "apps/data/preprod/services/am-auth"
-      template: |
-        export INTERNAL_JWT_SECRET="{{ index .Data.data "SECRET_KEY" }}"
-        export JWT_SECRET="{{ index .Data.data "JWT_SECRET" }}"
-    identity-oidc:
-      path: "apps/data/preprod/services/am-identity"
-      template: |
-        export OIDC_JWKS_URI="{{ index .Data.data "OIDC_JWKS_URL" }}"
-        export OIDC_ISSUER_URI="{{ index .Data.data "OIDC_ISSUER" }}"
-    service-oauth:
-      path: "apps/data/preprod/services/am-document-processor"
-      template: |
-        export OAUTH2_CLIENT_ID="{{ index .Data.data "AM_DOCUMENT_PROCESSOR_CLIENT_ID" }}"
-        export OAUTH2_CLIENT_SECRET="{{ index .Data.data "AM_DOCUMENT_PROCESSOR_CLIENT_SECRET" }}"
+  # Paths are provided per-environment in values.{env}.yaml
+  # Mappings (env var → vault key) are in vault-mappings.yaml
+  secretPaths: {}
 
 env:
   SPRING_PROFILES_ACTIVE: "preprod,security"
