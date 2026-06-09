@@ -813,9 +813,10 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 rowData.put("Trade Date", dateStr);
 
             } else {
-                // FORMAT 1: TRADE HISTORY (Legacy)
+                // FORMAT 1: TRADE HISTORY (Legacy & Modern Excel formats)
                 // Dynamic Column Mapping
                 int scripIdx = -1, typeIdx = -1, buyPriceIdx = -1, sellPriceIdx = -1, quantityIdx = -1, dateIdx = -1;
+                int exchangeIdx = -1, orderIdIdx = -1, tradeIdIdx = -1, segmentIdx = -1;
 
                 for (int i = 0; i < headers.size(); i++) {
                     String h = headers.get(i).toLowerCase();
@@ -832,6 +833,14 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                     else if ((h.contains("date") && !h.contains("payout") && !h.contains("payin"))
                             || h.equals("trade date"))
                         dateIdx = i;
+                    else if (h.contains("exchange"))
+                        exchangeIdx = i;
+                    else if (h.contains("order id") || h.contains("orderid"))
+                        orderIdIdx = i;
+                    else if (h.contains("trade id") || h.contains("tradeid"))
+                        tradeIdIdx = i;
+                    else if (h.contains("segment"))
+                        segmentIdx = i;
                 }
 
                 // Fallbacks
@@ -859,7 +868,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
                 String quantityStr = getCellValueAsString(row.getCell(quantityIdx));
                 // Skip if quantity is missing or 0
-                if (quantityStr.isEmpty() || "0".equals(quantityStr))
+                if (quantityStr.isEmpty() || "0".equals(quantityStr) || "0.0".equals(quantityStr))
                     continue;
 
                 rowData.put("Symbol", scrip);
@@ -867,26 +876,53 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
                 String buyPrice = getCellValueAsString(row.getCell(buyPriceIdx));
                 String sellPrice = getCellValueAsString(row.getCell(sellPriceIdx));
-                String priceRaw = !buyPrice.isEmpty() && !"0".equals(buyPrice) ? buyPrice : sellPrice;
+                String priceRaw = !buyPrice.isEmpty() && !"0".equals(buyPrice) && !"0.0".equals(buyPrice) ? buyPrice : sellPrice;
 
                 // Sanitize price (remove commas, handle empty)
                 rowData.put("Price", sanitizeNumeric(priceRaw));
                 rowData.put("Quantity", sanitizeNumeric(quantityStr));
 
                 String dateStr = getCellValueAsString(row.getCell(dateIdx));
+                // Handle LocalDateTime format (e.g. 2025-02-10T00:00) or space-separated times
+                if (dateStr.contains("T")) {
+                    dateStr = dateStr.split("T")[0];
+                } else if (dateStr.contains(" ")) {
+                    dateStr = dateStr.split(" ")[0];
+                }
+
                 // Normalize date if needed (usually dd-MMM-yyyy or dd/MM/yyyy in Format 1)
-                // Angel One Trade History often uses "20-Jan-2023" or "20/01/2023"
-                // Try to parse if it's not in standard ISO format
                 if (dateStr.matches("\\d{2}-\\w{3}-\\d{4}")) { // e.g. 10-Nov-2022
                     try {
                         java.time.LocalDate date = java.time.LocalDate.parse(dateStr,
                                 java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
                         dateStr = date.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
                     } catch (Exception e) {
-                        log.warn("Failed to parse date (Format 1): {}", dateStr);
+                        log.warn("Failed to parse date (Format 1 -): {}", dateStr);
+                    }
+                } else if (dateStr.matches("\\d{2}/\\d{2}/\\d{4}")) { // e.g. 10/11/2022
+                    try {
+                        java.time.LocalDate date = java.time.LocalDate.parse(dateStr,
+                                java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                        dateStr = date.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse date (Format 1 /): {}", dateStr);
                     }
                 }
                 rowData.put("Trade Date", dateStr);
+
+                // Add other available fields
+                if (exchangeIdx != -1) {
+                    rowData.put("Exchange", getCellValueAsString(row.getCell(exchangeIdx)));
+                }
+                if (orderIdIdx != -1) {
+                    rowData.put("Order ID", getCellValueAsString(row.getCell(orderIdIdx)));
+                }
+                if (tradeIdIdx != -1) {
+                    rowData.put("Trade ID", getCellValueAsString(row.getCell(tradeIdIdx)));
+                }
+                if (segmentIdx != -1) {
+                    rowData.put("Segment", getCellValueAsString(row.getCell(segmentIdx)));
+                }
             }
 
             if (!rowData.isEmpty()) {

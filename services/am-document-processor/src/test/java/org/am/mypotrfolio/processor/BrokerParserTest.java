@@ -199,4 +199,32 @@ class BrokerParserTest {
         assertTrue(result.isEmpty(), "Groww MF trade history should be empty for a file with no transactions");
         printResults("Groww MF Trade History (Empty)", result);
     }
+
+    @Test
+    void testParseAngelOneTradeHistory() throws Exception {
+        MockMultipartFile file = createMockFile("docs/a1338c6d-d30e-4595-b9f4-bdb4bd2fec33.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, null);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Angel One trade history should not be empty");
+        printResults("Angel One Trade History", result);
+
+        Map<String, String> row = result.get(0);
+        assertTrue(row.containsKey("Symbol"), "Parsed row should contain Symbol");
+        assertTrue(row.containsKey("Price"), "Parsed row should contain Price");
+        assertTrue(row.containsKey("Trade Date"), "Parsed row should contain Trade Date");
+        assertTrue(row.containsKey("Order ID"), "Parsed row should contain Order ID");
+        assertTrue(row.containsKey("Trade ID"), "Parsed row should contain Trade ID");
+        assertTrue(row.containsKey("Exchange"), "Parsed row should contain Exchange");
+        
+        // Assert specific row contents from the test file:
+        // 'BHARTI AIRTEL LIMITE', 'Sell', '', 1687.9, 3
+        assertEquals("BHARTI AIRTEL LIMITE", row.get("Symbol"));
+        assertEquals("Sell", row.get("Type"));
+        assertEquals("1687.9", row.get("Price"));
+        assertEquals("3.0", row.get("Quantity"));
+        assertEquals("2025-02-10", row.get("Trade Date"));
+        assertEquals("1000000018181238", row.get("Order ID"));
+        assertEquals("2338290", row.get("Trade ID"));
+        assertEquals("NSE", row.get("Exchange"));
+    }
 }
