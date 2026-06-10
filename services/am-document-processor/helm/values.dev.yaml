@@ -28,6 +28,10 @@ vault:
 
 env:
   SPRING_PROFILES_ACTIVE: "dev,security"
+  AUTH_ENABLED: "false"
+  AM_SECURITY_ENABLED: "false"
+
+
 
 hostAliases:
   - ip: "203.174.22.129"
