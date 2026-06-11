@@ -156,6 +156,41 @@ class BrokerParserTest {
     }
 
     @Test
+    void testParseMStockPortfolioNew() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Portfolio_report_1781113687706.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseMStockFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "MStock portfolio should not be empty");
+        printResults("MStock Portfolio New", result);
+
+        // Verify some properties from MStock Portfolio report
+        Map<String, String> row = result.get(0);
+        assertTrue(row.containsKey("Symbol"), "Parsed row should contain Symbol");
+        assertTrue(row.containsKey("Quantity"), "Parsed row should contain Quantity");
+        assertTrue(row.containsKey("Average Price"), "Parsed row should contain Average Price");
+        assertEquals("APLLTD", row.get("Symbol"));
+        assertEquals("3", row.get("Quantity"));
+        assertEquals("1145.55", row.get("Average Price"));
+    }
+
+    @Test
+    void testParseMStockTradeHistoryNew() throws Exception {
+        MockMultipartFile file = createMockFile("docs/trade_history2025-04-01_2026-03-31_1781113567782.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseMStockFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "MStock trade history should not be empty");
+        printResults("MStock Trade History New", result);
+
+        // Verify first row contents from MStock Trade History
+        Map<String, String> row = result.get(0);
+        assertEquals("BAJAJ-AUTO", row.get("Symbol"));
+        assertEquals("Sell", row.get("Type"));
+        assertEquals("5", row.get("Quantity"));
+        assertEquals("8765.00", row.get("Price"));
+        assertEquals("2025-08-19", row.get("Trade Date"));
+    }
+
+    @Test
     void testParseNewGrowwStocks() throws Exception {
         MockMultipartFile file = createMockFile("docs/Stocks_Holdings_Statement_3060484652_2026-05-23.xlsx");
         List<Map<String, String>> result = excelProcessor.parseGrowFile(file);

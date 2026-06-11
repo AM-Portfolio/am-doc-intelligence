@@ -39,11 +39,17 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             Sheet sheet = workbook.getSheetAt(0);
 
             // Try to find "Trade Date" header
-            int headerRow = findHeaderRow(sheet, "Trade Date", "Exchange");
-            if (headerRow > 0 || (headerRow == 0
-                    && "Trade Date".equalsIgnoreCase(getCellValueAsString(sheet.getRow(0).getCell(0))))) {
-                log.info("Detected MStock Trade History format (Header at row {})", headerRow);
-                return parseMStockTradeHistory(workbook, headerRow);
+            int tradeHeaderRow = findHeaderRow(sheet, "Trade Date", "Exchange");
+            if (tradeHeaderRow >= 0) {
+                log.info("Detected MStock Trade History format (Header at row {})", tradeHeaderRow);
+                return parseMStockTradeHistory(workbook, tradeHeaderRow);
+            }
+
+            // Try to find "Scrip Name" or "Total Qty" header for Portfolio
+            int portfolioHeaderRow = findHeaderRow(sheet, "Scrip Name", "Total Qty");
+            if (portfolioHeaderRow >= 0) {
+                log.info("Detected MStock Portfolio format (Header at row {})", portfolioHeaderRow);
+                return parseMStockPortfolio(workbook, portfolioHeaderRow);
             }
         } catch (Exception e) {
             log.warn("Failed to inspect MStock file content, falling back to default", e);
@@ -1003,10 +1009,17 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             if (row.getRowNum() <= headerRow)
                 continue;
 
-            String tradeDate = getCellValueAsString(row.getCell(0));
-            // Stop if date is missing or doesn't look like a date (dd-MM-yyyy)
-            if (tradeDate.isEmpty() || !tradeDate.matches("\\d{2}-\\d{2}-\\d{4}")) {
-                log.debug("Skipping non-date row in MStock file: {}", tradeDate);
+            String tradeDateRaw = getCellValueAsString(row.getCell(0));
+            String tradeDate = tradeDateRaw;
+            if (tradeDate.contains("T")) {
+                tradeDate = tradeDate.split("T")[0];
+            } else if (tradeDate.contains(" ")) {
+                tradeDate = tradeDate.split(" ")[0];
+            }
+
+            // Stop or skip if date is missing or doesn't look like a date
+            if (tradeDate.isEmpty() || (!tradeDate.matches("\\d{2}-\\d{2}-\\d{4}") && !tradeDate.matches("\\d{4}-\\d{2}-\\d{2}"))) {
+                log.debug("Skipping non-date row in MStock file: {}", tradeDateRaw);
                 continue;
             }
 
@@ -1022,14 +1035,16 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             rowData.put("Type", type);
             rowData.put("Quantity", qty);
             rowData.put("Price", price);
-            rowData.put("Trade Date", tradeDate); // Format seems to be dd-MM-yyyy or dd-MM-yyyy
 
             // Date Normalization
             try {
-                // "19-08-2025" -> dd-MM-yyyy
-                java.time.LocalDate date = java.time.LocalDate.parse(tradeDate,
-                        java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-                rowData.put("Trade Date", date.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE));
+                if (tradeDate.matches("\\d{2}-\\d{2}-\\d{4}")) {
+                    java.time.LocalDate date = java.time.LocalDate.parse(tradeDate,
+                            java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                    rowData.put("Trade Date", date.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE));
+                } else {
+                    rowData.put("Trade Date", tradeDate);
+                }
             } catch (Exception e) {
                 log.warn("Failed to parse date (MStock): {}", tradeDate);
             }
@@ -1038,6 +1053,62 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
         }
 
         log.info("Parsed {} trade records from MStock", jsonList.size());
+        return jsonList;
+    }
+
+    private List<Map<String, String>> parseMStockPortfolio(Workbook workbook, int headerRow) throws Exception {
+        List<Map<String, String>> jsonList = new ArrayList<>();
+        Sheet sheet = workbook.getSheetAt(0);
+
+        log.info("Parsing MStock Portfolio from sheet: {} with header at row {}", sheet.getSheetName(), headerRow);
+
+        Row hr = sheet.getRow(headerRow);
+        if (hr == null) {
+            log.warn("MStock Portfolio header row is null");
+            return jsonList;
+        }
+
+        List<String> headers = new ArrayList<>();
+        int lastCellNum = hr.getLastCellNum();
+        for (int c = 0; c < lastCellNum; c++) {
+            Cell cell = hr.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+            cell.setCellType(CellType.STRING);
+            headers.add(cell.getStringCellValue().trim());
+        }
+
+        Iterator<Row> rowIterator = sheet.iterator();
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            if (row.getRowNum() <= headerRow) continue;
+
+            String scripName = getCellValueAsString(row.getCell(0));
+            // Stop/skip if empty or starts with TOTAL/note
+            if (scripName.isEmpty() || scripName.equalsIgnoreCase("TOTAL") || scripName.contains("Note:"))
+                continue;
+
+            Map<String, String> rowData = new HashMap<>();
+            for (int i = 0; i < headers.size(); i++) {
+                Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                rowData.put(headers.get(i), getCellValueAsString(cell));
+            }
+
+            // Normalize fields
+            if (rowData.containsKey("Total Qty")) {
+                rowData.put("Quantity", rowData.get("Total Qty"));
+            }
+            if (rowData.containsKey("Avg. Buy Price")) {
+                rowData.put("Average Price", rowData.get("Avg. Buy Price"));
+            }
+            if (rowData.containsKey("Invested Value")) {
+                rowData.put("Investment Value", rowData.get("Invested Value"));
+            }
+            if (rowData.containsKey("Scrip Name")) {
+                rowData.put("Symbol", rowData.get("Scrip Name"));
+                rowData.put("Name", rowData.get("Scrip Name"));
+            }
+            jsonList.add(rowData);
+        }
+        log.info("Parsed {} records from MStock Portfolio", jsonList.size());
         return jsonList;
     }
 
