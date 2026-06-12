@@ -1082,8 +1082,12 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             if (row.getRowNum() <= headerRow) continue;
 
             String scripName = getCellValueAsString(row.getCell(0));
-            // Stop/skip if empty or starts with TOTAL/note
-            if (scripName.isEmpty() || scripName.equalsIgnoreCase("TOTAL") || scripName.contains("Note:"))
+            // Stop/skip if empty, TOTAL, or starts/contains disclaimer footer notes
+            String scripLower = scripName.toLowerCase();
+            if (scripName.isEmpty() || scripLower.equalsIgnoreCase("total") || scripLower.contains("note:") ||
+                scripLower.contains("computer-generated") || scripLower.contains("independently verify") ||
+                scripLower.contains("reasonable care") || scripLower.contains("responsibility") || 
+                scripLower.contains("macm") || scripLower.contains("signature"))
                 continue;
 
             Map<String, String> rowData = new HashMap<>();
