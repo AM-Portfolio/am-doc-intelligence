@@ -26,8 +26,8 @@ public class DocumentProcessorService {
     private final DocumentProcessor documentProcessor;
 
     public DocumentProcessResponse processDocument(MultipartFile file, DocumentType documentType, String portfolioId,
-            BrokerType explicitBrokerType, String userId, String password) {
-        var documentRequest = getDocumentRequest(file, documentType, portfolioId, explicitBrokerType, userId, password);
+            String explicitBrokerTypeStr, String userId, String password) {
+        var documentRequest = getDocumentRequest(file, documentType, portfolioId, explicitBrokerTypeStr, userId, password);
         log.info("[ProcessId: {}] Starting document processing for type: {}", documentRequest.getRequestId(),
                 documentType);
         processStatusMap.put(documentRequest.getRequestId(), ProcessingStatus.QUEUED);
@@ -58,17 +58,30 @@ public class DocumentProcessorService {
     }
 
     private DocumentRequest getDocumentRequest(MultipartFile file, DocumentType documentType, String portfolioId,
-            BrokerType explicitBrokerType, String userId, String password) {
+            String explicitBrokerTypeStr, String userId, String password) {
         UUID processId = UUID.randomUUID();
+        
+        BrokerType explicitBrokerType = null;
+        if (explicitBrokerTypeStr != null && !explicitBrokerTypeStr.equalsIgnoreCase("UPSTOX")) {
+            try {
+                explicitBrokerType = BrokerType.valueOf(explicitBrokerTypeStr);
+            } catch (IllegalArgumentException e) {
+                // Ignore, handled by detection or UPSTOX specific check
+            }
+        }
+        
         // Use explicit broker type if provided, otherwise detect
         BrokerType brokerType = explicitBrokerType != null ? explicitBrokerType : detectBrokerType(file, password);
+        
+        String rawBrokerType = explicitBrokerTypeStr != null && explicitBrokerTypeStr.equalsIgnoreCase("UPSTOX") 
+                ? "UPSTOX" : null;
 
         return DocumentRequest.builder().file(file).documentType(documentType).requestId(processId)
-                .brokerType(brokerType).portfolioId(portfolioId).userId(userId).password(password).build();
+                .brokerType(brokerType).rawBrokerType(rawBrokerType).portfolioId(portfolioId).userId(userId).password(password).build();
     }
 
     public List<DocumentProcessResponse> processBatchDocuments(List<MultipartFile> files, DocumentType documentType,
-            String portfolioId, String userId) {
+            String portfolioId, String explicitBrokerTypeStr, String userId) {
         UUID batchId = UUID.randomUUID();
         log.info("[BatchId: {}] Starting batch processing of {} documents", batchId, files.size());
         List<DocumentProcessResponse> responses = new ArrayList<>();

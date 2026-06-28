@@ -101,7 +101,7 @@ public class DocumentProcessorController {
             @Parameter(description = "Portfolio document file to process", required = true) @RequestParam("file") MultipartFile file,
             @Parameter(description = "Type of document being processed", required = true) @RequestParam("documentType") DocumentType documentType,
             @Parameter(description = "Portfolio ID (optional)", required = false) @RequestParam(value = "portfolioId", required = false) String portfolioId,
-            @Parameter(description = "Explicit Broker Type (optional)", required = false) @RequestParam(value = "brokerType", required = false) BrokerType brokerType,
+            @Parameter(description = "Explicit Broker Type (optional)", required = false) @RequestParam(value = "brokerType", required = false) String brokerTypeStr,
             @RequestHeader(value = "X-User-ID", required = false) String userIdHeader, // Optional: API Gateway injects this; UI can pass it directly
             @Parameter(description = "Document Password (optional)", required = false) @RequestParam(value = "password", required = false) String password) {
 
@@ -119,14 +119,14 @@ public class DocumentProcessorController {
         }
 
         log.info("Processing document for user: {}, type: {}, portfolio: {}, broker: {}",
-                userId, documentType, portfolioId, brokerType);
+                userId, documentType, portfolioId, brokerTypeStr);
 
         try {
             DocumentProcessResponse response = documentProcessorService.processDocument(
                     file,
                     documentType,
                     portfolioId,
-                    brokerType,
+                    brokerTypeStr,
                     userId,
                     password
             );
@@ -161,6 +161,7 @@ public class DocumentProcessorController {
             @Parameter(description = "List of portfolio document files to process", required = true) @RequestParam("files") List<MultipartFile> files,
             @Parameter(description = "Type of documents being processed", required = true) @RequestParam("documentType") DocumentType documentType,
             @Parameter(description = "Portfolio ID (optional)", required = false) @RequestParam(value = "portfolioId", required = false) String portfolioId,
+            @Parameter(description = "Explicit Broker Type (optional)", required = false) @RequestParam(value = "brokerType", required = false) String brokerTypeStr,
             @RequestHeader(value = "X-User-ID", required = false) String userIdHeader) {
 
         String userId = userIdHeader;
@@ -174,8 +175,8 @@ public class DocumentProcessorController {
             return ResponseEntity.badRequest().body(new ErrorResponse("Cannot determine user identity"));
         }
 
-        log.info("Batch processing {} documents for user: {}, type: {}",
-                files.size(), userId, documentType);
+        log.info("Batch processing {} documents for user: {}, type: {}, portfolio: {}, broker: {}",
+                files.size(), userId, documentType, portfolioId, brokerTypeStr);
 
         try {
             // ✅ Just call service with user_id from header
@@ -183,6 +184,7 @@ public class DocumentProcessorController {
                     files,
                     documentType,
                     portfolioId,
+                    brokerTypeStr,
                     userId // ← Directly from API Gateway header
             );
 

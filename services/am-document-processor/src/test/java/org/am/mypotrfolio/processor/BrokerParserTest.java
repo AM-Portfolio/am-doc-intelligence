@@ -147,6 +147,26 @@ class BrokerParserTest {
     }
 
     @Test
+    void testParseZerodhaTradebookFONew() throws Exception {
+        MockMultipartFile file = createMockFile("docs/tradebook-ZC3978-FNO_Zerodha.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseZerodhaTradeFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Zerodha tradebook FNO new should not be empty");
+        printResults("Zerodha Tradebook FNO New", result);
+
+        // Check fields of first row
+        Map<String, String> row = result.get(0);
+        assertEquals("RELIANCE20AUGFUT", row.get("Symbol"));
+        assertEquals("sell", row.get("Type"));
+        assertEquals("505.0", row.get("Quantity"));
+        assertEquals("2120.05", row.get("Price"));
+        assertEquals("NSE", row.get("Exchange"));
+        assertEquals("FO", row.get("Segment"));
+        assertEquals("93369747", row.get("Trade ID"));
+        assertEquals("1500000023079946", row.get("Order ID"));
+    }
+
+    @Test
     void testParseMStockTradeHistory() throws Exception {
         MockMultipartFile file = createMockFile("docs/trade_history2024-06-21_2026-02-11_1770823206679.xlsx");
         List<Map<String, String>> result = excelProcessor.parseMStockFile(file);
@@ -237,6 +257,24 @@ class BrokerParserTest {
 
     @Test
     void testParseAngelOneTradeHistory() throws Exception {
+        MockMultipartFile file = createMockFile("docs/AngelOne_Trade_History_Report.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, null);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Angel One trade history should not be empty");
+        printResults("Angel One Trade History", result);
+    }
+
+    @Test
+    void testParseAngelOneCombinedPortfolio() throws Exception {
+        MockMultipartFile file = createMockFile("docs/Your Holding Details - P824583.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, "JYQPK9320A");
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Angel One combined portfolio should not be empty");
+        printResults("Angel One Combined Portfolio", result);
+    }
+
+    @Test
+    void testParseAngelOneTradeHistoryLegacy() throws Exception {
         MockMultipartFile file = createMockFile("docs/a1338c6d-d30e-4595-b9f4-bdb4bd2fec33.xlsx");
         List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, null);
         assertNotNull(result);

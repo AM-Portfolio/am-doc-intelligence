@@ -20,6 +20,7 @@ public class DocumentRequest {
 
     private UUID requestId;
     private BrokerType brokerType;
+    private String rawBrokerType;
     private DocumentType documentType;
     private MultipartFile file;
     private String portfolioId;

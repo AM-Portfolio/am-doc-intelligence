@@ -42,6 +42,11 @@ public abstract class AbstractFileProcessor implements FileProcessor {
             } else if (brokerType.isAngelOne()) {
                 log.debug("Using Angel One parser");
                 return parseAngelOneFile(file, documentRequest.getPassword());
+            } else if ("UPSTOX".equalsIgnoreCase(documentRequest.getRawBrokerType())) {
+                log.debug("Using Upstox parser");
+                return documentRequest.getDocumentType() == DocumentType.TRADE_EQ
+                        ? parseUpstoxTradeFile(file)
+                        : parseUpstoxFile(file);
             }
             log.debug("Using default Dhan parser");
             return parseDhanFile(file);
@@ -66,6 +71,10 @@ public abstract class AbstractFileProcessor implements FileProcessor {
 
     protected abstract List<Map<String, String>> parseAngelOneFile(MultipartFile file, String password)
             throws Exception;
+
+    protected abstract List<Map<String, String>> parseUpstoxFile(MultipartFile file) throws Exception;
+
+    protected abstract List<Map<String, String>> parseUpstoxTradeFile(MultipartFile file) throws Exception;
 
     protected abstract List<Map<String, String>> parseNseSecurityFile(MultipartFile file) throws Exception;
 

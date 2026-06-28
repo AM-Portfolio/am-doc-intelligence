@@ -1196,4 +1196,110 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
         return jsonList;
     }
+
+    @Override
+    protected List<Map<String, String>> parseUpstoxFile(MultipartFile file) throws Exception {
+        int headerRow = 0;
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            headerRow = findHeaderRow(sheet, "ISIN", "Scrip Name");
+            if (headerRow == -1) {
+                log.warn("Upstox header not found, defaulting to row 8");
+                headerRow = 8;
+            }
+        }
+
+        List<Map<String, String>> rows = parseExcelFile(file, headerRow, headerRow, 0);
+        List<Map<String, String>> cleanedRows = new ArrayList<>();
+
+        for (Map<String, String> row : rows) {
+            String scripName = row.getOrDefault("Scrip Name", "");
+            if (scripName == null || scripName.trim().isEmpty())
+                continue;
+
+            // Map fields to match standard StockAsset names if needed
+            if (row.containsKey("Current Qty") && !row.containsKey("Quantity")) {
+                row.put("Quantity", row.get("Current Qty"));
+            }
+            if (row.containsKey("Rate") && !row.containsKey("Average Price")) {
+                row.put("Average Price", row.get("Rate"));
+            }
+            if (row.containsKey("Valuation") && !row.containsKey("Investment")) {
+                row.put("Investment", row.get("Valuation"));
+            }
+
+            cleanedRows.add(row);
+        }
+        return cleanedRows;
+    }
+
+    @Override
+    protected List<Map<String, String>> parseUpstoxTradeFile(MultipartFile file) throws Exception {
+        List<Map<String, String>> jsonList = new ArrayList<>();
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Find Header Row (Look for "Company" or "Scrip Code")
+            int headerRowIdx = findHeaderRow(sheet, "Company", "Scrip Code");
+            if (headerRowIdx == -1) {
+                headerRowIdx = 8; // Default fallback for upstox trade file
+                log.warn("Upstox Trade header not found, defaulting to row {}", headerRowIdx);
+            }
+
+            Row headerRow = sheet.getRow(headerRowIdx);
+            Map<String, Integer> colMap = new HashMap<>();
+
+            for (Cell cell : headerRow) {
+                String header = getCellValueAsString(cell).trim();
+                colMap.put(header.toLowerCase(), cell.getColumnIndex());
+            }
+            log.info("Upstox Trade Column Mapping: {}", colMap);
+
+            int symbolIdx = colMap.getOrDefault("company", -1);
+            int isinIdx = colMap.getOrDefault("scrip code", -1);
+            int typeIdx = colMap.getOrDefault("side", -1);
+            int qtyIdx = colMap.getOrDefault("quantity", -1);
+            int priceIdx = colMap.getOrDefault("price", -1);
+            int dateIdx = colMap.getOrDefault("date", -1);
+            int exchangeIdx = colMap.getOrDefault("exchange", -1);
+            int segmentIdx = colMap.getOrDefault("segment", -1);
+            int orderIdIdx = colMap.getOrDefault("trade num", -1);
+            int orderExecutionTimeIdx = colMap.getOrDefault("trade time", -1);
+
+            for (int i = headerRowIdx + 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                
+                String symbol = symbolIdx != -1 ? getCellValueAsString(row.getCell(symbolIdx)).trim() : "";
+                if (symbol.isEmpty()) continue; // skip empty rows
+
+                String isin = isinIdx != -1 ? getCellValueAsString(row.getCell(isinIdx)).trim() : "";
+                String type = typeIdx != -1 ? getCellValueAsString(row.getCell(typeIdx)).trim() : "";
+                String qty = qtyIdx != -1 ? getCellValueAsString(row.getCell(qtyIdx)).trim() : "";
+                String price = priceIdx != -1 ? getCellValueAsString(row.getCell(priceIdx)).trim() : "";
+                String dateStr = dateIdx != -1 ? getCellValueAsString(row.getCell(dateIdx)).trim() : "";
+                String exchange = exchangeIdx != -1 ? getCellValueAsString(row.getCell(exchangeIdx)).trim() : "";
+                String segment = segmentIdx != -1 ? getCellValueAsString(row.getCell(segmentIdx)).trim() : "";
+                String orderId = orderIdIdx != -1 ? getCellValueAsString(row.getCell(orderIdIdx)).trim() : "";
+                String orderExecutionTime = orderExecutionTimeIdx != -1 ? getCellValueAsString(row.getCell(orderExecutionTimeIdx)).trim() : "";
+
+                Map<String, String> rowData = new LinkedHashMap<>();
+                rowData.put("Symbol", symbol);
+                rowData.put("Trade Date", dateStr);
+                rowData.put("Type", type);
+                rowData.put("Quantity", qty);
+                rowData.put("Price", price);
+                rowData.put("Exchange", exchange);
+                rowData.put("Segment", segment);
+                rowData.put("ISIN", isin);
+                rowData.put("Order ID", orderId);
+                rowData.put("Order Execution Time", orderExecutionTime);
+
+                jsonList.add(rowData);
+            }
+        }
+        return jsonList;
+    }
 }

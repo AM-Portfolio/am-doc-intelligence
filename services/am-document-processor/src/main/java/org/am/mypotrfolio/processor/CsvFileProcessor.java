@@ -68,6 +68,16 @@ public class CsvFileProcessor extends AbstractFileProcessor {
         return parseCsvFile(file, 0);
     }
 
+    @Override
+    protected List<Map<String, String>> parseUpstoxFile(MultipartFile file) throws Exception {
+        return parseCsvFile(file, 0);
+    }
+
+    @Override
+    protected List<Map<String, String>> parseUpstoxTradeFile(MultipartFile file) throws Exception {
+        return parseCsvFile(file, 0);
+    }
+
     private List<Map<String, String>> parseCsvWithHeaderDetection(MultipartFile file, String[] possibleHeaders)
             throws Exception {
         List<Map<String, String>> data = new ArrayList<>();
