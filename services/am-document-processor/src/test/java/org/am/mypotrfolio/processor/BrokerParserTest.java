@@ -300,4 +300,22 @@ class BrokerParserTest {
         assertEquals("2338290", row.get("Trade ID"));
         assertEquals("NSE", row.get("Exchange"));
     }
+
+    @Test
+    void testParseUpstoxHoldings() throws Exception {
+        MockMultipartFile file = createMockFile("docs/holdings_27-06-2026_5QBFU4.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseUpstoxFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Upstox holdings should not be empty");
+        printResults("Upstox Holdings", result);
+    }
+
+    @Test
+    void testParseUpstoxTrades() throws Exception {
+        MockMultipartFile file = createMockFile("docs/trade_20250401_20260331_5QBFU4.xlsx");
+        List<Map<String, String>> result = excelProcessor.parseUpstoxTradeFile(file);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Upstox trades should not be empty");
+        printResults("Upstox Trades", result);
+    }
 }

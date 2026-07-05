@@ -1149,6 +1149,8 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 headers.add(header);
             }
 
+            log.info("parseExcelFile headers: {}, lastCellNum: {}", headers, lastCellNum);
+
             // Normalize headers to match StockAsset fields
             for (int i = 0; i < headers.size(); i++) {
                 String h = headers.get(i);
@@ -1180,6 +1182,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                     values[valueIndex] = cell.getStringCellValue().trim();
                     valueIndex++;
                 }
+                log.info("Row {}: values = {}", r, Arrays.toString(values));
 
                 Map<String, String> rowData = createRowData(finalHeaders.toArray(new String[0]), values);
                 if (rowData != null) {
@@ -1199,37 +1202,63 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
     @Override
     protected List<Map<String, String>> parseUpstoxFile(MultipartFile file) throws Exception {
-        int headerRow = 0;
+        List<Map<String, String>> cleanedRows = new ArrayList<>();
         try (InputStream is = file.getInputStream();
                 Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            headerRow = findHeaderRow(sheet, "ISIN", "Scrip Name");
-            if (headerRow == -1) {
+            int headerRowIdx = findHeaderRow(sheet, "ISIN", "Scrip Name");
+            if (headerRowIdx == -1) {
                 log.warn("Upstox header not found, defaulting to row 8");
-                headerRow = 8;
-            }
-        }
-
-        List<Map<String, String>> rows = parseExcelFile(file, headerRow, headerRow, 0);
-        List<Map<String, String>> cleanedRows = new ArrayList<>();
-
-        for (Map<String, String> row : rows) {
-            String scripName = row.getOrDefault("Scrip Name", "");
-            if (scripName == null || scripName.trim().isEmpty())
-                continue;
-
-            // Map fields to match standard StockAsset names if needed
-            if (row.containsKey("Current Qty") && !row.containsKey("Quantity")) {
-                row.put("Quantity", row.get("Current Qty"));
-            }
-            if (row.containsKey("Rate") && !row.containsKey("Average Price")) {
-                row.put("Average Price", row.get("Rate"));
-            }
-            if (row.containsKey("Valuation") && !row.containsKey("Investment")) {
-                row.put("Investment", row.get("Valuation"));
+                headerRowIdx = 8;
             }
 
-            cleanedRows.add(row);
+            Row hr = sheet.getRow(headerRowIdx);
+            if (hr == null) {
+                return cleanedRows;
+            }
+
+            int lastCellNum = hr.getLastCellNum();
+            List<String> headers = new ArrayList<>();
+            for (int c = 0; c < lastCellNum; c++) {
+                Cell cell = hr.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                String header = getCellValueAsString(cell).trim();
+                headers.add(header);
+            }
+
+            for (int r = headerRowIdx + 1; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                Map<String, String> rowData = new LinkedHashMap<>();
+                boolean hasData = false;
+                for (int c = 0; c < lastCellNum && c < headers.size(); c++) {
+                    Cell cell = row.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    String val = getCellValueAsString(cell).trim();
+                    if (!val.isEmpty()) {
+                        hasData = true;
+                    }
+                    rowData.put(headers.get(c), val);
+                }
+
+                if (hasData) {
+                    String scripName = rowData.getOrDefault("Scrip Name", "");
+                    if (scripName == null || scripName.trim().isEmpty())
+                        continue;
+
+                    // Map fields to match standard StockAsset names if needed
+                    if (rowData.containsKey("Current Qty") && !rowData.containsKey("Quantity")) {
+                        rowData.put("Quantity", rowData.get("Current Qty"));
+                    }
+                    if (rowData.containsKey("Rate") && !rowData.containsKey("Average Price")) {
+                        rowData.put("Average Price", rowData.get("Rate"));
+                    }
+                    if (rowData.containsKey("Valuation") && !rowData.containsKey("Investment")) {
+                        rowData.put("Investment", rowData.get("Valuation"));
+                    }
+
+                    cleanedRows.add(rowData);
+                }
+            }
         }
         return cleanedRows;
     }

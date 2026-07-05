@@ -16,8 +16,15 @@ public abstract class AbstractFileProcessor implements FileProcessor {
     @Override
     public List<Map<String, String>> processFile(MultipartFile file, DocumentRequest documentRequest) {
         BrokerType brokerType = documentRequest.getBrokerType();
-        log.info("Processing {} file for broker: {}", getFileType(), brokerType);
+        String rawBrokerType = documentRequest.getRawBrokerType();
+        log.info("Processing {} file for broker: {}, rawBroker: {}", getFileType(), brokerType, rawBrokerType);
         try {
+            if ("UPSTOX".equalsIgnoreCase(rawBrokerType)) {
+                log.debug("Using Upstox parser");
+                return documentRequest.getDocumentType() == DocumentType.TRADE_EQ
+                        ? parseUpstoxTradeFile(file)
+                        : parseUpstoxFile(file);
+            }
             if (brokerType == null) {
                 log.debug("Using NSE Security parser");
                 return parseNseSecurityFile(file);
@@ -42,11 +49,6 @@ public abstract class AbstractFileProcessor implements FileProcessor {
             } else if (brokerType.isAngelOne()) {
                 log.debug("Using Angel One parser");
                 return parseAngelOneFile(file, documentRequest.getPassword());
-            } else if ("UPSTOX".equalsIgnoreCase(documentRequest.getRawBrokerType())) {
-                log.debug("Using Upstox parser");
-                return documentRequest.getDocumentType() == DocumentType.TRADE_EQ
-                        ? parseUpstoxTradeFile(file)
-                        : parseUpstoxFile(file);
             }
             log.debug("Using default Dhan parser");
             return parseDhanFile(file);
