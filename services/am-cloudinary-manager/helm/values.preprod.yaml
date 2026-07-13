@@ -1,5 +1,5 @@
 # Preprod — am-cloudinary-manager
-# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
+# Preprod app host only — am.asrax.in reserved for prod
 environment: preprod
 replicaCount: 1
 
@@ -14,10 +14,6 @@ ingress:
       am-apps-preprod-strip-prefix-apps@kubernetescrd
   hosts:
     - host: am-preprod.asrax.in
-      paths:
-        - path: /v1/cloudinary
-          pathType: Prefix
-    - host: am.asrax.in
       paths:
         - path: /v1/cloudinary
           pathType: Prefix

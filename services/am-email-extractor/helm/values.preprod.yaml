@@ -1,5 +1,5 @@
 # Preprod — am-email-extractor
-# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
+# Preprod app host only — am.asrax.in reserved for prod
 environment: preprod
 replicaCount: 1
 
@@ -19,12 +19,6 @@ ingress:
           pathType: Prefix
         - path: /gmail
           pathType: Prefix
-    - host: am.asrax.in
-      paths:
-        - path: /email
-          pathType: Prefix
-        - path: /gmail
-          pathType: Prefix
 
 vault:
   enabled: true
@@ -39,7 +33,7 @@ vault:
       path: "apps/data/preprod/services/am-doc-intelligence"
 
 env:
-  ALLOWED_ORIGINS: "https://am-preprod.asrax.in,https://am.asrax.in,http://localhost:3000"
+  ALLOWED_ORIGINS: "https://am-preprod.asrax.in,http://localhost:3000"
 
 config:
   app:

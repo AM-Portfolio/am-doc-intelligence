@@ -1,5 +1,5 @@
 # Preprod — am-doc-viewer-ui
-# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
+# Preprod app host only — am.asrax.in reserved for prod
 environment: preprod
 replicaCount: 1
 
@@ -13,10 +13,6 @@ ingress:
       am-apps-preprod-global-cors@kubernetescrd
   hosts:
     - host: am-preprod.asrax.in
-      paths:
-        - path: /doc-ui
-          pathType: Prefix
-    - host: am.asrax.in
       paths:
         - path: /doc-ui
           pathType: Prefix
