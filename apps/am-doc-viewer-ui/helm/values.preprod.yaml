@@ -1,8 +1,22 @@
+# Preprod — am-doc-viewer-ui
+# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
+environment: preprod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-preprod-global-cors@kubernetescrd
   hosts:
-    - host: doc-intelligence.local
+    - host: am-preprod.asrax.in
+      paths:
+        - path: /doc-ui
+          pathType: Prefix
+    - host: am.asrax.in
       paths:
         - path: /doc-ui
           pathType: Prefix

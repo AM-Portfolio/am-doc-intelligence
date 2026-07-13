@@ -1,12 +1,46 @@
+# Preprod — am-email-extractor
+# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
+environment: preprod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-preprod-global-cors@kubernetescrd,
+      am-apps-preprod-strip-prefix-apps@kubernetescrd
   hosts:
-    - host: doc-intelligence.local
+    - host: am-preprod.asrax.in
       paths:
-        - path: /v1/extractor
+        - path: /email
           pathType: Prefix
+        - path: /gmail
+          pathType: Prefix
+    - host: am.asrax.in
+      paths:
+        - path: /email
+          pathType: Prefix
+        - path: /gmail
+          pathType: Prefix
+
+vault:
+  enabled: true
+  secretPaths:
+    mongodb:
+      path: "apps/data/preprod/infra/mongodb"
+    kafka:
+      path: "apps/data/preprod/infra/kafka"
+    identity-oidc:
+      path: "apps/data/preprod/services/am-identity"
+    service-oauth:
+      path: "apps/data/preprod/services/am-doc-intelligence"
+
+env:
+  ALLOWED_ORIGINS: "https://am-preprod.asrax.in,https://am.asrax.in,http://localhost:3000"
 
 config:
   app:
-    GMAIL_REDIRECT_URI: "http://doc-intelligence.local/v1/extractor/gmail/callback"
+    GMAIL_REDIRECT_URI: "https://am-preprod.asrax.in/email/api/v1/gmail/callback"

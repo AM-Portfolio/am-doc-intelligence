@@ -1,24 +1,35 @@
+# Prod — am-document-processor
+# Service-level Ingress (same model as am-identity).
+environment: prod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-prod-global-cors@kubernetescrd
   hosts:
-    - host: api.amportfolio.com
+    - host: am.asrax.in
       paths:
         - path: /doc/processor
           pathType: Prefix
 
 vault:
+  enabled: true
   secretPaths:
-    mongodb: 
-      path: "secret/data/prod/infra/mongodb"
-    kafka: 
-      path: "secret/data/prod/infra/kafka"
+    mongodb:
+      path: "apps/data/prod/infra/mongodb"
+    kafka:
+      path: "apps/data/prod/infra/kafka"
     auth:
-      path: "secret/data/prod/services/am-auth"
+      path: "apps/data/prod/services/am-auth"
     identity-oidc:
-      path: "secret/data/prod/services/am-identity"
+      path: "apps/data/prod/services/am-identity"
     service-oauth:
-      path: "secret/data/prod/services/am-document-processor"
+      path: "apps/data/prod/services/am-document-processor"
 
 env:
   SPRING_PROFILES_ACTIVE: "prod,security"

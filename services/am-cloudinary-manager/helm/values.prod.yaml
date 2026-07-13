@@ -1,17 +1,27 @@
+# Prod — am-cloudinary-manager
+environment: prod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-prod-global-cors@kubernetescrd
   hosts:
-    - host: api.amportfolio.com
+    - host: am.asrax.in
       paths:
         - path: /v1/cloudinary
           pathType: Prefix
 
 vault:
+  enabled: true
   secretPaths:
     cloudinary:
-      path: "secret/data/prod/apps/docs/cloudinary"
+      path: "apps/data/prod/services/am-cloudinary-manager"
     identity-oidc:
-      path: "secret/data/prod/services/am-identity"
+      path: "apps/data/prod/services/am-identity"
     service-oauth:
-      path: "secret/data/prod/services/am-cloudinary-manager"
+      path: "apps/data/prod/services/am-cloudinary-manager"

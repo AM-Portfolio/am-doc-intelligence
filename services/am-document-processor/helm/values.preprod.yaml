@@ -1,4 +1,7 @@
+# Preprod — am-document-processor
+# Dual-host: am-preprod (target) + am.asrax.in until Phase 4
 environment: preprod
+replicaCount: 1
 
 vault:
   enabled: true
@@ -16,9 +19,22 @@ vault:
 
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-preprod-global-cors@kubernetescrd,
+      am-apps-preprod-strip-prefix-apps@kubernetescrd
   hosts:
-    - host: doc-intelligence.local
+    - host: am-preprod.asrax.in
       paths:
         - path: /doc/processor
           pathType: Prefix
+    - host: am.asrax.in
+      paths:
+        - path: /doc/processor
+          pathType: Prefix
+
+env:
+  SPRING_PROFILES_ACTIVE: "preprod,security"

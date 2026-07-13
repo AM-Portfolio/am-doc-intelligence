@@ -11,8 +11,11 @@ def test_document_processor(file_path, broker_type="ZERODHA", document_type="STO
     # Determine base URL based on environment
     if env == "local":
         base_url = "http://localhost:8080/v1/documents"
-    else:
+    elif env == "prod":
         base_url = "https://am.asrax.in/doc/processor/v1/documents"
+    else:
+        # preprod (default): am-preprod; am.asrax.in also works until Phase 4
+        base_url = "https://am-preprod.asrax.in/doc/processor/v1/documents"
     
     upload_url = f"{base_url}/process"
     

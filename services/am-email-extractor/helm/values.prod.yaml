@@ -1,27 +1,38 @@
+# Prod — am-email-extractor
+environment: prod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-prod-global-cors@kubernetescrd
   hosts:
-    - host: api.amportfolio.com
+    - host: am.asrax.in
       paths:
-        - path: /v1/extractor
+        - path: /email
+          pathType: Prefix
+        - path: /gmail
           pathType: Prefix
 
 vault:
+  enabled: true
   secretPaths:
-    mongodb: 
-      path: "secret/data/prod/infra/mongodb"
-    kafka: 
-      path: "secret/data/prod/infra/kafka"
-    jwt:
-      path: "secret/data/prod/apps/auth/jwt"
-    google:
-      path: "secret/data/prod/apps/docs/google"
+    mongodb:
+      path: "apps/data/prod/infra/mongodb"
+    kafka:
+      path: "apps/data/prod/infra/kafka"
     identity-oidc:
-      path: "secret/data/prod/services/am-identity"
+      path: "apps/data/prod/services/am-identity"
     service-oauth:
-      path: "secret/data/prod/services/am-doc-intelligence"
+      path: "apps/data/prod/services/am-doc-intelligence"
+
+env:
+  ALLOWED_ORIGINS: "https://am.asrax.in,http://localhost:3000"
 
 config:
   app:
-    GMAIL_REDIRECT_URI: "https://api.amportfolio.com/v1/extractor/gmail/callback"
+    GMAIL_REDIRECT_URI: "https://am.asrax.in/email/api/v1/gmail/callback"

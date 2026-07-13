@@ -1,8 +1,17 @@
+# Prod — am-doc-viewer-ui
+environment: prod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-prod-global-cors@kubernetescrd
   hosts:
-    - host: amportfolio.com
+    - host: am.asrax.in
       paths:
         - path: /doc-ui
           pathType: Prefix
