@@ -25,5 +25,5 @@ jobs:
       build_context: '.'
       preprod_namespace: 'am-apps-preprod'
       prod_namespace: 'am-apps-prod'
-      deploy_prod: false
+      deploy_prod: true
     secrets: inherit
