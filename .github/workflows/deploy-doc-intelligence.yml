@@ -38,7 +38,7 @@ on:
 jobs:
   deploy:
     name: Deploy ${{ github.event.inputs.service_name }} to ${{ github.event.inputs.environment }}
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@develop
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@main
     with:
       service_name: ${{ github.event.inputs.service_name }}
       working_directory: ${{ github.event.inputs.service_name == 'am-doc-viewer-ui' && 'apps/am-doc-viewer-ui' || format('services/{0}', github.event.inputs.service_name) }}

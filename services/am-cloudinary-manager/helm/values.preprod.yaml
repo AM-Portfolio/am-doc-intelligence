@@ -1,8 +1,29 @@
+# Preprod — am-cloudinary-manager
+# Preprod app host only — am.asrax.in reserved for prod
+environment: preprod
+replicaCount: 1
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: >-
+      am-apps-preprod-global-cors@kubernetescrd,
+      am-apps-preprod-strip-prefix-apps@kubernetescrd
   hosts:
-    - host: doc-intelligence.local
+    - host: am-preprod.asrax.in
       paths:
         - path: /v1/cloudinary
           pathType: Prefix
+
+vault:
+  enabled: true
+  secretPaths:
+    cloudinary:
+      path: "apps/data/preprod/services/am-cloudinary-manager"
+    identity-oidc:
+      path: "apps/data/preprod/services/am-identity"
+    service-oauth:
+      path: "apps/data/preprod/services/am-cloudinary-manager"
