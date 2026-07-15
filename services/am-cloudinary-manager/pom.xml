@@ -30,7 +30,17 @@
         <cloudinary.version>1.35.0</cloudinary.version>
         <lombok.version>1.18.30</lombok.version>
         <springdoc.version>2.3.0</springdoc.version>
+        <!-- Align with am-analysis / published am-security-lib -->
+        <am.security-lib.version>1.1.0</am.security-lib.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>github-core-services</id>
+            <name>GitHub AM Core Services Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/AM-Portfolio/am-core-services</url>
+        </repository>
+    </repositories>
     
     <dependencyManagement>
         <dependencies>

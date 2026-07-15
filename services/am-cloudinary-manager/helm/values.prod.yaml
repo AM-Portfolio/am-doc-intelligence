@@ -8,6 +8,7 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: "traefik"
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    # Path is already /v1/cloudinary (matches app); CORS only — no strip-prefix.
     traefik.ingress.kubernetes.io/router.middlewares: >-
       am-apps-prod-global-cors@kubernetescrd
   hosts:
@@ -15,6 +16,9 @@ ingress:
       paths:
         - path: /v1/cloudinary
           pathType: Prefix
+
+env:
+  SPRING_PROFILES_ACTIVE: "prod,security"
 
 vault:
   enabled: true
