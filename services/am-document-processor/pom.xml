@@ -35,6 +35,8 @@
 		<am.common.data.mongo.version>1.4.0-SNAPSHOT</am.common.data.mongo.version>
 		<am.common.data.model.version>1.4.0-SNAPSHOT</am.common.data.model.version>
 		<am.common.data.service.version>1.4.0-SNAPSHOT</am.common.data.service.version>
+		<!-- Align with am-analysis / published am-security-lib -->
+		<am.security-lib.version>1.1.0</am.security-lib.version>
 		
 		<!-- Utility Libraries -->
 		<jackson.databind.version>2.15.2</jackson.databind.version>
@@ -66,6 +68,13 @@
             <id>github</id>
             <name>GitHub AM Common Data Model Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/AM-Portfolio/am-common-data-parent</url>
+        </repository>
+
+        <!-- id must match CI settings server github-core (do not reuse id github — used by common-data) -->
+        <repository>
+            <id>github-core</id>
+            <name>GitHub AM Core Services Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/AM-Portfolio/am-core-services</url>
         </repository>
     </repositories>
 
@@ -123,7 +132,7 @@
 		<dependency>
 			<groupId>com.am.libraries</groupId>
 			<artifactId>am-security-lib</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>${am.security-lib.version}</version>
 		</dependency>
 		<!-- AM Common Dependencies -->
 		<dependency>

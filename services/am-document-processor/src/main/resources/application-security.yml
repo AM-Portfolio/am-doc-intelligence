@@ -1,3 +1,4 @@
+# am-security-lib OIDC resource-server config (same pattern as am-analysis / am-cloudinary).
 am:
   security:
     enabled: true
@@ -11,10 +12,11 @@ am:
       - "/actuator/**"
       - "/document-processor/actuator/**"
       - "/v1/documents/types"
+      - "/swagger-ui/**"
+      - "/v3/api-docs/**"
+      - "/v3/api-docs.yaml"
     protected-paths:
-      - "/v1/documents/process"
-      - "/v1/documents/batch-process"
-      - "/v1/documents/status/**"
+      - "/v1/**"
   api:
     core:
       exception-handler:

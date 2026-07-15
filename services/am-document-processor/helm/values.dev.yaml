@@ -28,8 +28,8 @@ vault:
 
 env:
   SPRING_PROFILES_ACTIVE: "dev,security"
-  AUTH_ENABLED: "false"
-  AM_SECURITY_ENABLED: "false"
+  # Prefer lib local-mock for local/dev instead of disabling security entirely
+  AM_SECURITY_LOCAL_MOCK_ENABLED: "true"
 
 
 

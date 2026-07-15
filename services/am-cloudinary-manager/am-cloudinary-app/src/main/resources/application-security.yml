@@ -10,6 +10,10 @@ am:
     public-paths:
       - "/actuator/**"
       - "/cloudinary/actuator/**"
+      - "/swagger-ui/**"
+      - "/swagger-ui.html"
+      - "/api-docs/**"
+      - "/v3/api-docs/**"
     protected-paths:
       - "/v1/cloudinary/**"
   api:

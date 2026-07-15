@@ -9,9 +9,9 @@ logging:
 
 # Docker Cloudinary settings (using environment variables)
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:dr6crhham}
-  api-key: ${CLOUDINARY_API_KEY:712557573888213}
-  api-secret: ${CLOUDINARY_API_SECRET:eKoN0tAMCCNMnXtxiFdOsHDP69Y}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
   secure: true
   default-folder: docker-uploads
 

@@ -18,6 +18,7 @@ spring:
   profiles:
     include:
       - lot-sizes
+      - security
   data:
     mongodb:
       uri: ${MONGODB_URL}
@@ -41,30 +42,9 @@ app:
     portfolio-topic: ${APP_PORTFOLIO_TOPIC:am-portfolio}
     trade-topic: ${APP_TRADE_TOPIC:am-trade}
 
-# ═══════════════════════════════════════════════════════════════
-# ✅ JWT AUTHENTICATION CONFIGURATION (NEW)
-# ═══════════════════════════════════════════════════════════════
-auth:
-  enabled: ${AUTH_ENABLED:true}
-  jwt:
-    # User JWT (signed by am-auth-tokens service)
-    secret: ${JWT_SECRET:user-secret-key-min-32-characters-long-required-here}
-    # Service JWT (for inter-service communication with API Gateway)
-    internal-secret: ${INTERNAL_JWT_SECRET:internal-secret-key-min-32-characters-long-required-here}
-    # Token expiration times
-    expiration: 3600 # User token: 1 hour
-    refresh-expiration: 86400 # Refresh token: 24 hours
-    service-expiration: 900 # Service token: 15 minutes (shorter for security)
-    algorithm: HS256
+# Auth: enforced by am-security-lib via application-security.yml (OIDC JWKS).
+# Do not add a local HMAC SecurityConfig — that conflicts with the lib filter chain.
 
-  # Service identification (for logging and debugging)
-  service:
-    id: document-processor
-    name: Document Processor Service
-    version: 1.0.0
-# ═══════════════════════════════════════════════════════════════
-# LOGGING CONFIGURATION
-# ═══════════════════════════════════════════════════════════════
 logging:
   level:
     root: INFO
