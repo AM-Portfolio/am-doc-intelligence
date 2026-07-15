@@ -30,6 +30,8 @@ vault:
       path: "apps/data/prod/services/am-identity"
     service-oauth:
       path: "apps/data/prod/services/am-doc-intelligence"
+    google:
+      path: "apps/data/prod/apps/docs/google"
 
 env:
   ALLOWED_ORIGINS: "https://am.asrax.in,http://localhost:3000"
