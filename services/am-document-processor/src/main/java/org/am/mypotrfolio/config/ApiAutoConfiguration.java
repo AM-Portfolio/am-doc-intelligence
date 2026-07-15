@@ -17,12 +17,19 @@ public class ApiAutoConfiguration {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**") // Allow all endpoints
-                    .allowedOriginPatterns("http://localhost:*", "https://localhost:*") // Allow localhost with any port
+                registry.addMapping("/**")
+                    .allowedOriginPatterns(
+                            "http://localhost:*",
+                            "https://localhost:*",
+                            "https://am.asrax.in",
+                            "https://*.asrax.in",
+                            "https://am.munish.org",
+                            "https://*.munish.org"
+                    )
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                     .allowedHeaders("*")
                     .allowCredentials(true)
-                    .maxAge(3600); // 1 hour max age
+                    .maxAge(3600);
             }
         };
     }
