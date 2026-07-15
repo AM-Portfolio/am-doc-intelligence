@@ -1206,7 +1206,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
         try (InputStream is = file.getInputStream();
                 Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            int headerRowIdx = findHeaderRow(sheet, "ISIN", "Scrip Name");
+            int headerRowIdx = findHeaderRow(sheet, "ISIN", "Scrip Name", "Symbol");
             if (headerRowIdx == -1) {
                 log.warn("Upstox header not found, defaulting to row 8");
                 headerRowIdx = 8;
@@ -1222,6 +1222,9 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             for (int c = 0; c < lastCellNum; c++) {
                 Cell cell = hr.getCell(c, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 String header = getCellValueAsString(cell).trim();
+                if (header.toLowerCase().startsWith("symbol")) {
+                    header = "Symbol";
+                }
                 headers.add(header);
             }
 
@@ -1241,7 +1244,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 }
 
                 if (hasData) {
-                    String scripName = rowData.getOrDefault("Scrip Name", "");
+                    String scripName = rowData.getOrDefault("Scrip Name", rowData.getOrDefault("Symbol", ""));
                     if (scripName == null || scripName.trim().isEmpty())
                         continue;
 
