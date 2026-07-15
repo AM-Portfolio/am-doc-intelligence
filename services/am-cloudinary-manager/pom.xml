@@ -35,8 +35,9 @@
     </properties>
 
     <repositories>
+        <!-- id must match a <server> in CI ~/.m2/settings.xml (central-build-publish) -->
         <repository>
-            <id>github-core-services</id>
+            <id>github-core</id>
             <name>GitHub AM Core Services Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/AM-Portfolio/am-core-services</url>
         </repository>

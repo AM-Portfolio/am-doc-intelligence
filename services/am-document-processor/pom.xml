@@ -70,8 +70,9 @@
             <url>https://maven.pkg.github.com/AM-Portfolio/am-common-data-parent</url>
         </repository>
 
+        <!-- id must match CI settings server github-core (do not reuse id github — used by common-data) -->
         <repository>
-            <id>github-core-services</id>
+            <id>github-core</id>
             <name>GitHub AM Core Services Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/AM-Portfolio/am-core-services</url>
         </repository>
