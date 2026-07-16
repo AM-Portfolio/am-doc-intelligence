@@ -37,6 +37,8 @@
 		<am.common.data.service.version>1.4.0-SNAPSHOT</am.common.data.service.version>
 		<!-- Align with am-analysis / published am-security-lib -->
 		<am.security-lib.version>1.1.0</am.security-lib.version>
+		<!-- Core observability — branch snapshot until main publish -->
+		<am.observability-lib.version>1.1.1-SNAPSHOT</am.observability-lib.version>
 		
 		<!-- Utility Libraries -->
 		<jackson.databind.version>2.15.2</jackson.databind.version>
@@ -133,6 +135,11 @@
 			<groupId>com.am.libraries</groupId>
 			<artifactId>am-security-lib</artifactId>
 			<version>${am.security-lib.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.am.libraries</groupId>
+			<artifactId>am-observability-lib</artifactId>
+			<version>${am.observability-lib.version}</version>
 		</dependency>
 		<!-- AM Common Dependencies -->
 		<dependency>

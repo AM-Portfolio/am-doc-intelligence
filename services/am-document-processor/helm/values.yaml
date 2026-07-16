@@ -47,9 +47,18 @@ vault:
   # Mappings (env var → vault key) are in vault-mappings.yaml
   secretPaths: {}
 
+# Prometheus scrape (Plane A — Grafana Service dropdown)
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/actuator/prometheus"
+
 env:
   SPRING_PROFILES_ACTIVE: "preprod,security"
   SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
   SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-256"
   APP_PORTFOLIO_TOPIC: "am-portfolio"
   APP_TRADE_TOPIC: "am-trade"
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector.monitoring.svc.cluster.local:4318/v1/traces"
+  # 1.0 while validating flows in Tempo; dial back to 0.1 when comfortable
+  TRACING_SAMPLING_PROBABILITY: "1.0"
