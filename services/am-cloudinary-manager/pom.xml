@@ -31,9 +31,9 @@
         <lombok.version>1.18.30</lombok.version>
         <springdoc.version>2.3.0</springdoc.version>
         <!-- Align with am-analysis / published am-security-lib -->
-        <am.security-lib.version>1.1.0</am.security-lib.version>
+        <am.security-lib.version>1.1.2-SNAPSHOT</am.security-lib.version>
         <!-- Core observability — branch snapshot until main publish -->
-        <am.observability-lib.version>1.1.1-SNAPSHOT</am.observability-lib.version>
+        <am.observability-lib.version>1.1.2-SNAPSHOT</am.observability-lib.version>
     </properties>
 
     <repositories>

@@ -21,6 +21,8 @@ ingress:
 vault:
   enabled: true
   secretPaths:
+    otel:
+      path: "apps/data/preprod/infra/observability"
     cloudinary:
       path: "apps/data/preprod/services/am-cloudinary-manager"
     identity-oidc:

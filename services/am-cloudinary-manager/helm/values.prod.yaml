@@ -23,6 +23,8 @@ env:
 vault:
   enabled: true
   secretPaths:
+    otel:
+      path: "apps/data/prod/infra/observability"
     cloudinary:
       path: "apps/data/prod/services/am-cloudinary-manager"
     identity-oidc:
