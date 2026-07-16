@@ -35,6 +35,9 @@ except ImportError:
 
 # Initialize Flask app
 app = Flask(__name__)
+
+from plane_a import setup_plane_a
+setup_plane_a(app, application="am-email-extractor")
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # CORS Configuration

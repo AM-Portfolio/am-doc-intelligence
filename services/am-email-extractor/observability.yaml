@@ -1,0 +1,12 @@
+apiVersion: am.obs/v1
+kind: ServiceObservability
+service: am-email-extractor
+tier: B
+runtime: python
+k8s_app_label: am-email-extractor
+metrics_application: am-email-extractor
+namespace: am-apps-preprod
+owners: [platform]
+signals:
+  bundle: tier-b-python
+  domain: []
