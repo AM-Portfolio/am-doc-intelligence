@@ -21,6 +21,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(Include.NON_NULL)
 public class PortfolioUpdateEvent {
+    @Builder.Default
+    private String eventType = "DOC_UPLOAD";
+    
     private UUID id;
     private BrokerType brokerType;
     private String userId;
