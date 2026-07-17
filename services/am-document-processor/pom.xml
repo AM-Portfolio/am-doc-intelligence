@@ -69,7 +69,7 @@
         <repository>
             <id>github</id>
             <name>GitHub AM Common Data Model Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/AM-Portfolio/am-common-data-parent</url>
+            <url>https://maven.pkg.github.com/AM-Portfolio/am-portfolio</url>
             <snapshots>
                 <updatePolicy>always</updatePolicy>
             </snapshots>
