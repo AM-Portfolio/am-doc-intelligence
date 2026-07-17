@@ -70,6 +70,9 @@
             <id>github</id>
             <name>GitHub AM Common Data Model Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/AM-Portfolio/am-common-data-parent</url>
+            <snapshots>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
         </repository>
 
         <!-- id must match CI settings server github-core (do not reuse id github — used by common-data) -->
