@@ -150,6 +150,22 @@ public class DocumentProcessorService {
                 is = file.getInputStream();
             }
 
+            // Attempt content-based detection for Upstox
+            try (org.apache.poi.ss.usermodel.Workbook wb = org.apache.poi.ss.usermodel.WorkbookFactory.create(is)) {
+                org.apache.poi.ss.usermodel.Sheet sheet = wb.getSheetAt(0);
+                if (sheet != null && sheet.getRow(0) != null) {
+                    org.apache.poi.ss.usermodel.Cell cell = sheet.getRow(0).getCell(0);
+                    if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String cellVal = cell.getStringCellValue().toUpperCase();
+                        if (cellVal.contains("UPSTOX")) {
+                            return BrokerType.UPSTOX;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to perform content-based detection", e);
+            }
+
         } catch (Exception e) {
             log.warn("Failed to inspect file content", e);
         }
@@ -162,9 +178,12 @@ public class DocumentProcessorService {
         } else if (filename.contains("MSTOCK")) {
             return BrokerType.MSTOCK;
         } else if (filename.contains("GROWW")) {
-            return BrokerType.GROW;
+            return BrokerType.GROWW;
         } else if (filename.contains("ANGEL") || filename.contains("ANGELONE")) {
             return BrokerType.ANGEL_ONE;
+        } else if (filename.contains("HOLDINGS_")) {
+            // As a fallback for Upstox, their filenames often start with Holdings_
+            return BrokerType.UPSTOX;
         }
         return null;
     }

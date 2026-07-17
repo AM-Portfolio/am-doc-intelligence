@@ -174,11 +174,11 @@ public class PortfolioServiceImpl implements PortfolioService {
                 .name(stock.getName());
 
         if (useDb && brokerType != null
-                && (brokerType.isDhan() || brokerType.isMStock() || brokerType.isGrow() || brokerType.isAngelOne())) {
+                && (brokerType.isDhan() || brokerType.isMStock() || brokerType.isGroww() || brokerType.isAngelOne())) {
             // Only try if we haven't failed before
             try {
                 Optional<SecurityModel> nseSecurity = findBestMatchBySearchParam(
-                        (brokerType.isDhan() || brokerType.isGrow() || brokerType.isAngelOne()) ? stock.getName()
+                        (brokerType.isDhan() || brokerType.isGroww() || brokerType.isAngelOne()) ? stock.getName()
                                 : stock.getSymbol());
                 if (nseSecurity.isPresent()) {
                     SecurityModel security = nseSecurity.get();
