@@ -19,7 +19,7 @@ public abstract class AbstractFileProcessor implements FileProcessor {
         String rawBrokerType = documentRequest.getRawBrokerType();
         log.info("Processing {} file for broker: {}, rawBroker: {}", getFileType(), brokerType, rawBrokerType);
         try {
-            if ("UPSTOX".equalsIgnoreCase(rawBrokerType)) {
+            if ("UPSTOX".equalsIgnoreCase(rawBrokerType) || (brokerType != null && brokerType.isUpstox())) {
                 log.debug("Using Upstox parser");
                 return documentRequest.getDocumentType() == DocumentType.TRADE_EQ
                         ? parseUpstoxTradeFile(file)
@@ -40,8 +40,8 @@ public abstract class AbstractFileProcessor implements FileProcessor {
             } else if (brokerType.isDhan()) {
                 log.debug("Using Dhan parser");
                 return parseDhanFile(file);
-            } else if (brokerType.isGrow()) {
-                log.debug("Using Grow parser");
+            } else if (brokerType.isGroww()) {
+                log.debug("Using Groww parser");
                 return (documentRequest.getDocumentType() == DocumentType.TRADE_EQ
                         || documentRequest.getDocumentType() == DocumentType.TRADE_MF)
                                 ? parseGrowTradeFile(file, documentRequest.getDocumentType())
