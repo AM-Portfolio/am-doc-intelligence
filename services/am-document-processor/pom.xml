@@ -32,9 +32,9 @@
 		<spring.boot.version>3.4.1</spring.boot.version>
 		
 		<!-- AM Common -->
-		<am.common.data.mongo.version>1.5.0</am.common.data.mongo.version>
-		<am.common.data.model.version>1.5.0</am.common.data.model.version>
-		<am.common.data.service.version>1.5.0</am.common.data.service.version>
+		<am.common.data.mongo.version>1.5.1-SNAPSHOT</am.common.data.mongo.version>
+		<am.common.data.model.version>1.5.1-SNAPSHOT</am.common.data.model.version>
+		<am.common.data.service.version>1.5.1-SNAPSHOT</am.common.data.service.version>
 		<!-- Align with am-analysis / published am-security-lib -->
 		<am.security-lib.version>1.1.0</am.security-lib.version>
 		<!-- Core observability — branch snapshot until main publish -->

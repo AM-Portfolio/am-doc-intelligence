@@ -62,11 +62,11 @@ public class DocumentProcessorService {
         UUID processId = UUID.randomUUID();
         
         BrokerType explicitBrokerType = null;
-        if (explicitBrokerTypeStr != null && !explicitBrokerTypeStr.equalsIgnoreCase("UPSTOX")) {
+        if (explicitBrokerTypeStr != null) {
             try {
                 explicitBrokerType = BrokerType.valueOf(explicitBrokerTypeStr);
             } catch (IllegalArgumentException e) {
-                // Ignore, handled by detection or UPSTOX specific check
+                // Ignore, handled by detection
             }
         }
         
@@ -181,8 +181,8 @@ public class DocumentProcessorService {
             return BrokerType.GROWW;
         } else if (filename.contains("ANGEL") || filename.contains("ANGELONE")) {
             return BrokerType.ANGEL_ONE;
-        } else if (filename.contains("HOLDINGS_")) {
-            // As a fallback for Upstox, their filenames often start with Holdings_
+        } else if (filename.contains("HOLDINGS_") || filename.contains("UPSTOX")) {
+            // As a fallback for Upstox, their filenames often start with Holdings_ or Upstox
             return BrokerType.UPSTOX;
         }
         return null;
