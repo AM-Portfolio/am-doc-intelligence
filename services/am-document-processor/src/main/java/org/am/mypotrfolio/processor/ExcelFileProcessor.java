@@ -1252,8 +1252,14 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                     if (rowData.containsKey("Current Qty") && !rowData.containsKey("Quantity")) {
                         rowData.put("Quantity", rowData.get("Current Qty"));
                     }
+                    if (rowData.containsKey("Net Qty") && !rowData.containsKey("Quantity")) {
+                        rowData.put("Quantity", rowData.get("Net Qty"));
+                    }
                     if (rowData.containsKey("Rate") && !rowData.containsKey("Average Price")) {
                         rowData.put("Average Price", rowData.get("Rate"));
+                    }
+                    if (rowData.containsKey("Avg. Price") && !rowData.containsKey("Average Price")) {
+                        rowData.put("Average Price", rowData.get("Avg. Price"));
                     }
                     if (rowData.containsKey("Valuation") && !rowData.containsKey("Investment")) {
                         rowData.put("Investment", rowData.get("Valuation"));
