@@ -32,9 +32,9 @@
 		<spring.boot.version>3.4.1</spring.boot.version>
 		
 		<!-- AM Common -->
-		<am.common.data.mongo.version>1.4.1-SNAPSHOT</am.common.data.mongo.version>
-		<am.common.data.model.version>1.4.1-SNAPSHOT</am.common.data.model.version>
-		<am.common.data.service.version>1.4.1-SNAPSHOT</am.common.data.service.version>
+		<am.common.data.mongo.version>1.5.0</am.common.data.mongo.version>
+		<am.common.data.model.version>1.5.0</am.common.data.model.version>
+		<am.common.data.service.version>1.5.0</am.common.data.service.version>
 		<!-- Align with am-analysis / published am-security-lib -->
 		<am.security-lib.version>1.1.0</am.security-lib.version>
 		<!-- Core observability — branch snapshot until main publish -->
@@ -66,13 +66,11 @@
             <url>https://maven.pkg.github.com/AM-Portfolio/am-common-investment-service</url>
         </repository>
     
+        <!-- am-common-data JARs are published to the am-portfolio GitHub Packages registry -->
         <repository>
             <id>github</id>
             <name>GitHub AM Common Data Model Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/AM-Portfolio/am-portfolio</url>
-            <snapshots>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
         </repository>
 
         <!-- id must match CI settings server github-core (do not reuse id github — used by common-data) -->
@@ -139,11 +137,11 @@
 			<artifactId>am-security-lib</artifactId>
 			<version>${am.security-lib.version}</version>
 		</dependency>
-  		<dependency>
-  			<groupId>com.am.libraries</groupId>
-  			<artifactId>am-observability-lib</artifactId>
-  			<version>${am.observability-lib.version}</version>
-  		</dependency>
+		<dependency>
+			<groupId>com.am.libraries</groupId>
+			<artifactId>am-observability-lib</artifactId>
+			<version>${am.observability-lib.version}</version>
+		</dependency>
 		<!-- AM Common Dependencies -->
 		<dependency>
 			<groupId>com.portfolio</groupId>
@@ -307,7 +305,3 @@
 		</plugins>
 	</build>
 </project>
-
-
-
-
