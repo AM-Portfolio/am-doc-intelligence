@@ -121,6 +121,17 @@ def require_jwt(f):
 # Health & Info Endpoints
 # ============================================================================
 
+@app.route('/v3/api-docs', methods=['GET'])
+def get_openapi_spec():
+    """Serve the static OpenAPI specification"""
+    try:
+        from flask import send_file
+        yaml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'openapi.yaml')
+        return send_file(yaml_path, mimetype='text/yaml')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route(f'/api/{API_VERSION}/health', methods=['GET'])
 def health_check():
     """Health check endpoint checking infrastructure"""

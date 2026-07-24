@@ -15,6 +15,7 @@ am:
       - "/swagger-ui/**"
       - "/v3/api-docs/**"
       - "/v3/api-docs.yaml"
+      - "/api-docs/**"
     protected-paths:
       - "/v1/**"
   api:

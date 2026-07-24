@@ -71,7 +71,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                     .format((String) result.get("format"))
                     .bytes(((Number) result.get("bytes")).longValue())
                     .resourceType((String) result.get("resource_type"))
-                    .createdAt((String) result.get("created_at"))
+                    .createdAt(result.get("created_at") != null ? java.time.Instant.parse((String) result.get("created_at")) : null)
                     .metadata(result)
                     .build();
         } catch (IOException e) {
@@ -207,7 +207,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 .width(resource.get("width") != null ? ((Number) resource.get("width")).intValue() : null)
                 .height(resource.get("height") != null ? ((Number) resource.get("height")).intValue() : null)
                 .resourceType((String) resource.get("resource_type"))
-                .createdAt((String) resource.get("created_at"))
+                .createdAt(resource.get("created_at") != null ? java.time.Instant.parse((String) resource.get("created_at")) : null)
                 .folder((String) resource.get("folder"))
                 .metadata(resource)
                 .build();
