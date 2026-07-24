@@ -106,8 +106,8 @@ To set up:
 ```json
 {
   "publicId": "uploads/sample-image",
-  "url": "http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
-  "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+  "url": "http://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
+  "secureUrl": "https://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
   "originalFilename": "sample-image.png",
   "format": "png",
   "bytes": 95,
@@ -123,14 +123,14 @@ To set up:
 ### Signature Response
 ```json
 {
-  "apiKey": "123456789012345",
+  "apiKey": "REDACTED_API_KEY",
   "publicId": "uploads/my-custom-id",
   "timestamp": 1732878600,
-  "signature": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
-  "cloudName": "demo",
+  "signature": "REDACTED_SIGNATURE",
+  "cloudName": "mycloud",
   "folder": "uploads",
   "resourceType": "auto",
-  "uploadUrl": "https://api.cloudinary.com/v1_1/demo/auto/upload",
+  "uploadUrl": "https://api.cloudinary.com/v1_1/mycloud/auto/upload",
   "params": {
     "eager": "w_400,h_300,c_pad",
     "tags": "sample,client-upload"

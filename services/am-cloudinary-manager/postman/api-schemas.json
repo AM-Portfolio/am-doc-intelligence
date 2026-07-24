@@ -60,13 +60,13 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the uploaded resource (HTTP)",
-          "examples": ["http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+          "examples": ["http://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png"]
         },
         "secureUrl": {
           "type": "string",
           "format": "uri",
           "description": "Secure URL of the uploaded resource (HTTPS)",
-          "examples": ["https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+          "examples": ["https://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png"]
         },
         "originalFilename": {
           "type": "string",
@@ -112,8 +112,8 @@
       "examples": [
         {
           "publicId": "uploads/sample-image",
-          "url": "http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
-          "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "url": "http://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
+          "secureUrl": "https://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
           "originalFilename": "sample-image.png",
           "format": "png",
           "bytes": 95,
@@ -185,7 +185,7 @@
         "apiKey": {
           "type": "string",
           "description": "API key for Cloudinary",
-          "examples": ["123456789012345"]
+          "examples": ["REDACTED_API_KEY"]
         },
         "publicId": {
           "type": "string",
@@ -201,12 +201,12 @@
         "signature": {
           "type": "string",
           "description": "Generated SHA-256 signature for the upload",
-          "examples": ["a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"]
+          "examples": ["REDACTED_SIGNATURE"]
         },
         "cloudName": {
           "type": "string",
           "description": "Cloudinary cloud name",
-          "examples": ["demo"]
+          "examples": ["mycloud"]
         },
         "folder": {
           "type": "string",
@@ -223,7 +223,7 @@
           "type": "string",
           "format": "uri",
           "description": "Upload URL for the resource type",
-          "examples": ["https://api.cloudinary.com/v1_1/demo/auto/upload"]
+          "examples": ["https://api.cloudinary.com/v1_1/mycloud/auto/upload"]
         },
         "params": {
           "type": "object",
@@ -239,14 +239,14 @@
       },
       "examples": [
         {
-          "apiKey": "123456789012345",
+          "apiKey": "REDACTED_API_KEY",
           "publicId": "uploads/my-custom-id",
           "timestamp": 1732878600,
-          "signature": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
-          "cloudName": "demo",
+          "signature": "REDACTED_SIGNATURE",
+          "cloudName": "mycloud",
           "folder": "uploads",
           "resourceType": "auto",
-          "uploadUrl": "https://api.cloudinary.com/v1_1/demo/auto/upload",
+          "uploadUrl": "https://api.cloudinary.com/v1_1/mycloud/auto/upload",
           "params": {
             "eager": "w_400,h_300,c_pad",
             "tags": "sample,client-upload"
@@ -267,13 +267,13 @@
           "type": "string",
           "format": "uri",
           "description": "URL of the resource (HTTP)",
-          "examples": ["http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+          "examples": ["http://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png"]
         },
         "secureUrl": {
           "type": "string",
           "format": "uri",
           "description": "Secure URL of the resource (HTTPS)",
-          "examples": ["https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png"]
+          "examples": ["https://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png"]
         },
         "format": {
           "type": "string",
@@ -330,8 +330,8 @@
       "examples": [
         {
           "publicId": "uploads/sample-image",
-          "url": "http://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
-          "secureUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/uploads/sample-image.png",
+          "url": "http://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
+          "secureUrl": "https://res.cloudinary.com/mycloud/image/upload/v1234567890/uploads/sample-image.png",
           "format": "png",
           "bytes": 95,
           "width": 1,
