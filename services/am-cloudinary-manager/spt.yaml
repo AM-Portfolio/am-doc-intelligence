@@ -1,0 +1,28 @@
+apiVersion: am.spt/v1
+kind: ServiceLoadTest
+service: am-cloudinary-manager
+label: am-cloudinary-manager
+enabled: true
+runtime: java
+owners: [doc-intelligence]
+description: Cloudinary Manager load-test registration
+createdBy: doc-intelligence
+updatedBy: doc-intelligence
+createdAt: "2026-07-24"
+updatedAt: "2026-07-24"
+tags: [docs, java]
+source:
+  repo: am-doc-intelligence
+  path: services/am-cloudinary-manager/spt.yaml
+  team: doc-intelligence
+traces:
+  - name: configmap
+    ref: spt-catalog-am-cloudinary-manager
+  - name: openapi
+    ref: /v3/api-docs
+targets:
+  dev: "https://am-dev.asrax.in/v1/cloudinary"
+  preprod: "https://am-preprod.asrax.in/v1/cloudinary"
+  prod: "https://am.asrax.in/v1/cloudinary"
+openapi:
+  path: /v3/api-docs

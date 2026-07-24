@@ -1,0 +1,28 @@
+apiVersion: am.spt/v1
+kind: ServiceLoadTest
+service: am-document-processor
+label: am-document-processor
+enabled: true
+runtime: java
+owners: [doc-intelligence]
+description: Document Processor load-test registration
+createdBy: doc-intelligence
+updatedBy: doc-intelligence
+createdAt: "2026-07-24"
+updatedAt: "2026-07-24"
+tags: [docs, java, springdoc]
+source:
+  repo: am-doc-intelligence
+  path: services/am-document-processor/spt.yaml
+  team: doc-intelligence
+traces:
+  - name: configmap
+    ref: spt-catalog-am-document-processor
+  - name: openapi
+    ref: /v3/api-docs
+targets:
+  dev: "https://am-dev.asrax.in/doc/processor"
+  preprod: "https://am-preprod.asrax.in/doc/processor"
+  prod: "https://am.asrax.in/doc/processor"
+openapi:
+  path: /v3/api-docs
