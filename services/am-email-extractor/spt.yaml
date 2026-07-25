@@ -1,0 +1,24 @@
+apiVersion: am.spt/v1
+kind: ServiceLoadTest
+service: am-email-extractor
+label: am-email-extractor
+enabled: true
+runtime: python
+owners: [doc-intelligence]
+description: Email Extractor load-test registration
+createdBy: doc-intelligence
+updatedBy: doc-intelligence
+createdAt: "2026-07-24"
+updatedAt: "2026-07-24"
+tags: [docs, python]
+source:
+  repo: am-doc-intelligence
+  path: services/am-email-extractor/spt.yaml
+  team: doc-intelligence
+traces:
+  - name: configmap
+    ref: spt-catalog-am-email-extractor
+targets:
+  dev: "https://am-dev.asrax.in/email"
+  preprod: "https://am-preprod.asrax.in/email"
+  prod: "https://am.asrax.in/email"

@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: Gmail Extractor API
+  description: Microservice for extracting broker portfolio holdings from Gmail or direct uploads
+  version: 1.0.0
+  contact:
+    name: AM Portfolio Team
+servers:
+  - url: /
+    description: Default Server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'JWT Authentication. Enter the JWT token in the format: Bearer {token}'
+  schemas:
+    Holding:
+      type: object
+      properties:
+        isin_code:
+          type: string
+        quantity:
+          type: number
+        avg_price:
+          type: number
+        current_price:
+          type: number
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        version:
+          type: string
+          example: "1.0.0"
+        service:
+          type: string
+          example: "gmail-extractor-api"
+        infrastructure:
+          type: object
+    BrokerListResponse:
+      type: object
+      properties:
+        brokers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              format:
+                type: string
+    ExtractionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        broker:
+          type: string
+        count:
+          type: integer
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Holding'
+        metadata:
+          type: object
+        db_id:
+          type: string
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+        '503':
+          description: Service is unhealthy
+  /api/v1/brokers:
+    get:
+      summary: List supported brokers
+      responses:
+        '200':
+          description: List of supported brokers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrokerListResponse'
+  /api/v1/gmail/connect:
+    get:
+      summary: Start Gmail OAuth flow
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Connection initiated
+  /api/v1/gmail/status:
+    get:
+      summary: Check Gmail connection status
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Status retrieved
+  /api/v1/gmail/disconnect:
+    delete:
+      summary: Disconnect Gmail account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Disconnected successfully
+  /api/v1/extract/gmail/{broker}:
+    get:
+      summary: Fetch statement from Gmail and extract holdings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: broker
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [groww, zerodha, angleone, dhan, mstock]
+            example: "[groww, zerodha, angleone, dhan, mstock]"
+            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock]"
+        - name: pan
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Extraction successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResponse'
+  /api/v1/extract/upload/{broker}:
+    post:
+      summary: Upload file and extract holdings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: broker
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [groww, zerodha, angleone, dhan, mstock]
+            example: "[groww, zerodha, angleone, dhan, mstock]"
+            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock]"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Extraction successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResponse'

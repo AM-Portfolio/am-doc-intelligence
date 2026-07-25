@@ -56,7 +56,7 @@
 		<spring.web.version>6.2.1</spring.web.version>
 		
 		<!-- Documentation -->
-		<springdoc.openapi.version>2.3.0</springdoc.openapi.version>
+		<springdoc.openapi.version>2.8.4</springdoc.openapi.version>
 	</properties>
 
 	<repositories>

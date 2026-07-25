@@ -54,7 +54,8 @@ public class UploadResponse {
     /**
      * Creation timestamp
      */
-    private String createdAt;
+    @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "date-time", example = "2023-10-24T12:00:00Z")
+    private java.time.Instant createdAt;
     
     /**
      * Additional metadata returned by Cloudinary

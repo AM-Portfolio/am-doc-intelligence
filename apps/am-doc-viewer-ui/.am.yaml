@@ -1,0 +1,15 @@
+name: am-doc-viewer-ui
+release: am-doc-viewer-ui
+image: ghcr.io/am-portfolio/am-doc-viewer-ui
+runtime: flutter
+language: dart
+dockerfile: Dockerfile
+context: .
+github:
+  repo: AM-Portfolio/am-doc-intelligence
+  deploy_workflow: am-doc-viewer-ui.yml
+  service: am-doc-viewer-ui
+  ref: main
+deploy:
+  via: helm
+  rebuild: on-change

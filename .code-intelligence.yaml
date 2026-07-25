@@ -1,0 +1,37 @@
+enabled: true
+tool: gitnexus
+phase: local
+versions:
+  gitnexus: 1.6.9
+  graphifyy: 0.4.11
+production:
+  branch: main
+  embeddings: false
+  ci: false
+  mode: verify
+local:
+  sync_on_commit: true
+  sync_on_save: false
+  index_workspace: true
+  watch_debounce_sec: 30
+gitnexus:
+  skipAgentsMd: true
+  skipSkills: true
+  group_path: am-doc-intelligence
+capabilities:
+  domain: services
+  surfaces:
+  - http
+  - kafka
+  - libs
+  - config
+  pdg: true
+  scan:
+    scan_roots:
+    - services
+    - apps
+  topics:
+  - DOCUMENT_PROCESSED
+  - EMAIL_EXTRACTED
+  config_prefixes:
+  - am.doc
