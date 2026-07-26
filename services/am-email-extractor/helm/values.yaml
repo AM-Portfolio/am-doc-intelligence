@@ -48,8 +48,7 @@ vault:
       path: "apps/data/preprod/infra/mongodb"
     kafka:
       path: "apps/data/preprod/infra/kafka"
-    jwt:
-      path: "secret/data/preprod/apps/auth/jwt"
+    # jwt only where needed (see values.dev.yaml) — do not inherit a preprod jwt into prod
     google:
       path: "secret/data/preprod/apps/docs/google"
     identity-oidc:
