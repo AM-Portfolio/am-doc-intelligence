@@ -8,6 +8,7 @@ vault:
         KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
         KAFKA_USERNAME: "username"
         KAFKA_PASSWORD: "password"
+
     google:
       mappings:
         GOOGLE_CLIENT_ID: "GOOGLE_CLIENT_ID"

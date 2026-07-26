@@ -50,14 +50,13 @@ vault:
       path: "apps/data/preprod/infra/kafka"
     # jwt only where needed (see values.dev.yaml) — do not inherit a preprod jwt into prod
     google:
-      path: "secret/data/preprod/apps/docs/google"
+      path: "apps/data/preprod/shared/google"
     identity-oidc:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
       path: "apps/data/preprod/services/am-doc-intelligence"
 
-config:
-  app:
-    JWT_ALGORITHM: "HS256"
-    MONGO_DATABASE: "am-doc-intelligence"
-    KAFKA_TOPIC: "am-portfolio"
+env:
+  JWT_ALGORITHM: "HS256"
+  MONGO_DATABASE: "am-doc-intelligence"
+  KAFKA_TOPIC: "am-portfolio"

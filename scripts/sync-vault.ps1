@@ -51,13 +51,18 @@ function Write-VaultData {
     kubectl --kubeconfig $KubeConfig exec vault-0 -n vault -- /bin/sh -c "$Command"
 }
 
+
 # 1. Sync Infra Secrets
 Write-Host "Syncing Infra Secrets..."
 $InfraPaths = @(
     "apps/preprod/infra/mongodb",
     "apps/preprod/infra/kafka",
     "apps/preprod/infra/postgres",
-    "apps/preprod/infra/redis"
+    "apps/preprod/infra/redis",
+    "apps/prod/infra/mongodb",
+    "apps/prod/infra/kafka",
+    "apps/prod/infra/postgres",
+    "apps/prod/infra/redis"
 )
 
 foreach ($Path in $InfraPaths) {
@@ -80,6 +85,8 @@ if ($env:CLOUDINARY_CLOUD_NAME) {
         CLOUDINARY_API_SECRET = $env:CLOUDINARY_API_SECRET
     }
     Write-VaultData "secret/preprod/apps/docs/cloudinary" $CloudinaryData
+    Write-VaultData "apps/preprod/services/am-cloudinary-manager" $CloudinaryData
+    Write-VaultData "apps/prod/services/am-cloudinary-manager" $CloudinaryData
 }
 
 # Google
@@ -88,13 +95,30 @@ $GoogleData = [PSCustomObject]@{
     GOOGLE_CLIENT_SECRET = ($env:GOOGLE_CLIENT_SECRET -or "placeholder")
 }
 Write-VaultData "secret/preprod/apps/docs/google" $GoogleData
+Write-VaultData "apps/preprod/apps/docs/google" $GoogleData
+Write-VaultData "apps/prod/apps/docs/google" $GoogleData
 
-# JWT
-if ($env:JWT_SECRET) {
-    $NewJwtData = [PSCustomObject]@{
-        JWT_SECRET = $env:JWT_SECRET
-    }
-    Write-VaultData "secret/preprod/apps/auth/jwt" $NewJwtData
+# 3. Create Service Secrets for Preprod & Prod
+# These were manually created in Vault for dev and are not in the backup file.
+# We now create them for preprod and prod using the same credential values.
+Write-Host "Creating service secrets for preprod and prod..."
+
+# am-identity — provides OIDC config (JWKS URL + Issuer) used for JWT validation
+$IdentityData = [PSCustomObject]@{
+    OIDC_JWKS_URL = $env:OIDC_JWKS_URL
+    OIDC_ISSUER   = $env:OIDC_ISSUER
 }
+Write-VaultData "apps/dev/services/am-identity"     $IdentityData
+Write-VaultData "apps/preprod/services/am-identity" $IdentityData
+Write-VaultData "apps/prod/services/am-identity"    $IdentityData
+
+# am-doc-intelligence — provides OAuth2 client credentials for service-to-service auth
+$DocIntelData = [PSCustomObject]@{
+    AM_DOC_INTELLIGENCE_CLIENT_ID     = $env:AM_DOC_INTELLIGENCE_CLIENT_ID
+    AM_DOC_INTELLIGENCE_CLIENT_SECRET = $env:AM_DOC_INTELLIGENCE_CLIENT_SECRET
+}
+Write-VaultData "apps/dev/services/am-doc-intelligence"     $DocIntelData
+Write-VaultData "apps/preprod/services/am-doc-intelligence" $DocIntelData
+Write-VaultData "apps/prod/services/am-doc-intelligence"    $DocIntelData
 
 Write-Host "Vault Sync Complete!"

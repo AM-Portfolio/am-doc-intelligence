@@ -97,20 +97,46 @@ def require_jwt(f):
                 request.jwt_payload = auth_context.claims
                 request.auth_context = auth_context
             else:
-                # Fallback to symmetric validation if security library not present
-                if not JWT_SECRET:
-                    return jsonify({'error': 'JWT_SECRET not configured and security library missing'}), 500
-                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
-                request.jwt_payload = payload
+                # Fallback to OIDC JWKS or symmetric validation if security library not present
+                jwks_url = os.environ.get('OIDC_JWKS_URL')
+                if jwks_url:
+                    import ssl
+                    ssl_context = ssl.create_default_context()
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                    
+                    jwks_client = jwt.PyJWKClient(jwks_url, ssl_context=ssl_context)
+                    signing_key = jwks_client.get_signing_key_from_jwt(token)
+                    
+                    unverified_header = jwt.get_unverified_header(token)
+                    alg = unverified_header.get('alg', 'RS256')
+                    
+                    decode_kwargs = {
+                        "algorithms": [alg],
+                        "options": {"verify_aud": False, "verify_iss": False}
+                    }
+                        
+                    payload = jwt.decode(token, signing_key.key, **decode_kwargs)
+                    request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+                    request.jwt_payload = payload
+                elif JWT_SECRET:
+                    payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                    request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+                    request.jwt_payload = payload
+                else:
+                    return jsonify({'error': 'OIDC_JWKS_URL or JWT_SECRET not configured and security library missing'}), 500
             
             if not request.user_id:
                 return jsonify({'error': 'User ID not found in token'}), 401
             
         except Exception as e:
+            import traceback
+            print(f"JWT Validation Error: {type(e).__name__}: {str(e)}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            
             if hasattr(e, 'status_code') and hasattr(e, 'detail'):
                 return jsonify({'error': getattr(e, 'detail')}), getattr(e, 'status_code')
-            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
+            return jsonify({'error': f'Invalid token: {type(e).__name__} - {str(e)}'}), 401
         
         return f(*args, **kwargs)
     
