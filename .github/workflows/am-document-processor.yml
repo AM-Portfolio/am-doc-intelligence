@@ -20,7 +20,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish.yml@main
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish.yml@feature/parameterizable-runners
     with:
       language: 'java'
       working_directory: 'services/am-document-processor'
@@ -31,4 +31,6 @@ jobs:
       dev_namespace: 'am-apps-dev'
       deploy_dev: true
       deploy_prod: false
+      dev_runner_labels: '["self-hosted", "Linux", "X64", "docker", "dev"]'
+      preprod_runner_labels: '["self-hosted", "Linux", "X64", "docker", "preprod"]'
     secrets: inherit
