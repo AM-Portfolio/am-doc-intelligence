@@ -8,8 +8,10 @@ entrypoint: "exec java -jar app.jar"
 probes:
   liveness:
     path: /actuator/health
+    initialDelaySeconds: 150
   readiness:
     path: /actuator/health
+    initialDelaySeconds: 150
 
 global:
   image:
