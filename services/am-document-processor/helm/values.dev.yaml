@@ -30,6 +30,8 @@ env:
   SPRING_PROFILES_ACTIVE: "dev,security"
   # Prefer lib local-mock for local/dev instead of disabling security entirely
   AM_SECURITY_LOCAL_MOCK_ENABLED: "true"
+  SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "PLAINTEXT"
+  SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: ""
 
 
 
