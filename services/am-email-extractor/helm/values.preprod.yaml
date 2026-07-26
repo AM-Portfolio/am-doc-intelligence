@@ -31,8 +31,9 @@ vault:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
       path: "apps/data/preprod/services/am-doc-intelligence"
+    # Vault UI: apps → preprod → shared → google
     google:
-      path: "apps/data/preprod/apps/docs/google"
+      path: "apps/data/preprod/shared/google"
 
 env:
   ALLOWED_ORIGINS: "https://am-preprod.asrax.in,http://localhost:3000"

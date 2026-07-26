@@ -23,8 +23,9 @@ env:
 vault:
   enabled: true
   secretPaths:
+    # Credentials live under shared (same pattern as google): apps → prod → shared → cloudinary
     cloudinary:
-      path: "apps/data/prod/services/am-cloudinary-manager"
+      path: "apps/data/prod/shared/cloudinary"
     identity-oidc:
       path: "apps/data/prod/services/am-identity"
     service-oauth:
