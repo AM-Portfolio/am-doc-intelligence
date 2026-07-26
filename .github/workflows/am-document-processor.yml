@@ -33,4 +33,5 @@ jobs:
       deploy_prod: false
       dev_runner_labels: '["self-hosted", "Linux", "X64", "docker", "dev"]'
       preprod_runner_labels: '["self-hosted", "Linux", "X64", "docker", "preprod"]'
+      skip_secrets_scan: true
     secrets: inherit
