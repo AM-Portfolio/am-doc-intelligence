@@ -97,12 +97,29 @@ def require_jwt(f):
                 request.jwt_payload = auth_context.claims
                 request.auth_context = auth_context
             else:
-                # Fallback to symmetric validation if security library not present
-                if not JWT_SECRET:
-                    return jsonify({'error': 'JWT_SECRET not configured and security library missing'}), 500
-                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
-                request.jwt_payload = payload
+                # Fallback to OIDC JWKS or symmetric validation if security library not present
+                jwks_url = os.environ.get('OIDC_JWKS_URL')
+                if jwks_url:
+                    jwks_client = jwt.PyJWKClient(jwks_url)
+                    signing_key = jwks_client.get_signing_key_from_jwt(token)
+                    issuer = os.environ.get('OIDC_ISSUER')
+                    
+                    decode_kwargs = {
+                        "algorithms": ["RS256"],
+                        "options": {"verify_aud": False}
+                    }
+                    if issuer:
+                        decode_kwargs["issuer"] = issuer
+                        
+                    payload = jwt.decode(token, signing_key.key, **decode_kwargs)
+                    request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+                    request.jwt_payload = payload
+                elif JWT_SECRET:
+                    payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+                    request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
+                    request.jwt_payload = payload
+                else:
+                    return jsonify({'error': 'OIDC_JWKS_URL or JWT_SECRET not configured and security library missing'}), 500
             
             if not request.user_id:
                 return jsonify({'error': 'User ID not found in token'}), 401

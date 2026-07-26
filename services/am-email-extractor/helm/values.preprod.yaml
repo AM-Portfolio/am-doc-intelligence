@@ -37,7 +37,4 @@ vault:
 
 env:
   ALLOWED_ORIGINS: "https://am-preprod.asrax.in,http://localhost:3000"
-
-config:
-  app:
-    GMAIL_REDIRECT_URI: "https://am-preprod.asrax.in/email/api/v1/gmail/callback"
+  GMAIL_REDIRECT_URI: "https://am-preprod.asrax.in/email/api/v1/gmail/callback"
