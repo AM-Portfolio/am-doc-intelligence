@@ -45,7 +45,7 @@ vault:
   role: "am-backend-role"
   secretPaths:
     cloudinary:
-      path: "secret/data/preprod/apps/docs/cloudinary"
+      path: "apps/data/preprod/shared/cloudinary"
     identity-oidc:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
