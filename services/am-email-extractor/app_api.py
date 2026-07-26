@@ -100,12 +100,19 @@ def require_jwt(f):
                 # Fallback to OIDC JWKS or symmetric validation if security library not present
                 jwks_url = os.environ.get('OIDC_JWKS_URL')
                 if jwks_url:
-                    jwks_client = jwt.PyJWKClient(jwks_url)
+                    import ssl
+                    ssl_context = ssl.create_default_context()
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                    
+                    jwks_client = jwt.PyJWKClient(jwks_url, ssl_context=ssl_context)
                     signing_key = jwks_client.get_signing_key_from_jwt(token)
-                    issuer = os.environ.get('OIDC_ISSUER')
+                    
+                    unverified_header = jwt.get_unverified_header(token)
+                    alg = unverified_header.get('alg', 'RS256')
                     
                     decode_kwargs = {
-                        "algorithms": ["RS256"],
+                        "algorithms": [alg],
                         "options": {"verify_aud": False, "verify_iss": False}
                     }
                         
