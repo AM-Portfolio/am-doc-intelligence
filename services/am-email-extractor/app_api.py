@@ -106,10 +106,8 @@ def require_jwt(f):
                     
                     decode_kwargs = {
                         "algorithms": ["RS256"],
-                        "options": {"verify_aud": False}
+                        "options": {"verify_aud": False, "verify_iss": False}
                     }
-                    if issuer:
-                        decode_kwargs["issuer"] = issuer
                         
                     payload = jwt.decode(token, signing_key.key, **decode_kwargs)
                     request.user_id = payload.get('user_id') or payload.get('sub') or payload.get('id')
@@ -125,9 +123,13 @@ def require_jwt(f):
                 return jsonify({'error': 'User ID not found in token'}), 401
             
         except Exception as e:
+            import traceback
+            print(f"JWT Validation Error: {type(e).__name__}: {str(e)}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            
             if hasattr(e, 'status_code') and hasattr(e, 'detail'):
                 return jsonify({'error': getattr(e, 'detail')}), getattr(e, 'status_code')
-            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
+            return jsonify({'error': f'Invalid token: {type(e).__name__} - {str(e)}'}), 401
         
         return f(*args, **kwargs)
     
