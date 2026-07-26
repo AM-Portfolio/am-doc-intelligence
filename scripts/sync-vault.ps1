@@ -80,6 +80,8 @@ if ($env:CLOUDINARY_CLOUD_NAME) {
         CLOUDINARY_API_SECRET = $env:CLOUDINARY_API_SECRET
     }
     Write-VaultData "secret/preprod/apps/docs/cloudinary" $CloudinaryData
+    Write-VaultData "apps/preprod/services/am-cloudinary-manager" $CloudinaryData
+    Write-VaultData "apps/prod/services/am-cloudinary-manager" $CloudinaryData
 }
 
 # Google
@@ -88,6 +90,8 @@ $GoogleData = [PSCustomObject]@{
     GOOGLE_CLIENT_SECRET = ($env:GOOGLE_CLIENT_SECRET -or "placeholder")
 }
 Write-VaultData "secret/preprod/apps/docs/google" $GoogleData
+Write-VaultData "apps/preprod/apps/docs/google" $GoogleData
+Write-VaultData "apps/prod/apps/docs/google" $GoogleData
 
 # JWT
 if ($env:JWT_SECRET) {
@@ -95,6 +99,8 @@ if ($env:JWT_SECRET) {
         JWT_SECRET = $env:JWT_SECRET
     }
     Write-VaultData "secret/preprod/apps/auth/jwt" $NewJwtData
+    Write-VaultData "apps/preprod/apps/auth/jwt" $NewJwtData
+    Write-VaultData "apps/prod/apps/auth/jwt" $NewJwtData
 }
 
 Write-Host "Vault Sync Complete!"
