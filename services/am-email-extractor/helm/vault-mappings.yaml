@@ -8,10 +8,6 @@ vault:
         KAFKA_BOOTSTRAP_SERVERS: "bootstrap_servers"
         KAFKA_USERNAME: "username"
         KAFKA_PASSWORD: "password"
-    jwt:
-      mappings:
-        JWT_SECRET: "JWT_SECRET"
-        SESSION_SECRET: "JWT_SECRET"
 
     google:
       mappings:

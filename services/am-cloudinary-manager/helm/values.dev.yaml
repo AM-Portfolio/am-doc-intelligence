@@ -16,7 +16,7 @@ vault:
   enabled: true
   secretPaths:
     cloudinary:
-      path: "apps/data/dev/shared/cloudinary"
+      path: "secret/data/dev/apps/docs/cloudinary"
     identity-oidc:
       path: "apps/data/dev/services/am-identity"
     service-oauth:
