@@ -31,10 +31,6 @@ vault:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
       path: "apps/data/preprod/services/am-doc-intelligence"
-    google:
-      path: "apps/data/preprod/apps/docs/google"
-    jwt:
-      path: "apps/data/preprod/apps/auth/jwt"
 
 env:
   ALLOWED_ORIGINS: "https://am-preprod.asrax.in,http://localhost:3000"
