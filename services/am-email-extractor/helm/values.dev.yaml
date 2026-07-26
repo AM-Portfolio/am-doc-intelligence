@@ -22,8 +22,6 @@ vault:
       path: "apps/data/dev/infra/mongodb"
     kafka:
       path: "apps/data/dev/infra/kafka"
-    jwt:
-      path: "secret/data/dev/apps/auth/jwt"
     google:
       path: "secret/data/dev/apps/docs/google"
     identity-oidc:

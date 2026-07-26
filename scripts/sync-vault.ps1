@@ -93,14 +93,6 @@ Write-VaultData "secret/preprod/apps/docs/google" $GoogleData
 Write-VaultData "apps/preprod/apps/docs/google" $GoogleData
 Write-VaultData "apps/prod/apps/docs/google" $GoogleData
 
-# JWT
-if ($env:JWT_SECRET) {
-    $NewJwtData = [PSCustomObject]@{
-        JWT_SECRET = $env:JWT_SECRET
-    }
-    Write-VaultData "secret/preprod/apps/auth/jwt" $NewJwtData
-    Write-VaultData "apps/preprod/apps/auth/jwt" $NewJwtData
-    Write-VaultData "apps/prod/apps/auth/jwt" $NewJwtData
-}
+
 
 Write-Host "Vault Sync Complete!"

@@ -48,8 +48,6 @@ vault:
       path: "apps/data/preprod/infra/mongodb"
     kafka:
       path: "apps/data/preprod/infra/kafka"
-    jwt:
-      path: "secret/data/preprod/apps/auth/jwt"
     google:
       path: "secret/data/preprod/apps/docs/google"
     identity-oidc:
