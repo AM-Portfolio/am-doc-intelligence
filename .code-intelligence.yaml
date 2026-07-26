@@ -17,21 +17,19 @@ local:
 gitnexus:
   skipAgentsMd: true
   skipSkills: true
-  group_path: am-doc-intelligence
+  group_path: agents/am-doc-intelligence
+graphify:
+  sources:
+  - docs/
+  - backend/templates/
+  - attachments/
+  out: graphify-out/
+  mcp_name: graphify-corp-docs
+  llm_policy: local
 capabilities:
-  domain: services
+  domain: agents
   surfaces:
   - http
-  - kafka
-  - libs
-  - config
-  pdg: true
   scan:
     scan_roots:
-    - services
-    - apps
-  topics:
-  - DOCUMENT_PROCESSED
-  - EMAIL_EXTRACTED
-  config_prefixes:
-  - am.doc
+    - src
