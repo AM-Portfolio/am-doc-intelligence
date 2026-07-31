@@ -16,3 +16,9 @@ ingress:
       paths:
         - path: /doc-ui
           pathType: Prefix
+
+global:
+  image:
+    imagePullSecrets:
+      - name: ghcr-creds
+
