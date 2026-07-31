@@ -17,6 +17,8 @@ env:
 
 vault:
   enabled: true
+  csi:
+    enabled: true
   secretPaths:
     mongodb:
       path: "apps/data/dev/infra/mongodb"

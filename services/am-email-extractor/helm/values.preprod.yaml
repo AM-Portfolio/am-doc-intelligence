@@ -22,6 +22,8 @@ ingress:
 
 vault:
   enabled: true
+  csi:
+    enabled: true
   secretPaths:
     mongodb:
       path: "apps/data/preprod/infra/mongodb"

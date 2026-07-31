@@ -20,6 +20,8 @@ ingress:
 
 vault:
   enabled: true
+  csi:
+    enabled: true
   secretPaths:
     cloudinary:
       path: "apps/data/preprod/services/am-cloudinary-manager"
