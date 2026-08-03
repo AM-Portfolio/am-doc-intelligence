@@ -29,3 +29,7 @@ vault:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
       path: "apps/data/preprod/services/am-cloudinary-manager"
+
+nodeSelector:
+  role: services
+

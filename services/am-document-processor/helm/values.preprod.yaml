@@ -19,6 +19,9 @@ vault:
     service-oauth:
       path: "apps/data/preprod/services/am-document-processor"
 
+nodeSelector:
+  role: services
+
 ingress:
   enabled: true
   className: "traefik"

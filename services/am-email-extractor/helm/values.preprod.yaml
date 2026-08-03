@@ -37,6 +37,10 @@ vault:
     google:
       path: "apps/data/preprod/shared/google"
 
+nodeSelector:
+  role: services
+
+
 env:
   ALLOWED_ORIGINS: "https://am-preprod.asrax.in,http://localhost:3000"
 

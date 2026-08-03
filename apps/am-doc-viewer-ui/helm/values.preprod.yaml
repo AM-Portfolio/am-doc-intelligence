@@ -22,3 +22,7 @@ global:
     imagePullSecrets:
       - name: ghcr-creds
 
+nodeSelector:
+  role: services
+
+

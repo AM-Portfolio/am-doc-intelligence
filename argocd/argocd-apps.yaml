@@ -11,7 +11,7 @@ items:
       project: default
       sources:
         - repoURL: 'https://github.com/AM-Portfolio/am-pipelines.git'
-          targetRevision: main
+          targetRevision: feature/parameterizable-runners
           path: helm/universal-chart
           helm:
             valueFiles:
@@ -39,7 +39,7 @@ items:
       project: default
       sources:
         - repoURL: 'https://github.com/AM-Portfolio/am-pipelines.git'
-          targetRevision: main
+          targetRevision: feature/parameterizable-runners
           path: helm/universal-chart
           helm:
             valueFiles:
@@ -67,7 +67,7 @@ items:
       project: default
       sources:
         - repoURL: 'https://github.com/AM-Portfolio/am-pipelines.git'
-          targetRevision: main
+          targetRevision: feature/parameterizable-runners
           path: helm/universal-chart
           helm:
             valueFiles:
@@ -95,7 +95,7 @@ items:
       project: default
       sources:
         - repoURL: 'https://github.com/AM-Portfolio/am-pipelines.git'
-          targetRevision: main
+          targetRevision: feature/parameterizable-runners
           path: helm/universal-chart
           helm:
             valueFiles:
