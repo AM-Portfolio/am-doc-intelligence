@@ -2,7 +2,6 @@
 # Preprod app host only — am.asrax.in reserved for prod
 environment: preprod
 replicaCount: 1
-
 ingress:
   enabled: true
   className: "traefik"
@@ -16,13 +15,10 @@ ingress:
       paths:
         - path: /doc-ui
           pathType: Prefix
-
 global:
   image:
     imagePullSecrets:
       - name: ghcr-creds
-
+    tag: "30939245046"
 nodeSelector:
   role: services
-
-
