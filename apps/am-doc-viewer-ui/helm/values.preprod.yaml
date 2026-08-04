@@ -19,6 +19,6 @@ global:
   image:
     imagePullSecrets:
       - name: ghcr-creds
-    tag: "30939245046"
+    tag: "30940447906"
 nodeSelector:
   role: services
