@@ -169,6 +169,15 @@ class ApiService {
     }
   }
 
+  List<String> get brokerTypes => [
+        'ZERODHA',
+        'GROW',
+        'DHAN',
+        'MSTOCK',
+        'ANGEL_ONE',
+        'UPSTOX',
+      ];
+
   Future<Map<String, dynamic>> extractFromGmail(String broker) async {
     final url = '$_emailBase/extract/gmail/$broker?pan=PANK1234F';
     debugPrint('[ApiService] GET $url');
