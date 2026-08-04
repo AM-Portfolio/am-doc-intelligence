@@ -2,6 +2,12 @@
 ARG BASE_REGISTRY=""
 FROM ${BASE_REGISTRY}am-flutter-base:latest AS build-env
 
+ARG GITHUB_PACKAGES_USERNAME
+ARG GITHUB_PACKAGES_TOKEN
+
+# Clone the private dependencies repository into /am-modern-ui
+RUN git clone https://${GITHUB_PACKAGES_USERNAME}:${GITHUB_PACKAGES_TOKEN}@github.com/AM-Portfolio/am-modern-ui.git /am-modern-ui
+
 # Set working directory
 WORKDIR /app
 
