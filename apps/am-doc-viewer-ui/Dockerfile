@@ -8,7 +8,20 @@ ARG GITHUB_PACKAGES_TOKEN
 # Clone the private dependencies repository into /am-modern-ui
 RUN git clone https://${GITHUB_PACKAGES_USERNAME}:${GITHUB_PACKAGES_TOKEN}@github.com/AM-Portfolio/am-modern-ui.git /am-modern-ui
 
-# Set working directory
+# Resolve dependencies and generate code for the shared modules in topological order
+WORKDIR /am-modern-ui/am_library
+RUN flutter pub get
+
+WORKDIR /am-modern-ui/am_design_system
+RUN flutter pub get && dart run build_runner build --delete-conflicting-outputs
+
+WORKDIR /am-modern-ui/am_common
+RUN flutter pub get && dart run build_runner build --delete-conflicting-outputs
+
+WORKDIR /am-modern-ui/am_auth_ui
+RUN flutter pub get && dart run build_runner build --delete-conflicting-outputs
+
+# Set working directory for the main application
 WORKDIR /app
 
 # Copy and build
