@@ -1,7 +1,7 @@
 replicaCount: 1
-port: 80
+port: 8080
 service:
-  port: 80
+  port: 8080
 healthPath: /doc-ui/
 language: flutter
 
@@ -33,3 +33,6 @@ resources:
 
 vault:
   enabled: false
+
+nodeSelector:
+  role: services

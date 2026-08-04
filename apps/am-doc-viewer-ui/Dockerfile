@@ -31,10 +31,10 @@ RUN flutter pub get
 RUN flutter build web --release --base-href /doc-ui/
 
 # Final stage: Serve with Nginx
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=build-env /app/build/web /usr/share/nginx/html/doc-ui
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
