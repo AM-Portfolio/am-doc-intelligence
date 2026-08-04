@@ -2,7 +2,13 @@ replicaCount: 1
 port: 8080
 service:
   port: 8080
-healthPath: /doc-ui/
+probes:
+  liveness:
+    path: /doc-ui/
+    initialDelaySeconds: 10
+  readiness:
+    path: /doc-ui/
+    initialDelaySeconds: 5
 language: flutter
 
 global:
