@@ -1,0 +1,21 @@
+apiVersion: am.argocd/v1
+kind: ServiceDeploy
+service: am-cloudinary-manager
+enabled: true
+owners: doc-intelligence
+source:
+  repo: am-doc-intelligence
+  path: services/am-cloudinary-manager/argocd.yaml
+chart:
+  repoURL: https://github.com/AM-Portfolio/am-pipelines.git
+  path: services/am-cloudinary-manager/argocd.yaml
+  targetRevision: main
+helm:
+  releaseName: am-cloudinary-manager
+  valuesPath: services/am-cloudinary-manager/helm
+valuesRepoURL: https://github.com/AM-Portfolio/am-doc-intelligence.git
+valuesTargetRevision: main
+envs:
+  prod:
+    enabled: true
+    namespace: am-apps-prod

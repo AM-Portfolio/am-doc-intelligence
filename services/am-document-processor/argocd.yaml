@@ -1,0 +1,21 @@
+apiVersion: am.argocd/v1
+kind: ServiceDeploy
+service: am-document-processor
+enabled: true
+owners: doc-intelligence
+source:
+  repo: am-doc-intelligence
+  path: services/am-document-processor/argocd.yaml
+chart:
+  repoURL: https://github.com/AM-Portfolio/am-pipelines.git
+  path: services/am-document-processor/argocd.yaml
+  targetRevision: main
+helm:
+  releaseName: am-document-processor
+  valuesPath: services/am-document-processor/helm
+valuesRepoURL: https://github.com/AM-Portfolio/am-doc-intelligence.git
+valuesTargetRevision: main
+envs:
+  prod:
+    enabled: true
+    namespace: am-apps-prod

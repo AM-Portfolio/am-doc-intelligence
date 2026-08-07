@@ -1,4 +1,4 @@
-# Prod — am-email-extractor
+# Prod â€” am-email-extractor
 environment: prod
 replicaCount: 1
 
@@ -30,7 +30,7 @@ vault:
       path: "apps/data/prod/services/am-identity"
     service-oauth:
       path: "apps/data/prod/services/am-doc-intelligence"
-    # Vault UI: apps → prod → shared → google  (KV v2 → apps/data/…)
+    # Vault UI: apps â†’ prod â†’ shared â†’ google  (KV v2 â†’ apps/data/â€¦)
     google:
       path: "apps/data/prod/shared/google"
 
@@ -40,3 +40,7 @@ env:
 config:
   app:
     GMAIL_REDIRECT_URI: "https://am.asrax.in/email/api/v1/gmail/callback"
+
+global:
+  image:
+    tag: "local-b553cf0"

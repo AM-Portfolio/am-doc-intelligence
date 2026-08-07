@@ -52,3 +52,6 @@ token.pickle
 
 # Environment variables (contains sensitive credentials)
 .env
+
+# Staged at docker build time from am-platform
+third_party/

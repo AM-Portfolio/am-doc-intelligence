@@ -1,4 +1,4 @@
-# Prod — am-document-processor
+# Prod â€” am-document-processor
 # Service-level Ingress (same model as am-identity).
 environment: prod
 replicaCount: 1
@@ -34,3 +34,7 @@ vault:
 
 env:
   SPRING_PROFILES_ACTIVE: "prod,security"
+
+global:
+  image:
+    tag: "30171511216"
