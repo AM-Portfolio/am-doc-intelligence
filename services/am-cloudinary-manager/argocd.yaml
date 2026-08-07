@@ -8,7 +8,7 @@ source:
   path: services/am-cloudinary-manager/argocd.yaml
 chart:
   repoURL: https://github.com/AM-Portfolio/am-pipelines.git
-  path: services/am-cloudinary-manager/argocd.yaml
+  path: helm/universal-chart
   targetRevision: main
 helm:
   releaseName: am-cloudinary-manager

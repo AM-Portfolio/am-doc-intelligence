@@ -8,7 +8,7 @@ source:
   path: services/am-email-extractor/argocd.yaml
 chart:
   repoURL: https://github.com/AM-Portfolio/am-pipelines.git
-  path: services/am-email-extractor/argocd.yaml
+  path: helm/universal-chart
   targetRevision: main
 helm:
   releaseName: am-email-extractor
