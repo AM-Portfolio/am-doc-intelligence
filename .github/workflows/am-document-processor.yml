@@ -1,5 +1,10 @@
 name: AM Document Processor
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 on:
   push:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
@@ -16,10 +21,6 @@ on:
 jobs:
   publish:
     name: Build and Publish
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish.yml@main
     with:
       language: 'java'
