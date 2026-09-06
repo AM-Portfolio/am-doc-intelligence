@@ -8,7 +8,7 @@ public enum BatchProcessingStatus {
     QUEUED,
     /** At least one file is being actively processed. */
     PROCESSING,
-    /** All files finished — some may have failed. */
+    /** All files finished successfully. */
     COMPLETED,
     /** All files failed. */
     FAILED,

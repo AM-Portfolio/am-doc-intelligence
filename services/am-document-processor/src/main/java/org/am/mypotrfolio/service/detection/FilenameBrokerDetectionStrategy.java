@@ -58,9 +58,12 @@ public class FilenameBrokerDetectionStrategy implements BrokerDetectionStrategy 
         if (upper.contains("DHAN")) return BrokerType.DHAN;
         if (upper.contains("ZERODHA")) return BrokerType.ZERODHA;
         if (upper.contains("MSTOCK")) return BrokerType.MSTOCK;
-        if (upper.contains("GROWW")) return BrokerType.GROWW;
+        if (upper.contains("GROWW") || upper.contains("STOCKS_HOLDINGS_STATEMENT")
+                || upper.contains("MUTUAL_FUNDS_ORDER") || upper.contains("HOLDINGS_STATEMENT")) {
+            return BrokerType.GROWW;
+        }
         if (upper.contains("ANGEL") || upper.contains("ANGELONE")) return BrokerType.ANGEL_ONE;
-        if (upper.contains("HOLDINGS_") || upper.contains("UPSTOX")) return BrokerType.UPSTOX;
+        if (upper.contains("UPSTOX")) return BrokerType.UPSTOX;
         return null;
     }
 

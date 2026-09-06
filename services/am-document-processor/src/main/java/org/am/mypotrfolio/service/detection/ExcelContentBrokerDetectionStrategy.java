@@ -93,8 +93,9 @@ public class ExcelContentBrokerDetectionStrategy implements BrokerDetectionStrat
             return new DetectionResult(BrokerType.ZERODHA, DocumentType.COMBINE_PORTFOLIO, CONTENT_CONFIDENCE);
         }
 
-        // Upstox: sheet name contains UPSTOX or HOLDINGS_
-        if (sheetNamesStr.contains("UPSTOX") || sheetNamesStr.contains("HOLDINGS_")) {
+        // Upstox: sheet name contains the broker name. Do not match generic "Holdings_"
+        // prefixes — Groww and other brokers also use that filename/sheet pattern.
+        if (sheetNamesStr.contains("UPSTOX")) {
             return new DetectionResult(BrokerType.UPSTOX, DocumentType.STOCK_PORTFOLIO, CONTENT_CONFIDENCE);
         }
 
