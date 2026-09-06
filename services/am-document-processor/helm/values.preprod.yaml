@@ -34,3 +34,5 @@ ingress:
 
 env:
   SPRING_PROFILES_ACTIVE: "preprod,security"
+  # Mongo partial index owner_broker_broker_only_idx uses  which this Mongo rejects; boot without auto-index so /sync image can start.
+  SPRING_DATA_MONGODB_AUTO_INDEX_CREATION: "false"
