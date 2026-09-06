@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,9 @@ public class DocumentProcessorService {
 
     @Qualifier("docProcessingPool")
     private final Executor docProcessingPool;
+
+    /** Per-batch locks so parallel file workers cannot clobber sibling Mongo updates. */
+    private final ConcurrentHashMap<String, Object> batchLocks = new ConcurrentHashMap<>();
 
     // =========================================================================
     // Single-file (existing API — backward-compatible, unchanged behaviour)
@@ -119,7 +123,8 @@ public class DocumentProcessorService {
                 } catch (Exception e) {
                     log.error("[BatchId: {}] Failed to read file bytes for: {}", batchId,
                             entry.getFile().getOriginalFilename(), e);
-                    safEntries.add(entry);
+                    throw new IllegalArgumentException(
+                            "Could not read file: " + entry.getFile().getOriginalFilename());
                 }
             } else {
                 safEntries.add(entry);
@@ -265,63 +270,78 @@ public class DocumentProcessorService {
 
     private void updateFileDetection(UUID batchId, UUID fileId, DetectionResult detection,
                                      ProcessingStatus status) {
-        BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
-        if (record == null) return;
+        withBatchLock(batchId, () -> {
+            BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
+            if (record == null) return;
 
-        record.getFiles().stream()
-                .filter(f -> fileId.equals(f.getFileId()))
-                .findFirst()
-                .ifPresent(f -> {
-                    f.setDetectedBroker(detection.getBrokerType());
-                    f.setDetectedDocumentType(detection.getDocumentType() != null
-                            ? detection.getDocumentType().name() : null);
-                    f.setStatus(status);
-                    f.setStartedAt(LocalDateTime.now());
-                });
+            record.getFiles().stream()
+                    .filter(f -> fileId.equals(f.getFileId()))
+                    .findFirst()
+                    .ifPresent(f -> {
+                        f.setDetectedBroker(detection.getBrokerType());
+                        f.setDetectedDocumentType(detection.getDocumentType() != null
+                                ? detection.getDocumentType().name() : null);
+                        f.setStatus(status);
+                        f.setStartedAt(LocalDateTime.now());
+                    });
 
-        record.recomputeOverallStatus();
-        batchSyncRecordRepository.save(record);
+            record.recomputeOverallStatus();
+            batchSyncRecordRepository.save(record);
+
+            FileSyncStatus sse = buildFileSyncStatus(record.getFiles().stream()
+                    .filter(f -> fileId.equals(f.getFileId())).findFirst().orElse(null));
+            if (sse != null) {
+                eventPublisher.emit(batchId, sse);
+            }
+        });
     }
 
     private void updateFileStatus(UUID batchId, UUID fileId, ProcessingStatus status,
                                   String errorMessage, DetectionResult detection, int records) {
-        BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
-        if (record == null) {
-            log.warn("[BatchId: {}] Record not found during status update", batchId);
-            return;
-        }
+        withBatchLock(batchId, () -> {
+            BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
+            if (record == null) {
+                log.warn("[BatchId: {}] Record not found during status update", batchId);
+                return;
+            }
 
-        record.getFiles().stream()
-                .filter(f -> fileId.equals(f.getFileId()))
-                .findFirst()
-                .ifPresent(f -> {
-                    f.setStatus(status);
-                    f.setErrorMessage(errorMessage);
-                    f.setRecordsProcessed(records);
-                    f.setCompletedAt(LocalDateTime.now());
-                    if (detection != null && f.getDetectedBroker() == null) {
-                        f.setDetectedBroker(detection.getBrokerType());
-                        f.setDetectedDocumentType(detection.getDocumentType() != null
-                                ? detection.getDocumentType().name() : null);
-                    }
-                });
+            record.getFiles().stream()
+                    .filter(f -> fileId.equals(f.getFileId()))
+                    .findFirst()
+                    .ifPresent(f -> {
+                        f.setStatus(status);
+                        f.setErrorMessage(errorMessage);
+                        f.setRecordsProcessed(records);
+                        f.setCompletedAt(LocalDateTime.now());
+                        if (detection != null && f.getDetectedBroker() == null) {
+                            f.setDetectedBroker(detection.getBrokerType());
+                            f.setDetectedDocumentType(detection.getDocumentType() != null
+                                    ? detection.getDocumentType().name() : null);
+                        }
+                    });
 
-        record.recomputeOverallStatus();
-        batchSyncRecordRepository.save(record);
+            record.recomputeOverallStatus();
+            batchSyncRecordRepository.save(record);
 
-        // Push SSE update
-        UUID batchUUID = UUID.fromString(record.getBatchId());
-        FileSyncStatus sse = buildFileSyncStatus(record.getFiles().stream()
-                .filter(f -> fileId.equals(f.getFileId())).findFirst().orElse(null));
-        if (sse != null) {
-            eventPublisher.emit(batchUUID, sse);
-        }
+            FileSyncStatus sse = buildFileSyncStatus(record.getFiles().stream()
+                    .filter(f -> fileId.equals(f.getFileId())).findFirst().orElse(null));
+            if (sse != null) {
+                eventPublisher.emit(batchId, sse);
+            }
 
-        // Complete SSE stream if batch is terminal
-        if (record.getOverallStatus() == BatchProcessingStatus.COMPLETED
-                || record.getOverallStatus() == BatchProcessingStatus.FAILED
-                || record.getOverallStatus() == BatchProcessingStatus.PARTIAL) {
-            eventPublisher.completeBatch(batchUUID);
+            if (record.getOverallStatus() == BatchProcessingStatus.COMPLETED
+                    || record.getOverallStatus() == BatchProcessingStatus.FAILED
+                    || record.getOverallStatus() == BatchProcessingStatus.PARTIAL) {
+                eventPublisher.completeBatch(batchId);
+                batchLocks.remove(batchId.toString());
+            }
+        });
+    }
+
+    private void withBatchLock(UUID batchId, Runnable action) {
+        Object lock = batchLocks.computeIfAbsent(batchId.toString(), k -> new Object());
+        synchronized (lock) {
+            action.run();
         }
     }
 

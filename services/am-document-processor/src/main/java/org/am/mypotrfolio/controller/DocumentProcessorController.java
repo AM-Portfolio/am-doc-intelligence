@@ -171,7 +171,9 @@ public class DocumentProcessorController {
             @RequestParam(value = "documentTypes", required = false) List<String> documentTypes,
             @Parameter(description = "Optional per-file passwords for encrypted files")
             @RequestParam(value = "passwords", required = false) List<String> passwords,
-            @Parameter(description = "Optional batch-level portfolio ID")
+            @Parameter(description = "Optional per-file portfolio names/IDs (same order as files)")
+            @RequestParam(value = "portfolioIds", required = false) List<String> portfolioIds,
+            @Parameter(description = "Optional batch-level portfolio ID used when a file has no per-file value")
             @RequestParam(value = "portfolioId", required = false) String portfolioId) {
 
         String userId = resolveUserId();
@@ -182,6 +184,11 @@ public class DocumentProcessorController {
         if (files.size() > 5) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Maximum 5 files allowed per batch"));
         }
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("Empty files are not allowed"));
+            }
+        }
 
         log.info("Multi-broker sync request: {} files, user: {}", files.size(), userId);
 
@@ -189,14 +196,16 @@ public class DocumentProcessorController {
         for (int i = 0; i < files.size(); i++) {
             entries.add(BatchSyncEntry.builder()
                     .file(files.get(i))
-                    .brokerType(getOrNull(brokerTypes, i))
-                    .documentType(getOrNull(documentTypes, i))
-                    .password(getOrNull(passwords, i))
+                    .brokerType(blankToNull(getOrNull(brokerTypes, i)))
+                    .documentType(blankToNull(getOrNull(documentTypes, i)))
+                    .password(blankToNull(getOrNull(passwords, i)))
+                    .portfolioId(blankToNull(getOrNull(portfolioIds, i)))
                     .build());
         }
 
         try {
-            BatchSyncStatus status = documentProcessorService.submitBatchSync(entries, userId, portfolioId);
+            BatchSyncStatus status = documentProcessorService.submitBatchSync(
+                    entries, userId, blankToNull(portfolioId));
             return ResponseEntity.accepted().body(status);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
@@ -248,12 +257,29 @@ public class DocumentProcessorController {
             @PathVariable String batchId) {
 
         String userId = resolveUserId();
+        final UUID batchUuid;
+        try {
+            batchUuid = UUID.fromString(batchId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid batchId");
+        }
+        try {
+            documentProcessorService.getBatchSyncStatus(batchId, userId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Batch not found: " + batchId);
+        }
         log.info("SSE stream requested for batchId: {} by user: {}", batchId, userId);
-        return batchSyncEventPublisher.subscribe(UUID.fromString(batchId));
+        return batchSyncEventPublisher.subscribe(batchUuid);
     }
 
     private static <T> T getOrNull(List<T> list, int index) {
         return (list != null && index < list.size()) ? list.get(index) : null;
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     @Operation(summary = "Get document processing status", security = @SecurityRequirement(name = "Bearer"))
