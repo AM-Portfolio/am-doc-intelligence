@@ -16,6 +16,8 @@ import org.am.mypotrfolio.model.*;
 import org.am.mypotrfolio.service.BatchSyncEventPublisher;
 import org.am.mypotrfolio.service.DocumentProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,9 @@ public class DocumentProcessorController {
 
     @Autowired
     private BatchSyncEventPublisher batchSyncEventPublisher;
+
+    @Autowired
+    private Environment environment;
 
     @Operation(summary = "Get supported document types", description = "Public endpoint — no authentication required")
     @ApiResponses({
@@ -310,8 +315,12 @@ public class DocumentProcessorController {
      * Prefer am-security-lib {@link UserContext} (set by UserContextFilter).
      * Fall back to OIDC {@link JwtAuthenticationToken} subject when the filter
      * has not populated the ThreadLocal yet.
+     *
+     * <p>Unauthenticated requests return 401. A {@code local-dev-user} bypass is
+     * allowed only when profile {@code local} or {@code local-dev} is active and
+     * neither {@code prod} nor {@code preprod} is active.
      */
-    private static String resolveUserId() {
+    private String resolveUserId() {
         String userId = UserContext.getUserId();
         if (userId != null && !userId.isBlank()) {
             return userId;
@@ -323,8 +332,18 @@ public class DocumentProcessorController {
                 return sub;
             }
         }
-        log.warn("No authenticated user found. Falling back to local-dev-user");
-        return "local-dev-user";
+        if (isLocalDevAuthBypass()) {
+            log.warn("No authenticated user found. Using local-dev-user (local/local-dev profile only)");
+            return "local-dev-user";
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+    }
+
+    private boolean isLocalDevAuthBypass() {
+        if (environment.acceptsProfiles(Profiles.of("prod | preprod"))) {
+            return false;
+        }
+        return environment.acceptsProfiles(Profiles.of("local | local-dev"));
     }
 
     public static class ErrorResponse {

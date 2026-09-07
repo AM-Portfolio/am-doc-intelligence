@@ -11,8 +11,10 @@ server:
 spring:
   servlet:
     multipart:
+      # Hard cap per file. Batch sync copies bytes into heap; keep this strict.
       max-file-size: 10MB
-      max-request-size: 10MB
+      # POST /sync accepts up to 5 files (5 × 10MB plus multipart overhead).
+      max-request-size: 52MB
   application:
     name: document-processor-data
   profiles:

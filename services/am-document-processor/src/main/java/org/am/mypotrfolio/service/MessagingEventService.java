@@ -155,33 +155,18 @@ public class MessagingEventService {
     }
 
     /**
-     * Sends a single aggregated event after all files in a multi-broker batch sync are complete.
-     * Downstream services (am-portfolio, am-analysis) should use this to trigger a consolidated
-     * portfolio refresh rather than reacting to N individual per-file events.
+     * Batch completion is not published on the portfolio Kafka topic.
      *
-     * @param batchId      the batch UUID
-     * @param userId       the authenticated user
-     * @param fileRecords  completed file records (used for logging/audit)
+     * <p>{@code am-portfolio} treats {@link PortfolioUpdateEvent#getId()} as a fallback
+     * portfolio identity when {@code portfolioId} is null. Putting a batch UUID on
+     * {@code id} would therefore upsert a bogus portfolio. Per-file calls to
+     * {@link #sendStockPortfolioMessage} / {@link #sendMutualFundPortfolioMessage}
+     * already notify downstream with the real process id and portfolio id.
      */
     public void sendBatchCompletedEvent(UUID batchId, String userId, List<FileSyncRecord> fileRecords) {
-        if (kafkaProducerService == null) {
-            log.info("[BatchId: {}] Kafka is disabled. Skipping batch-completed event for user: {}",
-                    batchId, userId);
-            return;
-        }
-        log.info("[BatchId: {}] Sending batch-completed event for user: {} ({} files)",
-                batchId, userId, fileRecords.size());
-        try {
-            // Reuse PortfolioUpdateEvent as the aggregated signal; portfolioId is null at batch level.
-            PortfolioUpdateEvent event = PortfolioUpdateEvent.builder()
-                    .id(batchId)
-                    .userId(userId)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            kafkaProducerService.sendPortfolioUpdate(event);
-            log.info("[BatchId: {}] Successfully published batch-completed event to Kafka", batchId);
-        } catch (Exception e) {
-            log.error("[BatchId: {}] Failed to publish batch-completed event to Kafka", batchId, e);
-        }
+        int n = fileRecords == null ? 0 : fileRecords.size();
+        log.info("[BatchId: {}] Batch complete for user: {} ({} files). "
+                + "Not emitting a batch-level PortfolioUpdateEvent; per-file events already carry portfolioId.",
+                batchId, userId, n);
     }
 }
