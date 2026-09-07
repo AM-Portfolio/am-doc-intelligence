@@ -50,6 +50,27 @@ class BatchSyncRecordTest {
         assertEquals(1, record.getFailed());
     }
 
+    @Test
+    void recomputeOverallStatus_completedPlusSkippedIsCompleted() {
+        BatchSyncRecord record = record(
+                ProcessingStatus.SKIPPED,
+                ProcessingStatus.COMPLETED);
+        record.recomputeOverallStatus();
+        assertEquals(BatchProcessingStatus.COMPLETED, record.getOverallStatus());
+        assertEquals(1, record.getCompleted());
+        assertEquals(1, record.getSkipped());
+        assertEquals(0, record.getFailed());
+    }
+
+    @Test
+    void recomputeOverallStatus_skippedAndFailedIsPartial() {
+        BatchSyncRecord record = record(
+                ProcessingStatus.SKIPPED,
+                ProcessingStatus.FAILED);
+        record.recomputeOverallStatus();
+        assertEquals(BatchProcessingStatus.PARTIAL, record.getOverallStatus());
+    }
+
     private static BatchSyncRecord record(ProcessingStatus... statuses) {
         List<FileSyncRecord> files = new ArrayList<>();
         for (ProcessingStatus status : statuses) {
