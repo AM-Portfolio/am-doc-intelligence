@@ -56,10 +56,8 @@ public class DocumentProcessorImpl implements DocumentProcessor {
         } else if (documentRequest.getDocumentType().isTradeMf()) {
             return processTradeMf(documentRequest, portfolioId, userId);
         } else if (documentRequest.getDocumentType().isCombinePortfolio()) {
-            if (documentRequest.getBrokerType() == null || !documentRequest.getBrokerType().isAngelOne()) {
-                throw new UnsupportedOperationException("Combine Portfolio is only supported for Angel One");
-            }
-            // Broker Portfolio can be Equity or Composite (Equity + MF)
+            // Combined portfolio (Equity + MF) — supported for Angel One, Zerodha, and any
+            // other broker whose file is detected as COMBINE_PORTFOLIO.
             List<Object> combined = new java.util.ArrayList<>();
             combined.addAll(processEquityPortfolio(documentRequest, portfolioId, userId));
             combined.addAll(processMutualFundsPortfolio(documentRequest, portfolioId, userId));

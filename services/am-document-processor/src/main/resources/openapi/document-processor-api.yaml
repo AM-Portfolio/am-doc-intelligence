@@ -120,6 +120,122 @@ paths:
         '500':
           description: Internal server error
 
+  /documents/sync:
+    post:
+      tags:
+        - Documents
+      summary: Submit a multi-broker batch sync
+      description: |
+        Accepts up to 5 files from different brokers. Broker type and document type
+        are auto-detected per file unless hints are provided. Processing is async —
+        poll GET /documents/sync/{batchId}/status for progress.
+      operationId: submitBatchSync
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                files:
+                  type: array
+                  maxItems: 5
+                  items:
+                    type: string
+                    format: binary
+                  description: Files to process (one or more, different brokers allowed)
+                brokerTypes:
+                  type: array
+                  items:
+                    type: string
+                    example: ZERODHA
+                  description: Optional per-file broker hints (same order as files)
+                documentTypes:
+                  type: array
+                  items:
+                    type: string
+                    example: STOCK_PORTFOLIO
+                  description: Optional per-file document type hints (same order as files)
+                passwords:
+                  type: array
+                  items:
+                    type: string
+                  description: Optional per-file passwords for encrypted files
+                portfolioIds:
+                  type: array
+                  items:
+                    type: string
+                    example: My Zerodha
+                  description: Optional per-file portfolio names/IDs (same order as files)
+                portfolioId:
+                  type: string
+                  description: Optional batch-level portfolio ID used when a file has no per-file value
+      responses:
+        '202':
+          description: Batch accepted and processing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSyncStatus'
+        '400':
+          description: Invalid input parameters
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+
+  /documents/sync/{batchId}/status:
+    get:
+      tags:
+        - Documents
+      summary: Get batch sync status
+      operationId: getBatchSyncStatus
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSyncStatus'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Batch not found
+
+  /documents/sync/{batchId}/stream:
+    get:
+      tags:
+        - Documents
+      summary: Stream batch sync progress via SSE
+      operationId: streamBatchSyncProgress
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Server-sent events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: Batch not found
+
   /documents/types:
     get:
       tags:
@@ -170,3 +286,71 @@ components:
         - COMPLETED
         - FAILED
       description: Status of the document processing request
+
+    BatchProcessingStatus:
+      type: string
+      enum:
+        - QUEUED
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+        - PARTIAL
+
+    FileSyncStatus:
+      type: object
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        detectedBroker:
+          type: string
+        detectedDocumentType:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProcessingStatus'
+        errorMessage:
+          type: string
+        recordsProcessed:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+      required:
+        - fileId
+        - fileName
+        - status
+
+    BatchSyncStatus:
+      type: object
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        total:
+          type: integer
+        completed:
+          type: integer
+        failed:
+          type: integer
+        overallStatus:
+          $ref: '#/components/schemas/BatchProcessingStatus'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileSyncStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - batchId
+        - total
+        - overallStatus
+        - files

@@ -60,7 +60,25 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
     @Override
     protected List<Map<String, String>> parseZerodhaFile(MultipartFile file) throws Exception {
-        return parseExcelFile(file, 22, 22, 1);
+        int headerRow = 22;
+        int skipColumns = 1;
+        try (InputStream is = file.getInputStream();
+                Workbook workbook = new XSSFWorkbook(is)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            int dynamicRow = findHeaderRow(sheet, "Symbol", "Stock name");
+            if (dynamicRow != -1) {
+                headerRow = dynamicRow;
+                Row hr = sheet.getRow(headerRow);
+                if (hr != null) {
+                    Cell firstCell = hr.getCell(0, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    String val = getCellValueAsString(firstCell).trim();
+                    skipColumns = val.isEmpty() ? 1 : 0;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to dynamically detect Zerodha header, defaulting to row 22", e);
+        }
+        return parseExcelFile(file, headerRow, headerRow, skipColumns);
     }
 
     @Override
@@ -431,8 +449,14 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
 
             // Map headers to column indices
             for (Cell cell : headerRow) {
-                String header = getCellValueAsString(cell).trim();
-                colMap.put(header.toLowerCase(), cell.getColumnIndex());
+                String header = getCellValueAsString(cell).trim().toLowerCase();
+                if (header.startsWith("symbol")) {
+                    header = "symbol";
+                }
+                if (header.equals("qty.") || header.equals("net qty") || header.equals("total qty")) {
+                    header = "quantity";
+                }
+                colMap.put(header, cell.getColumnIndex());
             }
             log.info("Zerodha Column Mapping: {}", colMap);
 
@@ -1154,8 +1178,16 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
             // Normalize headers to match StockAsset fields
             for (int i = 0; i < headers.size(); i++) {
                 String h = headers.get(i);
-                if ("Quantity Available".equalsIgnoreCase(h)) {
+                if ("Quantity Available".equalsIgnoreCase(h) || "Qty.".equalsIgnoreCase(h) || "Net Qty".equalsIgnoreCase(h) || "Total Qty".equalsIgnoreCase(h)) {
                     headers.set(i, "Quantity");
+                } else if (h.toLowerCase().startsWith("symbol")) {
+                    headers.set(i, "Symbol");
+                } else if ("Avg. Price".equalsIgnoreCase(h) || "Rate".equalsIgnoreCase(h) || "Average buy price".equalsIgnoreCase(h)) {
+                    headers.set(i, "Average Price");
+                } else if ("Current".equalsIgnoreCase(h) || "Current Value".equalsIgnoreCase(h)) {
+                    headers.set(i, "Current Value");
+                } else if ("Invested".equalsIgnoreCase(h) || "Investment".equalsIgnoreCase(h)) {
+                    headers.set(i, "Investment");
                 }
             }
 

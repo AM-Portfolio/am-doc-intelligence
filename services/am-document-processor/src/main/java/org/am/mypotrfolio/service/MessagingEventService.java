@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.am.mypotrfolio.kafka.model.PortfolioUpdateEvent;
 import org.am.mypotrfolio.kafka.model.TradeUpdateEvent;
 import org.am.mypotrfolio.kafka.producer.KafkaProducerService;
+import org.am.mypotrfolio.model.FileSyncRecord;
 import org.am.mypotrfolio.model.trade.FNOTradeType;
 import org.am.mypotrfolio.model.trade.TradeModel;
 import org.am.mypotrfolio.model.trade.TradeType;
@@ -151,5 +152,21 @@ public class MessagingEventService {
                 .portfolioId(portfolioId)
                 .timestamp(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Batch completion is not published on the portfolio Kafka topic.
+     *
+     * <p>{@code am-portfolio} treats {@link PortfolioUpdateEvent#getId()} as a fallback
+     * portfolio identity when {@code portfolioId} is null. Putting a batch UUID on
+     * {@code id} would therefore upsert a bogus portfolio. Per-file calls to
+     * {@link #sendStockPortfolioMessage} / {@link #sendMutualFundPortfolioMessage}
+     * already notify downstream with the real process id and portfolio id.
+     */
+    public void sendBatchCompletedEvent(UUID batchId, String userId, List<FileSyncRecord> fileRecords) {
+        int n = fileRecords == null ? 0 : fileRecords.size();
+        log.info("[BatchId: {}] Batch complete for user: {} ({} files). "
+                + "Not emitting a batch-level PortfolioUpdateEvent; per-file events already carry portfolioId.",
+                batchId, userId, n);
     }
 }

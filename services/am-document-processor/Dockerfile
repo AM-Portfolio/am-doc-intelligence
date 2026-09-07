@@ -1,7 +1,7 @@
 # ===============================
 # Runtime Image
 # ===============================
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-noble
 
 WORKDIR /app
 
