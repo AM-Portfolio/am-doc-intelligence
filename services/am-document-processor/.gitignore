@@ -57,3 +57,6 @@ Thumbs.db
 src/main/resources/application-local-dev.yml
 .env
 settings.xml
+# Feature-branch Argo image pin — never ship on main
+helm/ci-image.yaml
+

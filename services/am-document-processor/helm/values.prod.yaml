@@ -34,6 +34,8 @@ vault:
 
 env:
   SPRING_PROFILES_ACTIVE: "prod,security"
+  # Same as preprod: Mongo rejects partial index owner_broker_broker_only_idx on auto-create.
+  SPRING_DATA_MONGODB_AUTO_INDEX_CREATION: "false"
 
 global:
   image:
