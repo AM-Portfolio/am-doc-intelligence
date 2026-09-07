@@ -64,18 +64,24 @@ public class BatchSyncRecord {
         return (int) countByStatus(ProcessingStatus.FAILED);
     }
 
+    public int getSkipped() {
+        return (int) countByStatus(ProcessingStatus.SKIPPED);
+    }
+
     /** Recomputes {@link #overallStatus} from child file statuses. */
     public void recomputeOverallStatus() {
         long total = files.size();
         long done = countByStatus(ProcessingStatus.COMPLETED);
         long failed = countByStatus(ProcessingStatus.FAILED);
+        long skipped = countByStatus(ProcessingStatus.SKIPPED);
         long active = countByStatus(ProcessingStatus.PROCESSING) + countByStatus(ProcessingStatus.QUEUED);
 
         if (active > 0) {
             overallStatus = BatchProcessingStatus.PROCESSING;
         } else if (failed == total) {
             overallStatus = BatchProcessingStatus.FAILED;
-        } else if (done == total) {
+        } else if (failed == 0 && done + skipped == total) {
+            // SKIPPED is terminal and non-failed — batch succeeds when remaining files complete.
             overallStatus = BatchProcessingStatus.COMPLETED;
         } else {
             overallStatus = BatchProcessingStatus.PARTIAL;

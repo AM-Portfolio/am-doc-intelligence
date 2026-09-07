@@ -285,7 +285,10 @@ components:
         - PROCESSING
         - COMPLETED
         - FAILED
-      description: Status of the document processing request
+        - SKIPPED
+      description: >
+        Status of the document processing request. SKIPPED means a duplicate
+        broker file in the same batch was dropped in favour of the latest file.
 
     BatchProcessingStatus:
       type: string

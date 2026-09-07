@@ -32,6 +32,8 @@ public class FileSyncStatus {
     private LocalDateTime completedAt;
 
     public boolean isTerminal() {
-        return status == ProcessingStatus.COMPLETED || status == ProcessingStatus.FAILED;
+        return status == ProcessingStatus.COMPLETED
+                || status == ProcessingStatus.FAILED
+                || status == ProcessingStatus.SKIPPED;
     }
 }

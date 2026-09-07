@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -148,19 +149,72 @@ public class DocumentProcessorService {
                 .build();
         batchSyncRecordRepository.save(batchRecord);
 
-        // Submit each entry asynchronously
+        // Phase A: detect brokers for all files before any processing (barrier).
+        List<DetectionResult> detections = new ArrayList<>(safEntries.size());
+        List<BrokerType> resolvedBrokers = new ArrayList<>(safEntries.size());
         for (int i = 0; i < safEntries.size(); i++) {
+            BatchSyncEntry entry = safEntries.get(i);
+            BrokerType explicitBroker = parseBrokerType(entry.getBrokerType());
+            DocumentType explicitDocType = parseDocumentType(entry.getDocumentType());
+            DetectionResult detection = brokerDetectionService.detectWithHints(
+                    entry.getFile(), entry.getPassword(), explicitBroker, explicitDocType);
+            detections.add(detection);
+            // Explicit broker wins for duplicate identity; else use detection.
+            BrokerType resolved = explicitBroker != null ? explicitBroker : detection.getBrokerType();
+            resolvedBrokers.add(resolved);
+
+            FileSyncRecord fr = fileRecords.get(i);
+            fr.setDetectedBroker(resolved != null ? resolved : detection.getBrokerType());
+            fr.setDetectedDocumentType(detection.getDocumentType() != null
+                    ? detection.getDocumentType().name() : null);
+        }
+
+        // Phase B: keep latest file per broker; mark earlier duplicates SKIPPED.
+        Set<Integer> skipIndices = BrokerBatchDeduper.indicesToSkip(resolvedBrokers);
+        LocalDateTime now = LocalDateTime.now();
+        for (Integer skipIdx : skipIndices) {
+            BrokerType broker = resolvedBrokers.get(skipIdx);
+            int keptIdx = -1;
+            for (int j = safEntries.size() - 1; j >= 0; j--) {
+                if (broker != null && broker.equals(resolvedBrokers.get(j))) {
+                    keptIdx = j;
+                    break;
+                }
+            }
+            String keptName = keptIdx >= 0 ? fileRecords.get(keptIdx).getFileName() : null;
+            FileSyncRecord skipped = fileRecords.get(skipIdx);
+            skipped.setStatus(ProcessingStatus.SKIPPED);
+            skipped.setErrorMessage(BrokerBatchDeduper.skipMessage(broker, keptName));
+            skipped.setCompletedAt(now);
+            log.info("[BatchId: {}][FileId: {}] Skipping duplicate broker={} kept={}",
+                    batchId, skipped.getFileId(), broker, keptName);
+        }
+        batchRecord.recomputeOverallStatus();
+        batchSyncRecordRepository.save(batchRecord);
+
+        // Phase C: process only non-skipped files.
+        for (int i = 0; i < safEntries.size(); i++) {
+            if (skipIndices.contains(i)) {
+                continue;
+            }
             final BatchSyncEntry entry = safEntries.get(i);
             final UUID fileId = fileRecords.get(i).getFileId();
+            final DetectionResult detection = detections.get(i);
 
             CompletableFuture.runAsync(
-                    () -> processEntry(batchId, fileId, entry, userId, portfolioId),
+                    () -> processEntry(batchId, fileId, entry, userId, portfolioId, detection),
                     docProcessingPool
             ).exceptionally(ex -> {
                 log.error("[BatchId: {}][FileId: {}] Unhandled exception in async processor", batchId, fileId, ex);
                 updateFileStatus(batchId, fileId, ProcessingStatus.FAILED, ex.getMessage(), null, 0);
                 return null;
             });
+        }
+
+        // If every file was skipped, complete the SSE stream immediately.
+        if (skipIndices.size() == safEntries.size() && !safEntries.isEmpty()) {
+            eventPublisher.completeBatch(batchId);
+            batchLocks.remove(batchId.toString());
         }
 
         return toBatchSyncStatus(batchRecord);
@@ -218,19 +272,13 @@ public class DocumentProcessorService {
     // Private helpers
     // =========================================================================
 
-    /** Core async worker: detect → split → process each sub-request → persist + emit. */
+    /** Core async worker: use precomputed detection → split → process → persist + emit. */
     private void processEntry(UUID batchId, UUID fileId, BatchSyncEntry entry,
-                              String userId, String batchPortfolioId) {
+                              String userId, String batchPortfolioId, DetectionResult detection) {
         String fileName = entry.getFile() != null ? entry.getFile().getOriginalFilename() : "unknown";
         log.info("[BatchId: {}][FileId: {}] Starting processing for file: {}", batchId, fileId, fileName);
 
         try {
-            // 1. Detect broker & document type
-            BrokerType explicitBroker = parseBrokerType(entry.getBrokerType());
-            DocumentType explicitDocType = parseDocumentType(entry.getDocumentType());
-            DetectionResult detection = brokerDetectionService.detectWithHints(
-                    entry.getFile(), entry.getPassword(), explicitBroker, explicitDocType);
-
             updateFileDetection(batchId, fileId, detection, ProcessingStatus.PROCESSING);
             log.info("[BatchId: {}][FileId: {}] Detected broker={} docType={} confidence={}",
                     batchId, fileId, detection.getBrokerType(), detection.getDocumentType(),
@@ -243,7 +291,7 @@ public class DocumentProcessorService {
                         ". Please provide 'brokerTypes' and/or 'documentTypes' hints in the request.");
             }
 
-            // 2. Split multi-portfolio files if needed
+            // Split multi-portfolio files if needed
             String effectivePortfolioId = entry.getPortfolioId() != null
                     ? entry.getPortfolioId() : batchPortfolioId;
             List<DocumentRequest> requests = splitterFactory.splitOrWrap(
@@ -251,7 +299,6 @@ public class DocumentProcessorService {
 
             log.info("[BatchId: {}][FileId: {}] Split into {} sub-requests", batchId, fileId, requests.size());
 
-            // 3. Process each sub-request (synchronous within this async worker)
             int totalRecords = 0;
             for (DocumentRequest req : requests) {
                 DocumentProcessResponse resp = documentProcessor.processDocument(
