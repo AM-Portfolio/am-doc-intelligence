@@ -2,6 +2,7 @@ package org.am.mypotrfolio.service;
 
 import com.am.common.amcommondata.model.enums.BrokerType;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +24,9 @@ public final class BrokerBatchDeduper {
 
     /**
      * @param brokersInOrder resolved broker per file index (null allowed)
-     * @return indices that must be marked SKIPPED (not processed)
+     * @return skip indices plus the kept (latest) index per broker
      */
-    public static Set<Integer> indicesToSkip(List<BrokerType> brokersInOrder) {
+    public static DedupResult evaluate(List<BrokerType> brokersInOrder) {
         Map<BrokerType, Integer> lastIndexByBroker = new HashMap<>();
         for (int i = 0; i < brokersInOrder.size(); i++) {
             BrokerType broker = brokersInOrder.get(i);
@@ -41,12 +42,24 @@ public final class BrokerBatchDeduper {
                 skip.add(i);
             }
         }
-        return skip;
+        return new DedupResult(Collections.unmodifiableSet(skip),
+                Collections.unmodifiableMap(lastIndexByBroker));
+    }
+
+    /**
+     * @param brokersInOrder resolved broker per file index (null allowed)
+     * @return indices that must be marked SKIPPED (not processed)
+     */
+    public static Set<Integer> indicesToSkip(List<BrokerType> brokersInOrder) {
+        return evaluate(brokersInOrder).skipIndices();
     }
 
     public static String skipMessage(BrokerType broker, String keptFileName) {
         String brokerLabel = broker != null ? broker.name() : "UNKNOWN";
         String kept = keptFileName != null && !keptFileName.isBlank() ? keptFileName : "latest file";
         return "Duplicate " + brokerLabel + " file; kept " + kept + " (latest)";
+    }
+
+    public record DedupResult(Set<Integer> skipIndices, Map<BrokerType, Integer> keptIndexByBroker) {
     }
 }

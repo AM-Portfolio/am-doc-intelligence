@@ -91,10 +91,13 @@ public class DocumentProcessorService {
     // =========================================================================
 
     /**
-     * Accepts a list of {@link BatchSyncEntry}s, persists a {@link BatchSyncRecord} to
-     * MongoDB, and submits each entry to the {@code docProcessingPool} for parallel
-     * async processing. Returns the initial {@link BatchSyncStatus} immediately — the
-     * caller can poll {@code GET /sync/{batchId}/status} or stream via SSE.
+     * Accepts a list of {@link BatchSyncEntry}s, persists a {@link BatchSyncRecord} as
+     * {@code QUEUED}, and returns {@link BatchSyncStatus} immediately so the HTTP
+     * thread is not blocked by broker detection / POI / PDFBox work.
+     *
+     * <p>A single async orchestrator task then runs Phase A (detect), Phase B (dedupe),
+     * and Phase C (fan-out processing on {@code docProcessingPool}). Clients poll
+     * {@code GET /sync/{batchId}/status} or stream via SSE.</p>
      *
      * @param entries     one entry per file in the batch
      * @param userId      authenticated user
@@ -149,6 +152,28 @@ public class DocumentProcessorService {
                 .build();
         batchSyncRecordRepository.save(batchRecord);
 
+        // Detection + dedupe + fan-out must not run on the servlet thread (504 risk).
+        CompletableFuture.runAsync(
+                () -> orchestrateBatch(batchId, safEntries, fileRecords, userId, portfolioId),
+                docProcessingPool
+        ).exceptionally(ex -> {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            log.error("[BatchId: {}] Batch orchestrator failed", batchId, cause);
+            failEntireBatch(batchId,
+                    cause.getMessage() != null ? cause.getMessage() : "Batch orchestrator failed");
+            return null;
+        });
+
+        return toBatchSyncStatus(batchRecord);
+    }
+
+    /**
+     * Async batch orchestrator: detect all brokers, skip duplicates, then fan out processing.
+     */
+    private void orchestrateBatch(UUID batchId, List<BatchSyncEntry> safEntries,
+                                  List<FileSyncRecord> fileRecords, String userId, String portfolioId) {
+        log.info("[BatchId: {}] Orchestrator started ({} files)", batchId, safEntries.size());
+
         // Phase A: detect brokers for all files before any processing (barrier).
         List<DetectionResult> detections = new ArrayList<>(safEntries.size());
         List<BrokerType> resolvedBrokers = new ArrayList<>(safEntries.size());
@@ -170,27 +195,49 @@ public class DocumentProcessorService {
         }
 
         // Phase B: keep latest file per broker; mark earlier duplicates SKIPPED.
-        Set<Integer> skipIndices = BrokerBatchDeduper.indicesToSkip(resolvedBrokers);
+        BrokerBatchDeduper.DedupResult dedup = BrokerBatchDeduper.evaluate(resolvedBrokers);
+        Set<Integer> skipIndices = dedup.skipIndices();
         LocalDateTime now = LocalDateTime.now();
-        for (Integer skipIdx : skipIndices) {
-            BrokerType broker = resolvedBrokers.get(skipIdx);
-            int keptIdx = -1;
-            for (int j = safEntries.size() - 1; j >= 0; j--) {
-                if (broker != null && broker.equals(resolvedBrokers.get(j))) {
-                    keptIdx = j;
-                    break;
+        withBatchLock(batchId, () -> {
+            BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
+            if (record == null) {
+                log.warn("[BatchId: {}] Record missing during Phase B", batchId);
+                return;
+            }
+            for (Integer skipIdx : skipIndices) {
+                BrokerType broker = resolvedBrokers.get(skipIdx);
+                Integer keptIdx = broker != null ? dedup.keptIndexByBroker().get(broker) : null;
+                String keptName = keptIdx != null ? record.getFiles().get(keptIdx).getFileName() : null;
+                FileSyncRecord skipped = record.getFiles().get(skipIdx);
+                skipped.setStatus(ProcessingStatus.SKIPPED);
+                skipped.setDetectedBroker(fileRecords.get(skipIdx).getDetectedBroker());
+                skipped.setDetectedDocumentType(fileRecords.get(skipIdx).getDetectedDocumentType());
+                skipped.setErrorMessage(BrokerBatchDeduper.skipMessage(broker, keptName));
+                skipped.setCompletedAt(now);
+                log.info("[BatchId: {}][FileId: {}] Skipping duplicate broker={} kept={}",
+                        batchId, skipped.getFileId(), broker, keptName);
+                FileSyncStatus sse = buildFileSyncStatus(skipped);
+                if (sse != null) {
+                    eventPublisher.emit(batchId, sse);
                 }
             }
-            String keptName = keptIdx >= 0 ? fileRecords.get(keptIdx).getFileName() : null;
-            FileSyncRecord skipped = fileRecords.get(skipIdx);
-            skipped.setStatus(ProcessingStatus.SKIPPED);
-            skipped.setErrorMessage(BrokerBatchDeduper.skipMessage(broker, keptName));
-            skipped.setCompletedAt(now);
-            log.info("[BatchId: {}][FileId: {}] Skipping duplicate broker={} kept={}",
-                    batchId, skipped.getFileId(), broker, keptName);
-        }
-        batchRecord.recomputeOverallStatus();
-        batchSyncRecordRepository.save(batchRecord);
+            // Persist detection metadata for non-skipped files still QUEUED.
+            for (int i = 0; i < record.getFiles().size(); i++) {
+                if (skipIndices.contains(i)) {
+                    continue;
+                }
+                FileSyncRecord fr = record.getFiles().get(i);
+                fr.setDetectedBroker(fileRecords.get(i).getDetectedBroker());
+                fr.setDetectedDocumentType(fileRecords.get(i).getDetectedDocumentType());
+            }
+            record.recomputeOverallStatus();
+            batchSyncRecordRepository.save(record);
+
+            if (skipIndices.size() == safEntries.size() && !safEntries.isEmpty()) {
+                eventPublisher.completeBatch(batchId);
+                batchLocks.remove(batchId.toString());
+            }
+        });
 
         // Phase C: process only non-skipped files.
         for (int i = 0; i < safEntries.size(); i++) {
@@ -211,13 +258,29 @@ public class DocumentProcessorService {
             });
         }
 
-        // If every file was skipped, complete the SSE stream immediately.
-        if (skipIndices.size() == safEntries.size() && !safEntries.isEmpty()) {
+        log.info("[BatchId: {}] Orchestrator scheduled {} file workers (skipped {})",
+                batchId, safEntries.size() - skipIndices.size(), skipIndices.size());
+    }
+
+    private void failEntireBatch(UUID batchId, String errorMessage) {
+        withBatchLock(batchId, () -> {
+            BatchSyncRecord record = batchSyncRecordRepository.findById(batchId.toString()).orElse(null);
+            if (record == null) {
+                return;
+            }
+            LocalDateTime now = LocalDateTime.now();
+            for (FileSyncRecord f : record.getFiles()) {
+                if (f.getStatus() == ProcessingStatus.QUEUED || f.getStatus() == ProcessingStatus.PROCESSING) {
+                    f.setStatus(ProcessingStatus.FAILED);
+                    f.setErrorMessage(errorMessage);
+                    f.setCompletedAt(now);
+                }
+            }
+            record.recomputeOverallStatus();
+            batchSyncRecordRepository.save(record);
             eventPublisher.completeBatch(batchId);
             batchLocks.remove(batchId.toString());
-        }
-
-        return toBatchSyncStatus(batchRecord);
+        });
     }
 
     /**

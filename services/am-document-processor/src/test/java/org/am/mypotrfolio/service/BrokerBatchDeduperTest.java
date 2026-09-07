@@ -51,4 +51,16 @@ class BrokerBatchDeduperTest {
         String msg = BrokerBatchDeduper.skipMessage(BrokerType.ZERODHA, "holdings_latest.xlsx");
         assertEquals("Duplicate ZERODHA file; kept holdings_latest.xlsx (latest)", msg);
     }
+
+    @Test
+    void evaluate_exposesKeptIndexPerBroker() {
+        List<BrokerType> brokers = Arrays.asList(
+                BrokerType.ZERODHA,
+                BrokerType.GROWW,
+                BrokerType.ZERODHA);
+        BrokerBatchDeduper.DedupResult result = BrokerBatchDeduper.evaluate(brokers);
+        assertEquals(Set.of(0), result.skipIndices());
+        assertEquals(2, result.keptIndexByBroker().get(BrokerType.ZERODHA));
+        assertEquals(1, result.keptIndexByBroker().get(BrokerType.GROWW));
+    }
 }
