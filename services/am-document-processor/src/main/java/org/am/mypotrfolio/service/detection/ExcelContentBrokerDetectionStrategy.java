@@ -24,7 +24,7 @@ import java.util.Set;
  *   <li>Upstox — cell[0][0] contains "UPSTOX" or sheet name contains "Holdings"</li>
  *   <li>Zerodha — sheet name "Portfolio" + header "Symbol"/"Instrument"</li>
  *   <li>Angel One — workbook is password-protected (encrypted)</li>
- *   <li>Dhan — header "Buy Avg. Cost Price" present</li>
+ *   <li>Dhan — header "Buy Avg. Cost Price", or Demat Holding Summary (Security Name + Free Holding)</li>
  *   <li>Groww — header "Current Value (INR)" or "Gain/Loss"</li>
  *   <li>MStock — header "Avg. Price" + "Scripcode"</li>
  * </ul>
@@ -133,6 +133,11 @@ public class ExcelContentBrokerDetectionStrategy implements BrokerDetectionStrat
             return new DetectionResult(BrokerType.ZERODHA, dt, CONTENT_CONFIDENCE);
         }
         if (headers.contains("BUY AVG. COST PRICE") || headers.contains("TRADING SYMBOL")) {
+            return new DetectionResult(BrokerType.DHAN, DocumentType.STOCK_PORTFOLIO, CONTENT_CONFIDENCE);
+        }
+        // Dhan Demat Holding Summary (.xls): Security Name + Free Holding (+ sheet title)
+        if ((headers.contains("SECURITY NAME") && headers.contains("FREE HOLDING"))
+                || sheetNamesStr.contains("DEMAT HOLDING SUMMARY")) {
             return new DetectionResult(BrokerType.DHAN, DocumentType.STOCK_PORTFOLIO, CONTENT_CONFIDENCE);
         }
         if (headers.contains("SCRIPCODE") && headers.contains("AVG. PRICE")) {

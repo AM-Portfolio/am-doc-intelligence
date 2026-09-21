@@ -56,6 +56,10 @@ public class FilenameBrokerDetectionStrategy implements BrokerDetectionStrategy 
 
     private BrokerType resolveFromFilename(String upper) {
         if (upper.contains("DHAN")) return BrokerType.DHAN;
+        // Dhan demat export: e.g. HYTJ65377G_Demat_Holding_Summary.xls (no "DHAN" token)
+        if (upper.contains("DEMAT_HOLDING_SUMMARY") || upper.contains("DEMAT HOLDING SUMMARY")) {
+            return BrokerType.DHAN;
+        }
         if (upper.contains("ZERODHA")) return BrokerType.ZERODHA;
         if (upper.contains("MSTOCK")) return BrokerType.MSTOCK;
         if (upper.contains("GROWW") || upper.contains("STOCKS_HOLDINGS_STATEMENT")

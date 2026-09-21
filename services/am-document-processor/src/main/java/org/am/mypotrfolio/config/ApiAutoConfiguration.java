@@ -21,6 +21,8 @@ public class ApiAutoConfiguration {
                     .allowedOriginPatterns(
                             "http://localhost:*",
                             "https://localhost:*",
+                            "http://127.0.0.1:*",
+                            "https://127.0.0.1:*",
                             "https://am.asrax.in",
                             "https://*.asrax.in",
                             "https://am.munish.org",
