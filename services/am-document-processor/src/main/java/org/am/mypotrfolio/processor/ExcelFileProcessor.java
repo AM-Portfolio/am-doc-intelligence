@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.am.mypotrfolio.domain.common.DocumentType;
 import org.apache.poi.ss.usermodel.*;
 import java.util.stream.Collectors;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,10 +30,16 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                         fileExtension.equalsIgnoreCase("xls"));
     }
 
+
+    /** Opens .xls (OLE2/HSSF) or .xlsx (OOXML/XSSF) from stream. */
+    private static Workbook openWorkbook(InputStream inputStream) throws Exception {
+        return WorkbookFactory.create(inputStream);
+    }
+
     @Override
     protected List<Map<String, String>> parseMStockFile(MultipartFile file) throws Exception {
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -63,7 +68,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
         int headerRow = 22;
         int skipColumns = 1;
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             int dynamicRow = findHeaderRow(sheet, "Symbol", "Stock name");
             if (dynamicRow != -1) {
@@ -85,11 +90,18 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     protected List<Map<String, String>> parseDhanFile(MultipartFile file) throws Exception {
         int headerRow = 0;
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             headerRow = findHeaderRow(sheet, "Scrip Name", "Quantity");
             if (headerRow == -1) {
                 headerRow = findHeaderRow(sheet, "Scrip Name", "ISIN Code");
+            }
+            // Demat Holding Summary export (classic .xls): Security Name + Free Holding / ISIN
+            if (headerRow == -1) {
+                headerRow = findHeaderRow(sheet, "Security Name", "Free Holding");
+            }
+            if (headerRow == -1) {
+                headerRow = findHeaderRow(sheet, "Security Name", "ISIN");
             }
             if (headerRow == -1) {
                 log.warn("Dhan header not found, defaulting to row 0");
@@ -101,6 +113,14 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
         List<Map<String, String>> cleanedRows = new ArrayList<>();
 
         for (Map<String, String> row : rows) {
+            // Demat Holding Summary column aliases
+            if (row.containsKey("Security Name") && !row.containsKey("Scrip Name")) {
+                row.put("Scrip Name", row.get("Security Name"));
+            }
+            if (row.containsKey("ISIN") && !row.containsKey("ISIN Code")) {
+                row.put("ISIN Code", row.get("ISIN"));
+            }
+
             String scripName = row.getOrDefault("Scrip Name", "");
             if (scripName == null || scripName.trim().isEmpty())
                 continue;
@@ -140,7 +160,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     protected List<Map<String, String>> parseGrowFile(MultipartFile file) throws Exception {
         int headerRow = -1;
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             
             // Try to find Stocks header: "Stock Name"
@@ -190,7 +210,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     private List<Map<String, String>> parseGrowStockTradeFile(MultipartFile file) throws Exception {
         List<Map<String, String>> jsonList = new ArrayList<>();
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -306,7 +326,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     private List<Map<String, String>> parseGrowMfTradeFile(MultipartFile file) throws Exception {
         List<Map<String, String>> jsonList = new ArrayList<>();
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -432,7 +452,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     private List<Map<String, String>> parseZerodhaExcelFile(MultipartFile file) throws Exception {
         List<Map<String, String>> jsonList = new ArrayList<>();
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -586,7 +606,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                     inputStream.close();
                     inputStream = file.getInputStream();
                 }
-                workbook = new XSSFWorkbook(inputStream);
+                workbook = openWorkbook(inputStream);
             }
 
             // Check for Trade History format (Scan first 10 rows for ClientCode)
@@ -1145,7 +1165,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
         List<Map<String, String>> jsonList = new ArrayList<>();
 
         try (InputStream inputStream = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(inputStream)) {
+                Workbook workbook = openWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -1236,7 +1256,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     protected List<Map<String, String>> parseUpstoxFile(MultipartFile file) throws Exception {
         List<Map<String, String>> cleanedRows = new ArrayList<>();
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
             int headerRowIdx = findHeaderRow(sheet, "ISIN", "Scrip Name", "Symbol");
             if (headerRowIdx == -1) {
@@ -1308,7 +1328,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
     protected List<Map<String, String>> parseUpstoxTradeFile(MultipartFile file) throws Exception {
         List<Map<String, String>> jsonList = new ArrayList<>();
         try (InputStream is = file.getInputStream();
-                Workbook workbook = new XSSFWorkbook(is)) {
+                Workbook workbook = openWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             // Find Header Row (Look for "Company" or "Scrip Code")
