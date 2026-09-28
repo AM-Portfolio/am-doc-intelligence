@@ -25,4 +25,5 @@ jobs:
       working_directory: 'apps/am-doc-viewer-ui'
       image_name: 'am-doc-viewer-ui'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit

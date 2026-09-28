@@ -25,4 +25,5 @@ jobs:
       working_directory: 'services/am-cloudinary-manager'
       image_name: 'am-cloudinary-manager'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit

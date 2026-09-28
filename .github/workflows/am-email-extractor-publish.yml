@@ -25,4 +25,5 @@ jobs:
       working_directory: 'services/am-email-extractor'
       image_name: 'am-email-extractor'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit

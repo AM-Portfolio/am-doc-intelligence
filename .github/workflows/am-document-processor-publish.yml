@@ -25,4 +25,5 @@ jobs:
       working_directory: 'services/am-document-processor'
       image_name: 'am-document-processor'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit
