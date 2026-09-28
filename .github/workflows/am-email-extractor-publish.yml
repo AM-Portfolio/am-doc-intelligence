@@ -1,19 +1,44 @@
 name: AM Email Extractor Publish
 
 on:
+  push:
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    paths:
+      - 'services/am-email-extractor/**'
+      - '.github/workflows/am-email-extractor-publish.yml'
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - 'services/am-email-extractor/**'
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Publish UI
+    name: Build & Push
+    runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
-    with:
-      language: 'python'
-      working_directory: 'services/am-email-extractor'
-      image_name: 'am-email-extractor'
-      build_context: 'services/am-email-extractor'
-      skip_secrets_scan: true
-    secrets: inherit
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Stage am-platform-security
+        run: |
+          git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/AM-Portfolio/am-platform.git /tmp/am-platform
+          mkdir -p services/am-email-extractor/third_party
+          cp -r /tmp/am-platform/libraries/am-platform-security services/am-email-extractor/third_party/
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/am-email-extractor
+          push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
+          tags: ghcr.io/am-portfolio/am-email-extractor:${{ github.run_id }}
