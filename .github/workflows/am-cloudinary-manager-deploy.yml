@@ -33,7 +33,7 @@ jobs:
     with:
       service_name: "am-cloudinary-manager"
       working_directory: "services/am-cloudinary-manager"
-      language: "python"
+      language: "java"
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ github.event.inputs.image_tag == 'custom' && github.event.inputs.custom_tag || github.event.inputs.image_tag }}
       namespace: ${{ (github.event.inputs.environment == 'prod' || github.event.inputs.environment == 'dr') && 'am-apps-prod' || (github.event.inputs.environment == 'preprod' && 'am-apps-preprod' || 'am-apps-dev') }}
