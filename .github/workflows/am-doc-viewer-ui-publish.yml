@@ -1,38 +1,19 @@
 name: AM Doc Viewer UI Publish
 
 on:
-  push:
-    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
-    paths:
-      - 'apps/am-doc-viewer-ui/**'
-      - '.github/workflows/am-doc-viewer-ui-publish.yml'
-  pull_request:
-    branches: ["main", "develop"]
-    paths:
-      - 'apps/am-doc-viewer-ui/**'
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Build & Push
-    runs-on: ubuntu-latest
+    name: Publish UI
     permissions:
-      contents: read
+      contents: write
       packages: write
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: apps/am-doc-viewer-ui
-          push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
-          tags: ghcr.io/am-portfolio/am-doc-viewer-ui:${{ github.run_id }}
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
+    with:
+      language: 'flutter'
+      working_directory: 'apps/am-doc-viewer-ui'
+      image_name: 'am-doc-viewer-ui'
+      build_context: '.'
+      skip_secrets_scan: true
+    secrets: inherit
