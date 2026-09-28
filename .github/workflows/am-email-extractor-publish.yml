@@ -1,4 +1,3 @@
-# Slim Contabo graph: Build once; Auto sync preprod on main only; Contabo Approve matrix.
 name: AM Email Extractor Publish
 
 on:
@@ -15,15 +14,25 @@ on:
 
 jobs:
   publish:
-    name: Build and Publish
+    name: Build & Push
+    runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
-    with:
-      language: 'python'
-      working_directory: 'services/am-email-extractor'
-      image_name: 'am-email-extractor'
-      build_context: '.'
-      skip_secrets_scan: true
-    secrets: inherit
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: services/am-email-extractor
+          push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
+          tags: ghcr.io/am-portfolio/am-email-extractor:${{ github.run_id }}
