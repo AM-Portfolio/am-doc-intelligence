@@ -1,4 +1,4 @@
-name: Manual Deploy (workflowsam-email-extractor)
+name: Manual Deploy (am-email-extractor)
 
 on:
   workflow_dispatch:
@@ -28,11 +28,11 @@ on:
 
 jobs:
   deploy:
-    name: Deploy workflowsam-email-extractor to ${{ github.event.inputs.environment }}
+    name: Deploy am-email-extractor to ${{ github.event.inputs.environment }}
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@main
     with:
-      service_name: "workflowsam-email-extractor"
-      working_directory: "services/workflowsam-email-extractor"
+      service_name: "am-email-extractor"
+      working_directory: "services/am-email-extractor"
       language: "python"
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ github.event.inputs.image_tag == 'custom' && github.event.inputs.custom_tag || github.event.inputs.image_tag }}

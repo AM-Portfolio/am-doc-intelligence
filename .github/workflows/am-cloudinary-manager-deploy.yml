@@ -1,4 +1,4 @@
-name: Manual Deploy (workflowsam-cloudinary-manager)
+name: Manual Deploy (am-cloudinary-manager)
 
 on:
   workflow_dispatch:
@@ -28,11 +28,11 @@ on:
 
 jobs:
   deploy:
-    name: Deploy workflowsam-cloudinary-manager to ${{ github.event.inputs.environment }}
+    name: Deploy am-cloudinary-manager to ${{ github.event.inputs.environment }}
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@main
     with:
-      service_name: "workflowsam-cloudinary-manager"
-      working_directory: "services/workflowsam-cloudinary-manager"
+      service_name: "am-cloudinary-manager"
+      working_directory: "services/am-cloudinary-manager"
       language: "python"
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ github.event.inputs.image_tag == 'custom' && github.event.inputs.custom_tag || github.event.inputs.image_tag }}

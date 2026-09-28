@@ -1,4 +1,4 @@
-name: Manual Deploy (workflowsam-doc-viewer-ui)
+name: Manual Deploy (am-doc-viewer-ui)
 
 on:
   workflow_dispatch:
@@ -28,11 +28,11 @@ on:
 
 jobs:
   deploy:
-    name: Deploy workflowsam-doc-viewer-ui to ${{ github.event.inputs.environment }}
+    name: Deploy am-doc-viewer-ui to ${{ github.event.inputs.environment }}
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-deploy.yml@main
     with:
-      service_name: "workflowsam-doc-viewer-ui"
-      working_directory: "services/workflowsam-doc-viewer-ui"
+      service_name: "am-doc-viewer-ui"
+      working_directory: "services/am-doc-viewer-ui"
       language: "node"
       environment: ${{ github.event.inputs.environment }}
       image_tag: ${{ github.event.inputs.image_tag == 'custom' && github.event.inputs.custom_tag || github.event.inputs.image_tag }}
