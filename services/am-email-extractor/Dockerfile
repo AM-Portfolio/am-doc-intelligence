@@ -9,14 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/third_party/am-platform-security
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    gcc git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY third_party/am-platform-security/ third_party/am-platform-security/
-RUN pip install --no-cache-dir ./third_party/am-platform-security
+ARG GITHUB_PACKAGES_TOKEN
+RUN pip install --no-cache-dir git+https://${GITHUB_PACKAGES_TOKEN}@github.com/AM-Portfolio/am-platform.git#subdirectory=libraries/am-platform-security
 
 COPY . .
 
