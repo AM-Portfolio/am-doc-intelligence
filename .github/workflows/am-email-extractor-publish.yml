@@ -1,0 +1,27 @@
+name: AM Email Extractor Publish
+
+on:
+  push:
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    paths:
+      - 'services/am-email-extractor/**'
+      - '.github/workflows/am-email-extractor-publish.yml'
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - 'services/am-email-extractor/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build and Publish
+    permissions:
+      contents: write
+      packages: write
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
+    with:
+      language: 'python'
+      working_directory: 'services/am-email-extractor'
+      image_name: 'am-email-extractor'
+      build_context: '.'
+    secrets: inherit

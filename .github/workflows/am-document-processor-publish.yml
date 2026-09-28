@@ -1,0 +1,27 @@
+name: AM Document Processor Publish
+
+on:
+  push:
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    paths:
+      - 'services/am-document-processor/**'
+      - '.github/workflows/am-document-processor-publish.yml'
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - 'services/am-document-processor/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build and Publish
+    permissions:
+      contents: write
+      packages: write
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
+    with:
+      language: 'java'
+      working_directory: 'services/am-document-processor'
+      image_name: 'am-document-processor'
+      build_context: '.'
+    secrets: inherit
