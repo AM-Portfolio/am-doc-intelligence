@@ -4,26 +4,403 @@
 #1 transferring dockerfile: 1.63kB 0.0s done
 #1 DONE 0.0s
 
-#2 [auth] library/am-flutter-base:pull token for registry-1.docker.io
+#2 [auth] library/nginx:pull token for registry-1.docker.io
 #2 DONE 0.0s
 
-#3 [auth] library/nginx:pull token for registry-1.docker.io
+#3 [auth] am-portfolio/am-flutter-base:pull token for ghcr.io
 #3 DONE 0.0s
 
-#4 [internal] load metadata for docker.io/library/am-flutter-base:latest
-#4 ERROR: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+#4 [internal] load metadata for ghcr.io/am-portfolio/am-flutter-base:latest
+#4 ...
 
 #5 [internal] load metadata for docker.io/library/nginx:alpine
-#5 CANCELED
+#5 DONE 0.3s
+
+#4 [internal] load metadata for ghcr.io/am-portfolio/am-flutter-base:latest
+#4 DONE 0.7s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 670.37kB 0.0s done
+#7 DONE 0.0s
+
+#8 [build-env 1/8] FROM ghcr.io/am-portfolio/am-flutter-base:latest@sha256:35f8dd08f7489bef403086877475e73db5dc25dacbff6ae4998b5cebe29e329f
+#8 resolve ghcr.io/am-portfolio/am-flutter-base:latest@sha256:35f8dd08f7489bef403086877475e73db5dc25dacbff6ae4998b5cebe29e329f done
+#8 sha256:35f8dd08f7489bef403086877475e73db5dc25dacbff6ae4998b5cebe29e329f 856B / 856B done
+#8 sha256:f7bd746bc178fd58584e3648ec2eda13deef4d0c2b8efa701a2696e2176566cd 1.25kB / 1.25kB done
+#8 sha256:0b329fc0120a294485221a7cf404b1873ebbeceb904b7160b00c89b7a6a47bc6 1.77kB / 1.77kB done
+#8 sha256:b890c9407285c31d25426ef154b55c72e225f19b478a59451b01a8a44f5ea4f7 0B / 49.31MB 0.1s
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 0B / 54.37MB 0.1s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 0B / 482.32MB 0.1s
+#8 sha256:b890c9407285c31d25426ef154b55c72e225f19b478a59451b01a8a44f5ea4f7 20.97MB / 49.31MB 0.2s
+#8 sha256:b890c9407285c31d25426ef154b55c72e225f19b478a59451b01a8a44f5ea4f7 49.31MB / 49.31MB 0.3s done
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 12.58MB / 54.37MB 0.3s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 0B / 453.00MB 0.3s
+#8 extracting sha256:b890c9407285c31d25426ef154b55c72e225f19b478a59451b01a8a44f5ea4f7
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 20.97MB / 54.37MB 0.4s
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 33.55MB / 54.37MB 0.5s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 31.46MB / 482.32MB 0.5s
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 41.94MB / 54.37MB 0.6s
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 54.37MB / 54.37MB 0.7s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 31.46MB / 453.00MB 0.7s
+#8 sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 54.37MB / 54.37MB 0.7s done
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 62.91MB / 482.32MB 0.9s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 62.91MB / 453.00MB 0.9s
+#8 sha256:60bfc4d999f6aada46293d491962455f8e1bcf851ddf442eb936e98118ee9906 412B / 412B 0.9s done
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 88.08MB / 453.00MB 1.1s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 94.37MB / 482.32MB 1.2s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 121.63MB / 453.00MB 1.4s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 146.80MB / 482.32MB 1.6s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 157.29MB / 453.00MB 1.7s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 188.74MB / 482.32MB 2.0s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 188.74MB / 453.00MB 2.0s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 220.20MB / 482.32MB 2.2s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 213.91MB / 453.00MB 2.2s
+#8 extracting sha256:b890c9407285c31d25426ef154b55c72e225f19b478a59451b01a8a44f5ea4f7 1.9s done
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 259.00MB / 482.32MB 2.5s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 241.17MB / 453.00MB 2.5s
+#8 extracting sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 0.1s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 285.21MB / 482.32MB 2.8s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 283.12MB / 453.00MB 2.9s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 324.01MB / 482.32MB 3.1s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 314.57MB / 453.00MB 3.2s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 348.13MB / 482.32MB 3.4s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 387.97MB / 482.32MB 3.8s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 356.52MB / 453.00MB 3.8s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 417.33MB / 482.32MB 4.1s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 396.36MB / 453.00MB 4.1s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 450.89MB / 482.32MB 4.5s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 429.92MB / 453.00MB 4.5s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 453.00MB / 453.00MB 4.8s
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 479.20MB / 482.32MB 5.0s
+#8 sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 453.00MB / 453.00MB 5.4s done
+#8 sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 482.32MB / 482.32MB 5.6s done
+#8 ...
+
+#9 [stage-1 1/2] FROM docker.io/library/nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+#9 resolve docker.io/library/nginx:alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 done
+#9 sha256:0530961ff0592b58c10f767535cc0abdfccf9e389ff7cc90f87320c1bc7e8506 2.50kB / 2.50kB done
+#9 sha256:3dd08163706a20b20622f310ec10258cc96e9007ab357f7201955bc880ac17f4 12.32kB / 12.32kB done
+#9 sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 10.33kB / 10.33kB done
+#9 sha256:e2de96513ba9eb53b431787ec8a65cdde380ac4772a3e4c4b714dcfde2a102b5 3.85MB / 3.85MB 0.9s done
+#9 extracting sha256:e2de96513ba9eb53b431787ec8a65cdde380ac4772a3e4c4b714dcfde2a102b5 0.2s done
+#9 sha256:745dfb2690dd8627e1593941caccc756f14943df7930a478beb4e808c5695cb9 965B / 965B 0.9s done
+#9 sha256:64c8194480fee2c03e01cc561cf5542733627d2c7de493a028139677025f975c 1.21kB / 1.21kB 1.0s done
+#9 sha256:d9aae54b58315e84b9c3ac5f00bad6610e0e28ad9ff28fcde694647e0be13131 1.93MB / 1.93MB 0.9s done
+#9 sha256:6c53d0b2a666ed8f8fad8d9982e30cf24eb085036c17b27591665ca25e1ba40c 629B / 629B 0.9s done
+#9 sha256:9a9a644fdd6a3681d43dace44c8cfef374cfd7b24f433113379ea483692498a8 404B / 404B 1.0s done
+#9 sha256:e76228b47809e8a4bd37a6ba52a04d282d8c72ddf0ff9e8b83fd6318631abd52 1.40kB / 1.40kB 1.0s done
+#9 sha256:e72112c14215406dc7f23ef8e5cfdfddeb8662176167382ad64ec86f52b7a88e 20.53MB / 20.53MB 1.1s done
+#9 extracting sha256:d9aae54b58315e84b9c3ac5f00bad6610e0e28ad9ff28fcde694647e0be13131 0.1s done
+#9 extracting sha256:6c53d0b2a666ed8f8fad8d9982e30cf24eb085036c17b27591665ca25e1ba40c done
+#9 extracting sha256:745dfb2690dd8627e1593941caccc756f14943df7930a478beb4e808c5695cb9 done
+#9 extracting sha256:9a9a644fdd6a3681d43dace44c8cfef374cfd7b24f433113379ea483692498a8 done
+#9 extracting sha256:64c8194480fee2c03e01cc561cf5542733627d2c7de493a028139677025f975c done
+#9 extracting sha256:e76228b47809e8a4bd37a6ba52a04d282d8c72ddf0ff9e8b83fd6318631abd52 done
+#9 extracting sha256:e72112c14215406dc7f23ef8e5cfdfddeb8662176167382ad64ec86f52b7a88e 0.4s done
+#9 DONE 6.8s
+
+#8 [build-env 1/8] FROM ghcr.io/am-portfolio/am-flutter-base:latest@sha256:35f8dd08f7489bef403086877475e73db5dc25dacbff6ae4998b5cebe29e329f
+#8 extracting sha256:4203e067b060bb8fe35f276a60cd75a74a4be4f52a6503cae75ec4ddcda87ae6 4.5s done
+#8 extracting sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 0.1s
+#8 extracting sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 5.2s
+#8 extracting sha256:251e0b36500ec737a624d2824fd16c3c83bcfe3d2e84cded24f22b0828d16bca 6.6s done
+#8 extracting sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f
+#8 extracting sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 5.0s
+#8 extracting sha256:d5d2b380971c9893109f55cea5ec8dce78daaa4f8448a8823ff6be3f7fb9bc3f 8.4s done
+#8 extracting sha256:60bfc4d999f6aada46293d491962455f8e1bcf851ddf442eb936e98118ee9906
+#8 extracting sha256:60bfc4d999f6aada46293d491962455f8e1bcf851ddf442eb936e98118ee9906 done
+#8 DONE 26.8s
+
+#10 [build-env 2/8] WORKDIR /app
+#10 DONE 0.0s
+
+#11 [build-env 3/8] COPY pubspec.yaml .
+#11 DONE 0.0s
+
+#12 [build-env 4/8] RUN git config --global url."https://x-access-token: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@github.com/".insteadOf "https://github.com/"
+#12 DONE 0.2s
+
+#13 [build-env 5/8] RUN flutter pub get
+#13 0.136    Woah! You appear to be trying to run flutter as root.
+#13 0.136    We strongly recommend running the flutter tool without superuser privileges.
+#13 0.136   /
+#13 0.136 📎
+#13 3.386 
+#13 3.386 ┌─────────────────────────────────────────────────────────┐
+#13 3.386 │ A new version of Flutter is available!                  │
+#13 3.388 │                                                         │
+#13 3.388 │ To update to the latest version, run "flutter upgrade". │
+#13 3.388 └─────────────────────────────────────────────────────────┘
+#13 5.484 Resolving dependencies...
+#13 7.666 Downloading packages...
+#13 20.60 + _fe_analyzer_shared 103.0.0 (108.0.0 available)
+#13 20.60 + am_analysis_sdk 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_analysis/sdk
+#13 20.60 + am_auth_ui 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_auth_ui
+#13 20.60 + am_common 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_common
+#13 20.60 + am_design_system 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_design_system
+#13 20.60 + am_library 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_library
+#13 20.60 + am_market_sdk 2.0.0 from git https://github.com/AM-Portfolio/am-modern-ui.git at db7e88 in am_market/sdk
+#13 20.60 + analyzer 13.3.0 (14.4.0 available)
+#13 20.60 + archive 4.3.0
+#13 20.60 + args 2.7.0
+#13 20.60 + asn1lib 1.6.5
+#13 20.60 + async 2.13.1
+#13 20.61 + audioplayers 6.8.1
+#13 20.61 + audioplayers_android 5.3.0
+#13 20.61 + audioplayers_darwin 6.5.0
+#13 20.61 + audioplayers_linux 4.3.0
+#13 20.61 + audioplayers_platform_interface 7.2.0
+#13 20.61 + audioplayers_web 5.3.0
+#13 20.61 + audioplayers_windows 4.4.1
+#13 20.61 + bloc 9.2.1
+#13 20.61 + boolean_selector 2.1.2
+#13 20.61 + built_collection 5.1.2
+#13 20.61 + built_value 8.13.0
+#13 20.61 + cached_network_image 3.4.0 (4.0.2 available)
+#13 20.61 + cached_network_image_platform_interface 4.1.1 (5.0.2 available)
+#13 20.61 + cached_network_image_web 1.3.0 (2.0.2 available)
+#13 20.61 + characters 1.4.1
+#13 20.61 + cli_config 0.2.0
+#13 20.61 + clock 1.1.3
+#13 20.61 + cloudinary_flutter 1.3.0
+#13 20.61 + cloudinary_url_gen 1.8.0
+#13 20.61 + code_assets 2.1.0
+#13 20.61 + code_builder 4.12.0
+#13 20.61 + collection 1.19.1
+#13 20.61 + connectivity_plus 6.1.5 (7.3.1 available)
+#13 20.61 + connectivity_plus_platform_interface 2.1.0
+#13 20.61 + convert 3.1.2
+#13 20.61 + coverage 1.15.1
+#13 20.61 + cross_file 0.3.5+5 (0.4.0 available)
+#13 20.61 + crypto 3.0.7
+#13 20.61 + csslib 1.0.2
+#13 20.61 + cupertino_icons 1.0.9 (2.0.0 available)
+#13 20.61 + dart_style 3.1.13
+#13 20.61 + dartz 0.10.1
+#13 20.61 + dbus 0.7.15 (0.8.0 available)
+#13 20.61 + dio 5.11.1
+#13 20.61 + dio_web_adapter 2.2.2
+#13 20.61 + encrypt 5.0.3
+#13 20.61 + equatable 2.1.0 (3.0.0 available)
+#13 20.61 + fake_async 1.3.3
+#13 20.61 + ffi 2.2.0
+#13 20.61 + file 7.0.1
+#13 20.61 + file_picker 8.0.7 (13.1.0 available)
+#13 20.61 + file_selector_linux 0.9.4+1
+#13 20.61 + file_selector_macos 0.9.5+1
+#13 20.61 + file_selector_platform_interface 2.7.0
+#13 20.61 + file_selector_windows 0.9.3+6
+#13 20.61 + fixnum 1.1.1
+#13 20.61 + fl_chart 1.2.0
+#13 20.61 + flutter 0.0.0 from sdk flutter
+#13 20.61 + flutter_animate 4.5.2
+#13 20.61 + flutter_bloc 9.1.1
+#13 20.61 + flutter_cache_manager 3.4.1 (3.4.5 available)
+#13 20.61 + flutter_lints 5.0.0 (6.0.0 available)
+#13 20.61 + flutter_plugin_android_lifecycle 2.0.35
+#13 20.61 + flutter_riverpod 3.0.3 (3.4.3 available)
+#13 20.61 + flutter_secure_storage 9.2.4 (11.2.0 available)
+#13 20.61 + flutter_secure_storage_linux 1.2.3 (3.0.3 available)
+#13 20.61 + flutter_secure_storage_macos 3.1.3 (4.0.0 available)
+#13 20.61 + flutter_secure_storage_platform_interface 1.1.2 (2.1.1 available)
+#13 20.61 + flutter_secure_storage_web 1.2.1 (2.1.1 available)
+#13 20.61 + flutter_secure_storage_windows 3.1.2 (4.2.2 available)
+#13 20.61 + flutter_shaders 0.1.3
+#13 20.61 + flutter_test 0.0.0 from sdk flutter
+#13 20.61 + flutter_web_plugins 0.0.0 from sdk flutter
+#13 20.61 + freezed_annotation 3.1.0
+#13 20.61 + frontend_server_client 4.0.0
+#13 20.61 + get 4.7.3
+#13 20.61 + get_it 9.3.0
+#13 20.61 + glassmorphism 3.0.0 (4.0.0 available)
+#13 20.61 + glob 2.2.0
+#13 20.61 + go_router 14.8.1 (18.0.2 available)
+#13 20.61 + google_fonts 6.3.3 (9.0.0 available)
+#13 20.61 + google_identity_services_web 0.3.3+1
+#13 20.61 + google_sign_in 6.3.0 (7.2.0 available)
+#13 20.61 + google_sign_in_android 6.2.1 (7.2.17 available)
+#13 20.61 + google_sign_in_ios 5.9.0 (6.3.6 available)
+#13 20.61 + google_sign_in_platform_interface 2.5.0 (3.1.0 available)
+#13 20.61 + google_sign_in_web 0.12.4+4 (1.1.3 available)
+#13 20.61 + graphs 2.3.2
+#13 20.61 + growthbook_sdk_flutter 3.9.10 (4.4.0 available)
+#13 20.61 + hive 2.2.3
+#13 20.61 + hive_flutter 1.1.0
+#13 20.61 + hooks 2.2.0
+#13 20.61 + html 0.15.7
+#13 20.61 + http 1.6.0
+#13 20.61 + http_multi_server 3.2.2
+#13 20.61 + http_parser 4.1.2
+#13 20.61 + image_picker 1.2.3
+#13 20.61 + image_picker_android 0.8.13+23
+#13 20.61 + image_picker_for_web 3.1.1
+#13 20.61 + image_picker_ios 0.8.13+8
+#13 20.61 + image_picker_linux 0.2.2
+#13 20.61 + image_picker_macos 0.2.2+1
+#13 20.61 + image_picker_platform_interface 2.11.1
+#13 20.61 + image_picker_windows 0.2.2
+#13 20.61 + injectable 2.7.1+4 (3.0.0 available)
+#13 20.61 + intl 0.20.3
+#13 20.61 + io 1.1.0
+#13 20.61 + jni 1.0.3
+#13 20.61 + jni_flutter 1.0.3
+#13 20.61 + jni_util 1.0.0
+#13 20.61 + js 0.6.7 (0.7.2 available)
+#13 20.61 + json_annotation 4.12.0
+#13 20.61 + leak_tracker 11.0.2
+#13 20.61 + leak_tracker_flutter_testing 3.0.10
+#13 20.61 + leak_tracker_testing 3.0.2
+#13 20.61 + lints 5.1.1 (6.1.0 available)
+#13 20.61 + local_auth 2.3.0 (3.0.2 available)
+#13 20.61 + local_auth_android 1.0.56 (2.2.0 available)
+#13 20.61 + local_auth_darwin 1.6.1 (2.0.4 available)
+#13 20.61 + local_auth_platform_interface 1.1.0
+#13 20.61 + local_auth_windows 1.0.11 (2.0.2 available)
+#13 20.61 + logger 2.8.0
+#13 20.61 + logging 1.3.0
+#13 20.61 + lottie 3.6.1
+#13 20.61 + matcher 0.12.20
+#13 20.61 + material_color_utilities 0.13.0 (0.13.1 available)
+#13 20.61 + meta 1.19.0
+#13 20.61 + mime 2.1.0
+#13 20.61 + mobile_scanner 6.0.11 (7.4.2 available)
+#13 20.61 + nested 1.0.0
+#13 20.61 + nm 0.5.0 (0.6.0 available)
+#13 20.61 + node_preamble 2.0.2
+#13 20.61 + objective_c 9.6.0
+#13 20.61 + octo_image 2.1.1
+#13 20.61 + package_config 2.2.0 (3.0.0 available)
+#13 20.61 + path 1.9.1
+#13 20.61 + path_provider 2.1.6
+#13 20.61 + path_provider_android 2.3.1
+#13 20.61 + path_provider_foundation 2.6.0
+#13 20.61 + path_provider_linux 2.2.2
+#13 20.61 + path_provider_platform_interface 2.1.3
+#13 20.61 + path_provider_windows 2.3.0
+#13 20.61 + petitparser 7.1.0
+#13 20.61 + pigeon 29.0.4
+#13 20.61 + platform 3.2.0
+#13 20.61 + plugin_platform_interface 2.1.8
+#13 20.61 + pointycastle 3.9.1 (4.0.0 available)
+#13 20.61 + pool 1.5.3
+#13 20.61 + posix 6.5.2
+#13 20.61 + provider 6.1.5+1
+#13 20.61 + pub_semver 2.2.1
+#13 20.61 + qr 3.0.2 (4.0.0 available)
+#13 20.61 + qr_flutter 4.1.0
+#13 20.61 + record_use 1.1.1
+#13 20.61 + riverpod 3.0.3 (3.4.3 available)
+#13 20.61 + riverpod_annotation 3.0.3 (4.0.7 available)
+#13 20.61 + rxdart 0.27.7 (0.28.0 available)
+#13 20.61 + shared_preferences 2.5.5
+#13 20.61 + shared_preferences_android 2.4.28
+#13 20.61 + shared_preferences_foundation 2.5.7
+#13 20.61 + shared_preferences_linux 2.4.1
+#13 20.61 + shared_preferences_platform_interface 2.4.2
+#13 20.61 + shared_preferences_web 2.4.3
+#13 20.61 + shared_preferences_windows 2.4.1
+#13 20.61 + shelf 1.4.2
+#13 20.61 + shelf_packages_handler 3.0.2
+#13 20.61 + shelf_static 1.1.3
+#13 20.61 + shelf_web_socket 3.0.0
+#13 20.61 + sky_engine 0.0.0 from sdk flutter
+#13 20.61 + source_map_stack_trace 2.1.2
+#13 20.61 + source_maps 0.10.14
+#13 20.61 + source_span 1.10.2
+#13 20.61 + sqflite 2.4.4
+#13 20.61 + sqflite_android 2.4.4
+#13 20.61 + sqflite_common 2.5.13
+#13 20.61 + sqflite_darwin 2.4.4
+#13 20.61 + sqflite_platform_interface 2.4.2
+#13 20.61 + stack_trace 1.12.2
+#13 20.61 + state_notifier 1.0.0
+#13 20.61 + stomp_dart_client 1.0.3 (3.0.1 available)
+#13 20.61 + stream_channel 2.1.4
+#13 20.61 + string_scanner 1.4.1
+#13 20.61 + synchronized 3.4.2
+#13 20.61 + term_glyph 1.2.2
+#13 20.61 + test 1.31.1 (1.32.0 available)
+#13 20.61 + test_api 0.7.12 (0.7.14 available)
+#13 20.61 + test_core 0.6.18 (0.6.20 available)
+#13 20.61 + tuple 2.0.2
+#13 20.61 + typed_data 1.4.0
+#13 20.61 + universal_io 2.3.1
+#13 20.61 + url_launcher 6.3.2
+#13 20.61 + url_launcher_android 6.3.33
+#13 20.61 + url_launcher_ios 6.4.2
+#13 20.61 + url_launcher_linux 3.2.3
+#13 20.61 + url_launcher_macos 3.2.6
+#13 20.61 + url_launcher_platform_interface 2.3.2
+#13 20.61 + url_launcher_web 2.4.3
+#13 20.61 + url_launcher_windows 3.1.6
+#13 20.61 + uuid 4.6.0
+#13 20.61 + vector_math 2.4.3
+#13 20.61 + video_player 2.14.0
+#13 20.61 + video_player_android 2.12.2
+#13 20.61 + video_player_avfoundation 2.12.0
+#13 20.61 + video_player_platform_interface 6.9.0
+#13 20.61 + video_player_web 2.4.0
+#13 20.61 + vm_service 15.3.0
+#13 20.61 + watcher 1.2.1
+#13 20.61 + web 0.5.1 (1.1.1 available)
+#13 20.61 + web_socket_channel 2.4.5 (3.0.3 available)
+#13 20.61 + webkit_inspection_protocol 1.2.1
+#13 20.61 + win32 5.15.0 (6.4.0 available)
+#13 20.61 + xdg_directories 1.1.0
+#13 20.61 + xml 7.1.0
+#13 20.61 + yaml 3.1.4
+#13 20.61 Changed 216 dependencies!
+#13 20.61 52 packages have newer versions incompatible with dependency constraints.
+#13 20.61 Try `flutter pub outdated` for more information.
+#13 DONE 21.9s
+
+#14 [build-env 6/8] RUN PUB_CACHE_DIR=$(find / -type d -name ".pub-cache" 2>/dev/null | grep -v "dart_tool" | head -n 1) &&     if [ -z "$PUB_CACHE_DIR" ]; then PUB_CACHE_DIR=~/.pub-cache; fi &&     echo "Pub cache is at $PUB_CACHE_DIR" &&     MODERN_UI_DIR=$(find "$PUB_CACHE_DIR/git" -maxdepth 1 -type d -name "am-modern-ui-*" | head -n 1) &&     if [ -n "$MODERN_UI_DIR" ]; then       for pkg in am_common am_design_system am_auth_ui am_library; do         if [ -d "$MODERN_UI_DIR/$pkg" ]; then           echo "Generating files for $pkg" &&           cd "$MODERN_UI_DIR/$pkg" &&           flutter pub get &&           flutter pub run build_runner build --delete-conflicting-outputs || exit 1;         fi       done     else       echo "am-modern-ui not found in pub cache!" && exit 1;     fi
+#14 0.582 Pub cache is at /root/.pub-cache
+#14 0.584 Generating files for am_common
+#14 0.592    Woah! You appear to be trying to run flutter as root.
+#14 0.592    We strongly recommend running the flutter tool without superuser privileges.
+#14 0.592   /
+#14 0.592 📎
+#14 0.806 Cannot operate on packages inside the cache.
+#14 0.818 Failed to update packages.
+#14 ERROR: process "/bin/sh -c PUB_CACHE_DIR=$(find / -type d -name \".pub-cache\" 2>/dev/null | grep -v \"dart_tool\" | head -n 1) &&     if [ -z \"$PUB_CACHE_DIR\" ]; then PUB_CACHE_DIR=~/.pub-cache; fi &&     echo \"Pub cache is at $PUB_CACHE_DIR\" &&     MODERN_UI_DIR=$(find \"$PUB_CACHE_DIR/git\" -maxdepth 1 -type d -name \"am-modern-ui-*\" | head -n 1) &&     if [ -n \"$MODERN_UI_DIR\" ]; then       for pkg in am_common am_design_system am_auth_ui am_library; do         if [ -d \"$MODERN_UI_DIR/$pkg\" ]; then           echo \"Generating files for $pkg\" &&           cd \"$MODERN_UI_DIR/$pkg\" &&           flutter pub get &&           flutter pub run build_runner build --delete-conflicting-outputs || exit 1;         fi       done     else       echo \"am-modern-ui not found in pub cache!\" && exit 1;     fi" did not complete successfully: exit code: 1
 ------
- > [internal] load metadata for docker.io/library/am-flutter-base:latest:
+ > [build-env 6/8] RUN PUB_CACHE_DIR=$(find / -type d -name ".pub-cache" 2>/dev/null | grep -v "dart_tool" | head -n 1) &&     if [ -z "$PUB_CACHE_DIR" ]; then PUB_CACHE_DIR=~/.pub-cache; fi &&     echo "Pub cache is at $PUB_CACHE_DIR" &&     MODERN_UI_DIR=$(find "$PUB_CACHE_DIR/git" -maxdepth 1 -type d -name "am-modern-ui-*" | head -n 1) &&     if [ -n "$MODERN_UI_DIR" ]; then       for pkg in am_common am_design_system am_auth_ui am_library; do         if [ -d "$MODERN_UI_DIR/$pkg" ]; then           echo "Generating files for $pkg" &&           cd "$MODERN_UI_DIR/$pkg" &&           flutter pub get &&           flutter pub run build_runner build --delete-conflicting-outputs || exit 1;         fi       done     else       echo "am-modern-ui not found in pub cache!" && exit 1;     fi:
+0.582 Pub cache is at /root/.pub-cache
+0.584 Generating files for am_common
+0.592    Woah! You appear to be trying to run flutter as root.
+0.592    We strongly recommend running the flutter tool without superuser privileges.
+0.592   /
+0.592 📎
+0.806 Cannot operate on packages inside the cache.
+0.818 Failed to update packages.
 ------
-Dockerfile:3
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "GITHUB_PACKAGES_TOKEN") (line 10)
+Dockerfile:15
 --------------------
-   1 |     # Multi-stage build for Flutter Web
-   2 |     ARG BASE_REGISTRY=""
-   3 | >>> FROM ${BASE_REGISTRY}am-flutter-base:latest AS build-env
-   4 |     
-   5 |     # Set working directory
+  14 |     # Generate missing Freezed files for git dependencies in pub-cache
+  15 | >>> RUN PUB_CACHE_DIR=$(find / -type d -name ".pub-cache" 2>/dev/null | grep -v "dart_tool" | head -n 1) && \
+  16 | >>>     if [ -z "$PUB_CACHE_DIR" ]; then PUB_CACHE_DIR=~/.pub-cache; fi && \
+  17 | >>>     echo "Pub cache is at $PUB_CACHE_DIR" && \
+  18 | >>>     MODERN_UI_DIR=$(find "$PUB_CACHE_DIR/git" -maxdepth 1 -type d -name "am-modern-ui-*" | head -n 1) && \
+  19 | >>>     if [ -n "$MODERN_UI_DIR" ]; then \
+  20 | >>>       for pkg in am_common am_design_system am_auth_ui am_library; do \
+  21 | >>>         if [ -d "$MODERN_UI_DIR/$pkg" ]; then \
+  22 | >>>           echo "Generating files for $pkg" && \
+  23 | >>>           cd "$MODERN_UI_DIR/$pkg" && \
+  24 | >>>           flutter pub get && \
+  25 | >>>           flutter pub run build_runner build --delete-conflicting-outputs || exit 1; \
+  26 | >>>         fi \
+  27 | >>>       done \
+  28 | >>>     else \
+  29 | >>>       echo "am-modern-ui not found in pub cache!" && exit 1; \
+  30 | >>>     fi
+  31 |     # Copy application code
 --------------------
-ERROR: failed to build: failed to solve: am-flutter-base:latest: failed to resolve source metadata for docker.io/library/am-flutter-base:latest: pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+ERROR: failed to build: failed to solve: process "/bin/sh -c PUB_CACHE_DIR=$(find / -type d -name \".pub-cache\" 2>/dev/null | grep -v \"dart_tool\" | head -n 1) &&     if [ -z \"$PUB_CACHE_DIR\" ]; then PUB_CACHE_DIR=~/.pub-cache; fi &&     echo \"Pub cache is at $PUB_CACHE_DIR\" &&     MODERN_UI_DIR=$(find \"$PUB_CACHE_DIR/git\" -maxdepth 1 -type d -name \"am-modern-ui-*\" | head -n 1) &&     if [ -n \"$MODERN_UI_DIR\" ]; then       for pkg in am_common am_design_system am_auth_ui am_library; do         if [ -d \"$MODERN_UI_DIR/$pkg\" ]; then           echo \"Generating files for $pkg\" &&           cd \"$MODERN_UI_DIR/$pkg\" &&           flutter pub get &&           flutter pub run build_runner build --delete-conflicting-outputs || exit 1;         fi       done     else       echo \"am-modern-ui not found in pub cache!\" && exit 1;     fi" did not complete successfully: exit code: 1
