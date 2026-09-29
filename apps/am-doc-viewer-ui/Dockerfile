@@ -7,6 +7,8 @@ WORKDIR /app
 
 # Copy and build
 COPY . .
+ARG GITHUB_PACKAGES_TOKEN
+RUN git config --global url."https://x-access-token:${GITHUB_PACKAGES_TOKEN}@github.com/".insteadOf "https://github.com/"
 RUN flutter pub get
 # Build web application with correct base href
 RUN flutter build web --release --base-href /doc-ui/
