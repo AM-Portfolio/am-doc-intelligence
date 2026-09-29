@@ -22,4 +22,11 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Build Web
         working-directory: apps/am-doc-viewer-ui
-        run: flutter build web --release --base-href /doc-ui/
+        run: flutter build web --release --base-href /doc-ui/ > build_log.txt 2>&1 || true
+      - name: Commit log
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add apps/am-doc-viewer-ui/build_log.txt
+          git commit -m "chore: upload build log [skip ci]" || echo "No changes to commit"
+          git push
