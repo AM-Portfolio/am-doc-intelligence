@@ -1,7 +1,7 @@
 name: Debug Flutter Build
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
 
 jobs:
   debug-build:
