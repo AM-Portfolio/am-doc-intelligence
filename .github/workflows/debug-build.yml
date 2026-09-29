@@ -23,9 +23,37 @@ jobs:
       - name: Pub Get
         working-directory: apps/am-doc-viewer-ui
         run: flutter pub get > pub_log.txt 2>&1 || true
+      - name: Build Freezed Files
+        working-directory: apps/am-doc-viewer-ui
+        run: |
+          PUB_CACHE_DIR=$(find / -type d -name ".pub-cache" 2>/dev/null | grep -v "dart_tool" | head -n 1)
+          if [ -z "$PUB_CACHE_DIR" ]; then PUB_CACHE_DIR=~/.pub-cache; fi
+          MODERN_UI_DIR=$(find "$PUB_CACHE_DIR/git" -maxdepth 1 -type d -name "am-modern-ui-*" | head -n 1)
+          if [ -n "$MODERN_UI_DIR" ]; then
+            cp -r "$MODERN_UI_DIR" /tmp/am-modern-ui
+            for pkg in am_common am_design_system am_auth_ui am_library; do
+              if [ -d "/tmp/am-modern-ui/$pkg" ]; then
+                cd "/tmp/am-modern-ui/$pkg"
+                flutter pub get
+                flutter pub run build_runner build --delete-conflicting-outputs
+              fi
+            done
+          fi
+          cd ${{ github.workspace }}/apps/am-doc-viewer-ui
+          echo "" >> pubspec.yaml
+          echo "dependency_overrides:" >> pubspec.yaml
+          echo "  am_common:" >> pubspec.yaml
+          echo "    path: /tmp/am-modern-ui/am_common" >> pubspec.yaml
+          echo "  am_design_system:" >> pubspec.yaml
+          echo "    path: /tmp/am-modern-ui/am_design_system" >> pubspec.yaml
+          echo "  am_auth_ui:" >> pubspec.yaml
+          echo "    path: /tmp/am-modern-ui/am_auth_ui" >> pubspec.yaml
+          echo "  am_library:" >> pubspec.yaml
+          echo "    path: /tmp/am-modern-ui/am_library" >> pubspec.yaml
+          flutter pub get
       - name: Build Web
         working-directory: apps/am-doc-viewer-ui
-        run: docker build --build-arg BASE_REGISTRY=ghcr.io/am-portfolio/ --build-arg GITHUB_PACKAGES_TOKEN=${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }} -f Dockerfile . > build_log.txt 2>&1 || true
+        run: flutter build web --release --base-href /doc-ui/ > build_log.txt 2>&1 || true
       - name: Commit log
         run: |
           git config --global user.name "GitHub Action"
