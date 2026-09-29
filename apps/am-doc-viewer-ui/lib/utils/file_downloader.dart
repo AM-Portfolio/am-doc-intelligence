@@ -1,17 +1,26 @@
 
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:js_interop';
+import 'dart:typed_data';
+import 'package:web/web.dart' as web;
 
 class FileDownloader {
   static void downloadCSV(String content, String fileName) {
     final bytes = utf8.encode(content);
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute("download", fileName)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    // Convert to Uint8List so it can be safely passed to JS
+    final uint8List = Uint8List.fromList(bytes);
+    
+    // Create Blob using the typed array
+    final blobParts = [uint8List.toJS].toJS;
+    final blob = web.Blob(blobParts);
+    
+    final url = web.URL.createObjectURL(blob);
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
+      ..download = fileName;
+      
+    anchor.click();
+    web.URL.revokeObjectURL(url);
   }
 
   static String getDummyPortfolioCSV() {
