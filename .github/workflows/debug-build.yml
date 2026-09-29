@@ -14,12 +14,18 @@ jobs:
       - name: Git Config
         run: |
           git config --global url."https://x-access-token:${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Pub Get
         working-directory: apps/am-doc-viewer-ui
         run: flutter pub get > pub_log.txt 2>&1 || true
       - name: Build Web
         working-directory: apps/am-doc-viewer-ui
-        run: docker build --build-arg GITHUB_PACKAGES_TOKEN=${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }} -f Dockerfile . > build_log.txt 2>&1 || true
+        run: docker build --build-arg BASE_REGISTRY=ghcr.io/am-portfolio/ --build-arg GITHUB_PACKAGES_TOKEN=${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }} -f Dockerfile . > build_log.txt 2>&1 || true
       - name: Commit log
         run: |
           git config --global user.name "GitHub Action"
