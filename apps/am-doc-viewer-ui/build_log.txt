@@ -453,10 +453,6 @@ Error: The method '_$AuthResultModelToJson' isn't defined for the type 'AuthResu
  - 'AuthResultModel' is from 'package:am_auth_ui/features/authentication/data/models/auth_result_model.dart' ('../../../../../.pub-cache/git/am-modern-ui-db7e88b3e7d0eb28879109b797c90d1da8af473b/am_auth_ui/lib/features/authentication/data/models/auth_result_model.dart').
   Map<String, dynamic> toJson() => _$AuthResultModelToJson(this);
                                    ^^^^^^^^^^^^^^^^^^^^^^^
-lib/utils/file_downloader.dart:15:27:
-Error: The argument type 'JSArray<JSAny?>' can't be assigned to the parameter type 'JSArray<JSAny>'.
-    final blob = web.Blob(blobParts);
-                          ^
 ../../../../../.pub-cache/git/am-modern-ui-db7e88b3e7d0eb28879109b797c90d1da8af473b/am_common/lib/features/attachment/internal/data/datasources/cloudinary_remote_data_source.dart:79:46:
 Error: The getter 'publicId' isn't defined for the type 'UploadResponseDto'.
  - 'UploadResponseDto' is from 'package:am_common/features/attachment/internal/data/dtos/cloudinary_dto.dart' ('../../../../../.pub-cache/git/am-modern-ui-db7e88b3e7d0eb28879109b797c90d1da8af473b/am_common/lib/features/attachment/internal/data/dtos/cloudinary_dto.dart').
@@ -813,5 +809,5 @@ Error: Compilation failed.
 #22     main (package:flutter_tools/executable.dart:103:3)
 <asynchronous suspension>
 
-Compiling lib/main.dart for the Web...                             51.2s
+Compiling lib/main.dart for the Web...                             49.8s
 Error: Failed to compile application for the Web.
