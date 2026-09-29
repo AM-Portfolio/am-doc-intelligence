@@ -15,7 +15,7 @@ RUN flutter pub get
 COPY . .
 
 # Build web application with correct base href
-RUN flutter build web --release --base-href /doc-ui/
+RUN flutter build web --release --base-href /doc-ui/ --web-renderer canvaskit
 
 # Final stage: Serve with Nginx
 FROM nginx:alpine
