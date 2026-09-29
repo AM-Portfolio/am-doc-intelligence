@@ -11,7 +11,7 @@ class FileDownloader {
     final uint8List = Uint8List.fromList(bytes);
     
     // Create Blob using the typed array
-    final blobParts = [uint8List.toJS].toJS;
+    final blobParts = <JSAny?>[uint8List.toJS].toJS;
     final blob = web.Blob(blobParts);
     
     final url = web.URL.createObjectURL(blob);
