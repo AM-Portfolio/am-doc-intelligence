@@ -1,0 +1,25 @@
+name: Debug Flutter Build
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  debug-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Git Config
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+      - name: Pub Get
+        working-directory: apps/am-doc-viewer-ui
+        run: flutter pub get
+      - name: Analyze
+        working-directory: apps/am-doc-viewer-ui
+        run: flutter analyze
+      - name: Build Web
+        working-directory: apps/am-doc-viewer-ui
+        run: flutter build web --release --base-href /doc-ui/
