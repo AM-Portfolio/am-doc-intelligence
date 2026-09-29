@@ -12,16 +12,22 @@ RUN git config --global url."https://x-access-token:${GITHUB_PACKAGES_TOKEN}@git
 RUN flutter pub get
 
 # Generate missing Freezed files for git dependencies in pub-cache
-RUN find / -name "am-modern-ui-*" -type d 2>/dev/null | grep "/\.pub-cache/git/" | while read dir; do \
+RUN PUB_CACHE_DIR=$(find / -type d -name ".pub-cache" 2>/dev/null | grep -v "dart_tool" | head -n 1) && \
+    if [ -z "$PUB_CACHE_DIR" ]; then PUB_CACHE_DIR=~/.pub-cache; fi && \
+    echo "Pub cache is at $PUB_CACHE_DIR" && \
+    MODERN_UI_DIR=$(find "$PUB_CACHE_DIR/git" -maxdepth 1 -type d -name "am-modern-ui-*" | head -n 1) && \
+    if [ -n "$MODERN_UI_DIR" ]; then \
       for pkg in am_common am_design_system am_auth_ui am_library; do \
-        if [ -d "$dir/$pkg" ]; then \
+        if [ -d "$MODERN_UI_DIR/$pkg" ]; then \
           echo "Generating files for $pkg" && \
-          cd "$dir/$pkg" && \
+          cd "$MODERN_UI_DIR/$pkg" && \
           flutter pub get && \
-          flutter pub run build_runner build --delete-conflicting-outputs || echo "Failed to build $pkg, continuing..."; \
+          flutter pub run build_runner build --delete-conflicting-outputs || exit 1; \
         fi \
       done \
-    done
+    else \
+      echo "am-modern-ui not found in pub cache!" && exit 1; \
+    fi
 # Copy application code
 COPY . .
 
