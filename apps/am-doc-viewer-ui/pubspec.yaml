@@ -24,22 +24,18 @@ dependencies:
     git:
       url: https://github.com/AM-Portfolio/am-modern-ui.git
       path: am_common
-      ref: db7e88b3e7d0eb28879109b797c90d1da8af473b
   am_design_system:
     git:
       url: https://github.com/AM-Portfolio/am-modern-ui.git
       path: am_design_system
-      ref: db7e88b3e7d0eb28879109b797c90d1da8af473b
   am_auth_ui:
     git:
       url: https://github.com/AM-Portfolio/am-modern-ui.git
       path: am_auth_ui
-      ref: db7e88b3e7d0eb28879109b797c90d1da8af473b
   am_library:
     git:
       url: https://github.com/AM-Portfolio/am-modern-ui.git
       path: am_library
-      ref: db7e88b3e7d0eb28879109b797c90d1da8af473b
 
 dev_dependencies:
   flutter_test:
