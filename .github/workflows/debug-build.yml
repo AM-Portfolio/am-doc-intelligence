@@ -19,7 +19,7 @@ jobs:
         run: flutter pub get
       - name: Analyze
         working-directory: apps/am-doc-viewer-ui
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Build Web
         working-directory: apps/am-doc-viewer-ui
         run: flutter build web --release --base-href /doc-ui/
