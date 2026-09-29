@@ -11,6 +11,17 @@ ARG GITHUB_PACKAGES_TOKEN
 RUN git config --global url."https://x-access-token:${GITHUB_PACKAGES_TOKEN}@github.com/".insteadOf "https://github.com/"
 RUN flutter pub get
 
+# Generate missing Freezed files for git dependencies in pub-cache
+RUN find / -name "am-modern-ui-*" -type d 2>/dev/null | grep "/\.pub-cache/git/" | while read dir; do \
+      for pkg in am_common am_design_system am_auth_ui am_library; do \
+        if [ -d "$dir/$pkg" ]; then \
+          echo "Generating files for $pkg" && \
+          cd "$dir/$pkg" && \
+          flutter pub get && \
+          flutter pub run build_runner build --delete-conflicting-outputs || echo "Failed to build $pkg, continuing..."; \
+        fi \
+      done \
+    done
 # Copy application code
 COPY . .
 
