@@ -9,6 +9,8 @@ enum AppEnvironment { local, preprod }
 class ApiService {
   AppEnvironment environment = AppEnvironment.preprod;
 
+  final List<String> brokerTypes = ['ZERODHA', 'UPSTOX', 'GROWW', 'ANGELONE', 'HDFC_SEC'];
+
   // Create a BrowserClient with withCredentials = false
   // This ensures the browser doesn't send cookies/credentials,
   // allowing the server's "Access-Control-Allow-Origin: *" to work.
