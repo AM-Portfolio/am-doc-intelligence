@@ -1,9 +1,5 @@
 name: AM Cloudinary Manager Publish
 
-permissions:
-  packages: write
-  contents: read
-
 on:
   push:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
@@ -14,16 +10,19 @@ on:
     branches: ["main", "develop"]
     paths:
       - 'services/am-cloudinary-manager/**'
+      - '.github/workflows/am-cloudinary-manager.yml'
   workflow_dispatch:
 
 jobs:
   publish:
     name: Publish AM Cloudinary Manager
+    permissions:
+      contents: write
+      packages: write
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
     with:
       language: 'java'
       working_directory: 'services/am-cloudinary-manager'
       image_name: 'am-cloudinary-manager'
       build_context: '.'
-      skip_secrets_scan: true
     secrets: inherit
