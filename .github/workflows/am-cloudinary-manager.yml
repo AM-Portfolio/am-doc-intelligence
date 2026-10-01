@@ -2,27 +2,29 @@ name: AM Cloudinary Manager Publish
 
 on:
   push:
-    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    branches:
+      ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
-      - 'services/am-cloudinary-manager/**'
-      - '.github/workflows/am-cloudinary-manager.yml'
+      - "services/am-cloudinary-manager/**"
+      - ".github/workflows/am-cloudinary-manager.yml"
   pull_request:
-    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    branches:
+      ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
-      - 'services/am-cloudinary-manager/**'
+      - "services/am-cloudinary-manager/**"
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Publish UI
+    name: Publish AM Cloudinary Manager
     permissions:
       contents: write
       packages: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@develop
     with:
-      language: 'java'
-      working_directory: 'services/am-cloudinary-manager'
-      image_name: 'am-cloudinary-manager'
-      build_context: '.'
+      language: "java"
+      working_directory: "services/am-cloudinary-manager"
+      image_name: "am-cloudinary-manager"
+      build_context: "."
       skip_secrets_scan: true
     secrets: inherit
