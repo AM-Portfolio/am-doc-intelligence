@@ -1,28 +1,34 @@
 name: AM Doc Viewer UI Publish
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 on:
   push:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'apps/am-doc-viewer-ui/**'
-      - '.github/workflows/am-doc-viewer-ui-publish.yml'
+      - '.github/workflows/am-doc-viewer-ui.yml'
   pull_request:
-    branches: ["main", "develop"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'apps/am-doc-viewer-ui/**'
+      - '.github/workflows/am-doc-viewer-ui.yml'
   workflow_dispatch:
 
 jobs:
   publish:
     name: Publish UI
-    permissions:
-      contents: write
-      packages: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish.yml@main
     with:
       language: 'flutter'
       working_directory: 'apps/am-doc-viewer-ui'
       image_name: 'am-doc-viewer-ui'
-      build_context: '.'
-      skip_secrets_scan: true
+      preprod_namespace: 'am-apps-preprod'
+      prod_namespace: 'am-apps-prod'
+      deploy_dev: false
+      deploy_preprod: true
+      deploy_prod: false
     secrets: inherit
