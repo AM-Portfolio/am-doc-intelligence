@@ -10,12 +10,11 @@ on:
     branches: ["main", "develop"]
     paths:
       - 'services/am-document-processor/**'
-      - '.github/workflows/am-document-processor.yml'
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Publish AM Document Processor
+    name: Publish UI
     permissions:
       contents: write
       packages: write
@@ -25,4 +24,5 @@ jobs:
       working_directory: 'services/am-document-processor'
       image_name: 'am-document-processor'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit

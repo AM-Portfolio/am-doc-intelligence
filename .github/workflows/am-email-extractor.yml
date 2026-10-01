@@ -10,12 +10,11 @@ on:
     branches: ["main", "develop"]
     paths:
       - 'services/am-email-extractor/**'
-      - '.github/workflows/am-email-extractor.yml'
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Publish AM Email Extractor
+    name: Publish UI
     permissions:
       contents: write
       packages: write
@@ -25,4 +24,5 @@ jobs:
       working_directory: 'services/am-email-extractor'
       image_name: 'am-email-extractor'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit

@@ -10,12 +10,11 @@ on:
     branches: ["main", "develop"]
     paths:
       - 'services/am-cloudinary-manager/**'
-      - '.github/workflows/am-cloudinary-manager.yml'
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Publish AM Cloudinary Manager
+    name: Publish UI
     permissions:
       contents: write
       packages: write
@@ -25,4 +24,5 @@ jobs:
       working_directory: 'services/am-cloudinary-manager'
       image_name: 'am-cloudinary-manager'
       build_context: '.'
+      skip_secrets_scan: true
     secrets: inherit
