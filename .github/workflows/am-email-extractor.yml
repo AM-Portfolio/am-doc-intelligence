@@ -7,7 +7,7 @@ on:
       - 'services/am-email-extractor/**'
       - '.github/workflows/am-email-extractor.yml'
   pull_request:
-    branches: ["main", "develop"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-email-extractor/**'
   workflow_dispatch:

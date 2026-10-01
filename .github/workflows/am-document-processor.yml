@@ -7,7 +7,7 @@ on:
       - 'services/am-document-processor/**'
       - '.github/workflows/am-document-processor.yml'
   pull_request:
-    branches: ["main", "develop"]
+    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-document-processor/**'
   workflow_dispatch:
