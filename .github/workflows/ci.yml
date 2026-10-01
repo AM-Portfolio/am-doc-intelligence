@@ -46,6 +46,16 @@ jobs:
                 <username>${env.GITHUB_PACKAGES_USERNAME}</username>
                 <password>${env.GITHUB_PACKAGES_TOKEN}</password>
               </server>
+              <server>
+                <id>github-investment</id>
+                <username>${env.GITHUB_PACKAGES_USERNAME}</username>
+                <password>${env.GITHUB_PACKAGES_TOKEN}</password>
+              </server>
+              <server>
+                <id>github-trade</id>
+                <username>${env.GITHUB_PACKAGES_USERNAME}</username>
+                <password>${env.GITHUB_PACKAGES_TOKEN}</password>
+              </server>
             </servers>
           </settings>
           EOF
