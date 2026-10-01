@@ -9,7 +9,6 @@ on:
         type: choice
         options:
           - am-cloudinary-manager
-          - am-doc-viewer-ui
           - am-document-processor
           - am-email-extractor
       tag:
