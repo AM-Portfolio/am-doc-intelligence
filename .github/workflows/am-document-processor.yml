@@ -1,5 +1,9 @@
 name: AM Document Processor Publish
 
+permissions:
+  packages: write
+  contents: read
+
 on:
   push:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
@@ -15,8 +19,6 @@ on:
 jobs:
   publish:
     name: Publish AM Document Processor
-    permissions:
-      packages: write
     uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@main
     with:
       language: 'java'
