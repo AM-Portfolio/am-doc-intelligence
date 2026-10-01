@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-ARG GITHUB_PACKAGES_TOKEN
-RUN pip install --no-cache-dir git+https://${GITHUB_PACKAGES_TOKEN}@github.com/AM-Portfolio/am-platform.git#subdirectory=libraries/am-platform-security
+RUN pip install --no-cache-dir git+https://github.com/AM-Portfolio/am-platform.git#subdirectory=libraries/am-platform-security
 
 COPY . .
 
