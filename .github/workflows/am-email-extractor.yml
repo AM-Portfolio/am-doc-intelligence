@@ -1,4 +1,4 @@
-# Trigger CI test run
+# Trigger CI/CD test run - am-dev-apps verification
 name: AM Email Extractor Publish
 
 on:
