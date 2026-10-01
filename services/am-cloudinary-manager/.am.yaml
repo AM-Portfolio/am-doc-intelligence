@@ -1,6 +1,6 @@
 name: am-cloudinary-manager
 release: am-cloudinary-manager
-image: ghcr.io/am-portfolio/am-cloudinary-manager
+image: ghcr.io/am-portfolio/am-doc-intelligence/am-cloudinary-manager
 runtime: java
 language: java
 dockerfile: Dockerfile

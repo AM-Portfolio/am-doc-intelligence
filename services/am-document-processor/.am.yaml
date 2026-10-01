@@ -1,6 +1,6 @@
 name: am-document-processor
 release: am-document-processor
-image: ghcr.io/am-portfolio/am-document-processor
+image: ghcr.io/am-portfolio/am-doc-intelligence/am-document-processor
 runtime: java
 language: java
 dockerfile: Dockerfile

@@ -22,7 +22,8 @@ global:
     serviceAccountName: "am-backend-sa"
 
 image:
-  repository: am-cloudinary-manager
+  # CI Contabo publish pushes repo-scoped GHCR: <git-repo>/<image_name>
+  repository: am-doc-intelligence/am-cloudinary-manager
   pullPolicy: Always
   tag: "latest"
 
