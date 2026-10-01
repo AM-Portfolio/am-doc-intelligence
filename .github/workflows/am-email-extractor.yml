@@ -5,7 +5,7 @@ on:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-email-extractor/**'
-      - '.github/workflows/am-email-extractor-publish.yml'
+      - '.github/workflows/am-email-extractor.yml'
   pull_request:
     branches: ["main", "develop"]
     paths:
@@ -14,7 +14,7 @@ on:
 
 jobs:
   publish:
-    name: Publish UI
+    name: Publish AM Email Extractor
     permissions:
       contents: write
       packages: write

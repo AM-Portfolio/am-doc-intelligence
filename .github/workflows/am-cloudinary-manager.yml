@@ -5,7 +5,7 @@ on:
     branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
       - 'services/am-cloudinary-manager/**'
-      - '.github/workflows/am-cloudinary-manager-publish.yml'
+      - '.github/workflows/am-cloudinary-manager.yml'
   pull_request:
     branches: ["main", "develop"]
     paths:
@@ -14,7 +14,7 @@ on:
 
 jobs:
   publish:
-    name: Publish UI
+    name: Publish AM Cloudinary Manager
     permissions:
       contents: write
       packages: write
