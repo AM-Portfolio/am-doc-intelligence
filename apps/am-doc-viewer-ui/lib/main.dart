@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:am_design_system/am_design_system.dart';
 import 'package:am_auth_ui/am_auth_ui.dart';
 import 'features/document_processor/document_processor_view.dart';
