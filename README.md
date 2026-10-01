@@ -67,6 +67,7 @@ To build locally, you must ensure your `~/.m2/settings.xml` has a server entry f
 The services in this repository use the central pipeline defined in `AM-Portfolio/am-pipelines`.
 - **Workflows**: Located in `.github/workflows/`
 - **Maven Authentication**: Handled automatically in CI via `GITHUB_TOKEN` secrets and a dynamically generated `settings.xml`.
+- **Deployment Pipeline**: Central workflows use `AM-Portfolio/am-pipelines` (`@develop`) with Argo CD event-driven webhooks and fast health polling for `am-cloudinary-manager`, `am-document-processor`, and `am-email-extractor`.
 
 ## License
 Private / AM Portfolio
