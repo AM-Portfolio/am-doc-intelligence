@@ -1,6 +1,6 @@
 name: am-email-extractor
 release: am-email-extractor
-image: ghcr.io/am-portfolio/am-email-extractor
+image: ghcr.io/am-portfolio/am-doc-intelligence/am-email-extractor
 runtime: python
 language: python
 dockerfile: Dockerfile

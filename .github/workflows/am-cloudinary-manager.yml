@@ -1,34 +1,31 @@
-name: AM Cloudinary Manager
+# Trigger CI test run
+name: AM Cloudinary Manager Publish
 
 on:
   push:
-    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    branches:
+      ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
-      - 'services/am-cloudinary-manager/**'
-      - '.github/workflows/am-cloudinary-manager.yml'
+      - "services/am-cloudinary-manager/**"
+      - ".github/workflows/am-cloudinary-manager.yml"
   pull_request:
-    branches: ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
+    branches:
+      ["main", "develop", "feature/**", "test/**", "fix/**", "hotfix/**"]
     paths:
-      - 'services/am-cloudinary-manager/**'
-      - '.github/workflows/am-cloudinary-manager.yml'
+      - "services/am-cloudinary-manager/**"
   workflow_dispatch:
 
 jobs:
   publish:
-    name: Build and Publish
+    name: Publish AM Cloudinary Manager
     permissions:
-      contents: read
+      contents: write
       packages: write
-      id-token: write
-    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish.yml@main
+    uses: AM-Portfolio/am-pipelines/.github/workflows/central-build-publish-contabo.yml@develop
     with:
-      language: 'java'
-      working_directory: 'services/am-cloudinary-manager'
-      image_name: 'am-cloudinary-manager'
-      build_context: '.'
-      preprod_namespace: 'am-apps-preprod'
-      prod_namespace: 'am-apps-prod'
-      dev_namespace: 'am-apps-dev'
-      deploy_dev: true
-      deploy_prod: false
+      language: "java"
+      working_directory: "services/am-cloudinary-manager"
+      image_name: "am-cloudinary-manager"
+      build_context: "."
+      skip_secrets_scan: true
     secrets: inherit

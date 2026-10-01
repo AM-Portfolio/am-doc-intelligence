@@ -9,6 +9,7 @@ A Flask-based web application that extracts portfolio holdings data from passwor
 
 ## Supported Brokers
 
+
 ### Groww
 - **Status**: ✅ Fully functional and tested
 - **Test Data**: September and August 2025 portfolio statements (password: JYQPK9320A)
