@@ -164,10 +164,20 @@ public class PortfolioServiceImpl implements PortfolioService {
         var avgBuyingPrice = stock.getAvgPrice() != null ? getDouble(stock.getAvgPrice()) : 0.0;
         var investedValue = stock.getInvestmentValue() != null ? getDouble(stock.getInvestmentValue())
                 : quantity * avgBuyingPrice;
+        // When ISIN is present, do not prefer short broker Symbol codes (Upstox VO/TA/VI).
+        // Resolve via ISIN below, or leave blank so am-portfolio normalizer can fill the ticker.
+        String inboundSymbol = stock.getSymbol();
+        boolean hasIsin = stock.getIsin() != null && !stock.getIsin().isBlank();
+        if (hasIsin && ((brokerType != null && brokerType.isUpstox())
+                || inboundSymbol == null
+                || inboundSymbol.trim().length() <= 4)) {
+            inboundSymbol = null;
+        }
+
         EquityModel.EquityModelBuilder assetBuilder = EquityModel.builder()
                 .assetType(AssetType.EQUITY)
                 .isin(stock.getIsin())
-                .symbol(stock.getSymbol())
+                .symbol(inboundSymbol)
                 .avgBuyingPrice(round(avgBuyingPrice))
                 .quantity(round(quantity))
                 .investmentValue(round(investedValue))
