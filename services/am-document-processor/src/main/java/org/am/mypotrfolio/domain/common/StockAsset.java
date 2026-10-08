@@ -22,7 +22,7 @@ public class StockAsset {
     private String isin;
 
     @JsonProperty("Symbol")
-    @JsonAlias({ "Symbol", "prop1" })
+    @JsonAlias({ "Symbol", "prop1", "Scrip Name" })
     private String symbol;
 
     @JsonProperty("Quantity")
