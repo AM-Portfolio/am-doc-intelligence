@@ -2,7 +2,7 @@
 Gmail Extractor API - Microservice for extracting broker portfolio holdings
 API-only version with JWT authentication and CORS support
 """
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 import os
 import jwt
@@ -15,6 +15,7 @@ import kafka_producer
 import logging
 import sys
 from pathlib import Path
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 
 # Load environment variables
 load_dotenv()
@@ -146,7 +147,7 @@ def health_check():
     # 1. Check MongoDB
     try:
         db = database.get_db()
-        # Ping the database
+        db.get_db()  # ensure connected
         db.client.admin.command('ping')
         health_status['infrastructure']['mongodb'] = 'connected'
     except Exception as e:
@@ -252,23 +253,92 @@ def gmail_connect():
         return jsonify({'error': str(e)}), 500
 
 
+def _gmail_ui_success_url(**query) -> str:
+    """Frontend page to land on after OAuth (same app tab experience)."""
+    base = (
+        os.environ.get('GMAIL_UI_SUCCESS_URL')
+        or os.environ.get('FRONTEND_URL')
+        or 'https://am-dev.asrax.in/app/doc-intel/email-extractor'
+    ).strip()
+    parsed = urlparse(base)
+    q = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    q.update({k: v for k, v in query.items() if v is not None})
+    return urlunparse(parsed._replace(query=urlencode(q)))
+
+
+def _gmail_callback_browser_response(*, success: bool, email=None, name=None, error=None):
+    """Close popup / postMessage opener, else redirect back into the Flutter app."""
+    if success:
+        target = _gmail_ui_success_url(gmail='connected')
+        title = 'Gmail connected'
+        body = 'Gmail connected successfully. Returning to Asrax…'
+        payload = {
+            'type': 'am-gmail-oauth',
+            'success': True,
+            'email': email or '',
+            'name': name or '',
+        }
+    else:
+        target = _gmail_ui_success_url(gmail='error', msg=(error or 'oauth_failed')[:120])
+        title = 'Gmail connection failed'
+        body = f'Could not connect Gmail: {error or "unknown error"}. Returning to Asrax…'
+        payload = {
+            'type': 'am-gmail-oauth',
+            'success': False,
+            'error': error or 'oauth_failed',
+        }
+
+    import json as _json
+    origin = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(target))
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>{title}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{{font-family:system-ui,sans-serif;margin:2rem;color:#222}}</style>
+</head><body>
+<p>{body}</p>
+<script>
+(function() {{
+  var payload = {_json.dumps(payload)};
+  var target = {_json.dumps(target)};
+  var origin = {_json.dumps(origin)};
+  try {{
+    if (window.opener && !window.opener.closed) {{
+      window.opener.postMessage(payload, origin);
+      window.close();
+    }}
+  }} catch (e) {{}}
+  setTimeout(function() {{ window.location.replace(target); }}, 400);
+}})();
+</script>
+<p><a href="{target}">Continue to Asrax</a></p>
+</body></html>"""
+    resp = make_response(html, 200 if success else 400)
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return resp
+
+
 @app.route(f'/api/{API_VERSION}/gmail/callback', methods=['GET'])
 def gmail_callback():
-    """Handle Gmail OAuth callback"""
+    """Handle Gmail OAuth callback — return to app UI (not raw JSON)."""
     try:
         # Get state from query parameter
         state_param = request.args.get('state')
         code = request.args.get('code')
         
         if not state_param or not code:
-            return jsonify({'error': 'Missing state or code parameter'}), 400
+            return _gmail_callback_browser_response(
+                success=False, error='Missing state or code (do not reload this URL)'
+            )
         
         # Load state data
         import json
         state_file = os.path.join('user_tokens', f'state_{state_param}.json')
         
         if not os.path.exists(state_file):
-            return jsonify({'error': 'Invalid or expired state'}), 400
+            return _gmail_callback_browser_response(
+                success=False,
+                error='Invalid or expired state — start Authenticate Google Mail again',
+            )
         
         with open(state_file, 'r') as f:
             state_data = json.load(f)
@@ -281,7 +351,9 @@ def gmail_callback():
         creds, flow, _ = gmail_integration.get_credentials(user_id)
         
         if not flow:
-            return jsonify({'error': 'Failed to initialize OAuth flow'}), 500
+            return _gmail_callback_browser_response(
+                success=False, error='Failed to initialize OAuth flow'
+            )
         
         # Fetch token
         try:
@@ -290,7 +362,9 @@ def gmail_callback():
         except Exception as e:
             import traceback
             traceback.print_exc()
-            return jsonify({'error': f'Auth failed: {str(e)}'}), 401
+            return _gmail_callback_browser_response(
+                success=False, error=f'Auth failed: {str(e)}'
+            )
         
         # Save credentials to Database
         import pickle
@@ -298,19 +372,27 @@ def gmail_callback():
         
         # Get user info
         user_info = gmail_integration.get_user_info(flow.credentials)
-        
-        # Return success with user info
-        return jsonify({
-            'success': True,
-            'message': 'Gmail connected successfully',
-            'email': user_info.get('email') if user_info else None,
-            'name': user_info.get('name') if user_info else None
-        })
+        email = user_info.get('email') if user_info else None
+        name = user_info.get('name') if user_info else None
+
+        # API clients can still request JSON
+        accept = (request.headers.get('Accept') or '').lower()
+        if 'application/json' in accept and 'text/html' not in accept:
+            return jsonify({
+                'success': True,
+                'message': 'Gmail connected successfully',
+                'email': email,
+                'name': name,
+            })
+
+        return _gmail_callback_browser_response(
+            success=True, email=email, name=name
+        )
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return _gmail_callback_browser_response(success=False, error=str(e))
 
 
 @app.route(f'/api/{API_VERSION}/gmail/status', methods=['GET'])
@@ -337,6 +419,39 @@ def gmail_status():
             
     except Exception as e:
         return jsonify({'connected': False, 'error': str(e)})
+
+
+@app.route(f'/api/{API_VERSION}/gmail/mailbox-probe', methods=['GET'])
+@require_jwt
+def gmail_mailbox_probe():
+    """Dev/ops: count statement-like messages per broker for the connected mailbox."""
+    try:
+        user_id = request.user_id
+        service, _, _ = gmail_integration.get_gmail_service(user_id)
+        if not service:
+            return jsonify({'error': 'Gmail not connected'}), 401
+        days = int(request.args.get('days', '365'))
+        brokers = request.args.get('brokers', ','.join(SUPPORTED_BROKERS)).split(',')
+        out = {}
+        for broker in [b.strip().lower() for b in brokers if b.strip()]:
+            if broker not in SUPPORTED_BROKERS:
+                out[broker] = {'error': 'unsupported'}
+                continue
+            msgs = gmail_integration.search_emails(service, broker, days_back=days)
+            samples = []
+            for m in msgs[:3]:
+                d = gmail_integration.get_message_details(service, m['id'])
+                if d:
+                    samples.append({
+                        'subject': d.get('subject'),
+                        'from': d.get('from'),
+                        'date': d.get('date'),
+                    })
+            out[broker] = {'count': len(msgs), 'samples': samples}
+        return jsonify({'user_id': user_id, 'days': days, 'brokers': out})
+    except Exception as e:
+        logger.exception('mailbox-probe failed')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route(f'/api/{API_VERSION}/gmail/disconnect', methods=['DELETE'])
@@ -421,20 +536,10 @@ def extract_from_gmail(broker):
         doc_id = database.get_db().save_holdings(user_id, broker, holdings, metadata)
         sys.stderr.write(f"DEBUG: Saved to MongoDB. Doc ID: {doc_id}\n")
         
-        # Prepare Kafka Payload
+        # Prepare Kafka Payload (EquityModel / MutualFundModel JSON shape for am-portfolio)
         import uuid
         process_id = str(uuid.uuid4())
-        
-        equities = []
-        mutual_funds = []
-        
-        for holding in holdings:
-            # Simple ISIN check: INF usually Mutual Fund, INE usually Equity
-            isin = holding.get('isin_code', '')
-            if isin.startswith('INF'):
-                mutual_funds.append(holding)
-            else:
-                equities.append(holding)
+        equities, mutual_funds = holdings_for_portfolio_event(holdings, broker)
         
         # Send notification to Kafka
         sys.stderr.write("DEBUG: Sending Kafka event...\n")
@@ -558,6 +663,55 @@ def extract_broker_holdings(broker, file_path, password=None):
         raise ValueError(f"Unsupported broker: {broker}")
     
     return extract_holdings(file_path, password)
+
+
+def _holding_float(value, default=0.0):
+    try:
+        if value is None or value == '':
+            return default
+        return float(str(value).replace(',', '').replace('%', '').strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def to_portfolio_asset(holding):
+    """Map extractor dict → am-portfolio EquityModel-compatible JSON."""
+    isin = (holding.get('isin') or holding.get('isin_code') or '').strip().upper()
+    name = (holding.get('companyName') or holding.get('company_name') or holding.get('name') or '').strip()
+    qty = _holding_float(holding.get('quantity', holding.get('current_bal')))
+    price = _holding_float(holding.get('currentPrice', holding.get('avgBuyingPrice', holding.get('rate'))))
+    value = _holding_float(holding.get('currentValue', holding.get('investmentValue', holding.get('value'))))
+    if value <= 0 and qty > 0 and price > 0:
+        value = qty * price
+    return {
+        'isin': isin or None,
+        'companyName': name or None,
+        'name': name or None,
+        'symbol': isin or name or None,
+        'quantity': qty,
+        'avgBuyingPrice': price,
+        'currentPrice': price,
+        'currentValue': value,
+        'investmentValue': value,
+    }
+
+
+def holdings_for_portfolio_event(holdings, broker):
+    """
+    Split/map holdings for Kafka am-portfolio consumer.
+    Demat brokers (e.g. Dhan): keep INF* ETFs as equities — they are listed demat units.
+    """
+    equities = []
+    mutual_funds = []
+    demat_all_equity = broker in ('dhan',)
+    for holding in holdings or []:
+        asset = to_portfolio_asset(holding)
+        isin = asset.get('isin') or ''
+        if not demat_all_equity and isin.startswith('INF'):
+            mutual_funds.append(asset)
+        else:
+            equities.append(asset)
+    return equities, mutual_funds
 
 
 def cleanup_temp_files(file_path, temp_dir=None):

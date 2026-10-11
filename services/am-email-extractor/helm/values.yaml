@@ -51,11 +51,11 @@ vault:
       path: "apps/data/preprod/infra/kafka"
     # jwt only where needed (see values.dev.yaml) — do not inherit a preprod jwt into prod
     google:
-      path: "secret/data/preprod/apps/docs/google"
+      path: "apps/data/preprod/services/am-identity"
     identity-oidc:
       path: "apps/data/preprod/services/am-identity"
     service-oauth:
-      path: "apps/data/preprod/services/am-doc-intelligence"
+      path: "apps/data/preprod/services/am-email-extractor"
 
 config:
   app:

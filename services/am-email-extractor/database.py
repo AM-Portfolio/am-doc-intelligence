@@ -115,4 +115,9 @@ class Database:
 db_instance = Database()
 
 def get_db():
-    return db_instance.get_db()
+    """Return the Database helper (methods: get_user_token, save_holdings, …).
+
+    Callers must not treat this as a raw pymongo Database — use helper.get_db()
+    if you need the pymongo db object.
+    """
+    return db_instance
