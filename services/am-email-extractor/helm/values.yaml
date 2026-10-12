@@ -62,3 +62,4 @@ config:
     JWT_ALGORITHM: "HS256"
     MONGO_DATABASE: "am-doc-intelligence"
     KAFKA_TOPIC: "am-portfolio"
+    # Prefer env: on env-specific values — universal-chart injects Values.env

@@ -113,15 +113,20 @@ def load_broker_patterns() -> dict:
 BROKER_PATTERNS = load_broker_patterns()
 
 
-def get_credentials(user_id=None):
-    """Get Gmail API credentials for a specific user"""
+def get_credentials(user_id=None, mailbox=None, *, force_new_flow=False):
+    """Get Gmail API credentials for a user mailbox (optional email).
+
+    force_new_flow=True skips existing tokens and starts OAuth (add another mailbox).
+    """
     creds = None
     import database
-    
-    # Use database for token storage if user_id is provided
-    if user_id:
+    mailbox_email = (mailbox or '').strip().lower() or None
+
+    if force_new_flow:
+        creds = None
+    elif user_id:
         try:
-            token_data = database.get_db().get_user_token(user_id)
+            token_data = database.get_db().get_user_token(user_id, email=mailbox_email)
             if token_data:
                 creds = pickle.loads(token_data)
         except Exception as e:
@@ -132,14 +137,20 @@ def get_credentials(user_id=None):
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 creds = pickle.load(token)
-    
+
     # If credentials are invalid or don't exist
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
             # Save refreshed credentials
             if user_id:
-                database.get_db().save_user_token(user_id, pickle.dumps(creds))
+                email_for_save = mailbox_email
+                if not email_for_save:
+                    info = get_user_info(creds)
+                    email_for_save = (info or {}).get('email')
+                database.get_db().save_user_token(
+                    user_id, pickle.dumps(creds), email=email_for_save
+                )
             else:
                 with open('token.pickle', 'wb') as token:
                     pickle.dump(creds, token)
@@ -185,21 +196,30 @@ def get_credentials(user_id=None):
             )
             
             # We don't save here yet, as we need the flow to complete
-            return None, flow, None # No token file path needed anymore
-        
+            return None, flow, None  # No token file path needed anymore
+
         # Save credentials for next time (re-save if valid)
         if user_id and creds and creds.valid:
-            database.get_db().save_user_token(user_id, pickle.dumps(creds))
-    
+            email_for_save = mailbox_email
+            if not email_for_save:
+                info = get_user_info(creds)
+                email_for_save = (info or {}).get('email')
+            database.get_db().save_user_token(
+                user_id, pickle.dumps(creds), email=email_for_save
+            )
+
     return creds, None, None
 
-def get_gmail_service(user_id=None):
-    """Get authenticated Gmail API service for a specific user"""
-    creds, flow, _ = get_credentials(user_id)
-    
+
+def get_gmail_service(user_id=None, mailbox=None, *, force_new_flow=False):
+    """Get authenticated Gmail API service for a user mailbox."""
+    creds, flow, _ = get_credentials(
+        user_id, mailbox=mailbox, force_new_flow=force_new_flow
+    )
+
     if flow:
         return None, flow, None
-    
+
     return build('gmail', 'v1', credentials=creds), None, None
 
 def get_user_info(creds):

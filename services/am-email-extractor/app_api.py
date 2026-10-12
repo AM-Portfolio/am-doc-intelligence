@@ -206,49 +206,57 @@ logger = logging.getLogger(__name__)
 @app.route(f'/api/{API_VERSION}/gmail/connect', methods=['GET'])
 @require_jwt
 def gmail_connect():
-    """Start Gmail OAuth flow"""
+    """Start Gmail OAuth flow. ?add=1 forces adding another mailbox (up to 5)."""
     logger.info(f"Entry: gmail_connect for user_id={getattr(request, 'user_id', 'unknown')}")
     try:
         user_id = request.user_id
-        logger.debug(f"Getting credentials for user_id: {user_id}")
-        creds, flow, _ = gmail_integration.get_credentials(user_id)
-        
-        if creds:
-            logger.info("User already authenticated")
-            user_info = gmail_integration.get_user_info(creds)
+        force_add = request.args.get('add', '').strip() in ('1', 'true', 'yes')
+        mailboxes = database.get_db().list_mailboxes(user_id)
+
+        if not force_add and mailboxes:
+            logger.info("User already has mailbox(es); return connected")
+            default = next((m for m in mailboxes if m.get('is_default')), mailboxes[0])
             return jsonify({
                 'connected': True,
-                'email': user_info.get('email') if user_info else None,
-                'message': 'Gmail already connected'
+                'email': default.get('email'),
+                'mailboxes': mailboxes,
+                'message': 'Gmail already connected',
             })
-        
+
+        if force_add and len(mailboxes) >= database.MAX_MAILBOXES_PER_USER:
+            return jsonify({
+                'error': f'Maximum {database.MAX_MAILBOXES_PER_USER} mailboxes allowed',
+            }), 400
+
+        logger.debug(f"Starting OAuth flow for user_id: {user_id} add={force_add}")
+        creds, flow, _ = gmail_integration.get_credentials(
+            user_id, force_new_flow=True
+        )
+
         if not flow:
             logger.error("Failed to initialize OAuth flow")
             return jsonify({'error': 'Failed to initialize OAuth flow'}), 500
-        
-        # Generate authorization URL
+
         authorization_url, state = flow.authorization_url(
             access_type='offline',
-            prompt='consent'
+            prompt='consent',
         )
-        
-        # Store state for verification during callback
-        # We still use a temporary file for STATE because callback needs to verify state
-        # State is short-lived and doesn't contain sensitive credentials, just a nonce
+
         state_file = os.path.join('user_tokens', f'state_{state}.json')
         os.makedirs('user_tokens', exist_ok=True)
         with open(state_file, 'w') as f:
             import json
             json.dump({
                 'user_id': user_id,
-                'state': state
+                'state': state,
+                'add_mailbox': force_add or len(mailboxes) == 0,
             }, f)
-        
+
         return jsonify({
             'auth_url': authorization_url,
-            'state': state
+            'state': state,
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -347,17 +355,15 @@ def gmail_callback():
         # Clean up state file
         os.remove(state_file)
         
-        # Get credentials and exchange code for token
-        creds, flow, _ = gmail_integration.get_credentials(user_id)
-        
+        # Fresh OAuth flow for token exchange
+        _, flow, _ = gmail_integration.get_credentials(user_id, force_new_flow=True)
+
         if not flow:
             return _gmail_callback_browser_response(
                 success=False, error='Failed to initialize OAuth flow'
             )
-        
-        # Fetch token
+
         try:
-            # We must pass the same redirect_uri to fetch_token if it's not handled by the flow
             flow.fetch_token(code=code)
         except Exception as e:
             import traceback
@@ -365,17 +371,23 @@ def gmail_callback():
             return _gmail_callback_browser_response(
                 success=False, error=f'Auth failed: {str(e)}'
             )
-        
-        # Save credentials to Database
+
         import pickle
-        database.get_db().save_user_token(user_id, pickle.dumps(flow.credentials))
-        
-        # Get user info
         user_info = gmail_integration.get_user_info(flow.credentials)
         email = user_info.get('email') if user_info else None
         name = user_info.get('name') if user_info else None
+        if not email:
+            return _gmail_callback_browser_response(
+                success=False, error='Could not read Gmail address from Google'
+            )
 
-        # API clients can still request JSON
+        try:
+            database.get_db().save_user_token(
+                user_id, pickle.dumps(flow.credentials), email=email
+            )
+        except ValueError as ve:
+            return _gmail_callback_browser_response(success=False, error=str(ve))
+
         accept = (request.headers.get('Accept') or '').lower()
         if 'application/json' in accept and 'text/html' not in accept:
             return jsonify({
@@ -383,6 +395,7 @@ def gmail_callback():
                 'message': 'Gmail connected successfully',
                 'email': email,
                 'name': name,
+                'mailboxes': database.get_db().list_mailboxes(user_id),
             })
 
         return _gmail_callback_browser_response(
@@ -395,39 +408,89 @@ def gmail_callback():
         return _gmail_callback_browser_response(success=False, error=str(e))
 
 
+@app.route(f'/api/{API_VERSION}/gmail/mailboxes', methods=['GET'])
+@require_jwt
+def gmail_mailboxes():
+    """List connected Gmail mailboxes for the user."""
+    try:
+        user_id = request.user_id
+        mailboxes = database.get_db().list_mailboxes(user_id)
+        return jsonify({
+            'mailboxes': mailboxes,
+            'connected': len(mailboxes) > 0,
+            'max': database.MAX_MAILBOXES_PER_USER,
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route(f'/api/{API_VERSION}/gmail/mailboxes/<path:email>', methods=['DELETE'])
+@require_jwt
+def gmail_disconnect_mailbox(email):
+    """Disconnect one Gmail mailbox by email address."""
+    try:
+        user_id = request.user_id
+        deleted = database.get_db().delete_user_token(user_id, email=email)
+        if not deleted:
+            return jsonify({'error': 'Mailbox not found'}), 404
+        return jsonify({
+            'message': 'Mailbox disconnected',
+            'email': email.strip().lower(),
+            'mailboxes': database.get_db().list_mailboxes(user_id),
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route(f'/api/{API_VERSION}/gmail/status', methods=['GET'])
 @require_jwt
 def gmail_status():
-    """Check Gmail connection status"""
+    """Check Gmail connection status (includes mailboxes list)."""
     try:
         user_id = request.user_id
-        logger.debug(f"Checking status for user_id: {user_id}")
-        service, _, _ = gmail_integration.get_gmail_service(user_id)
-        
+        mailbox = request.args.get('mailbox', '').strip() or None
+        logger.debug(f"Checking status for user_id: {user_id} mailbox={mailbox}")
+        mailboxes = database.get_db().list_mailboxes(user_id)
+        if not mailboxes:
+            return jsonify({'connected': False, 'mailboxes': []})
+
+        resolved = database.get_db().resolve_mailbox_email(user_id, mailbox)
+        service, _, _ = gmail_integration.get_gmail_service(user_id, mailbox=resolved)
         if service:
-            # Get user info
-            creds, _, _ = gmail_integration.get_credentials(user_id)
+            creds, _, _ = gmail_integration.get_credentials(user_id, mailbox=resolved)
             user_info = gmail_integration.get_user_info(creds) if creds else None
-            
+            # Backfill email on legacy docs
+            email = (user_info or {}).get('email') or resolved
+            if creds and email:
+                import pickle
+                try:
+                    database.get_db().save_user_token(
+                        user_id, pickle.dumps(creds), email=email
+                    )
+                    mailboxes = database.get_db().list_mailboxes(user_id)
+                except Exception:
+                    pass
             return jsonify({
                 'connected': True,
-                'email': user_info.get('email') if user_info else None,
-                'name': user_info.get('name') if user_info else None
+                'email': email,
+                'name': (user_info or {}).get('name'),
+                'mailboxes': mailboxes,
             })
-        else:
-            return jsonify({'connected': False})
-            
+        return jsonify({'connected': False, 'mailboxes': mailboxes})
+
     except Exception as e:
-        return jsonify({'connected': False, 'error': str(e)})
+        return jsonify({'connected': False, 'error': str(e), 'mailboxes': []})
 
 
 @app.route(f'/api/{API_VERSION}/gmail/mailbox-probe', methods=['GET'])
 @require_jwt
 def gmail_mailbox_probe():
-    """Dev/ops: count statement-like messages per broker for the connected mailbox."""
+    """Dev/ops: count statement-like messages per broker for a mailbox."""
     try:
         user_id = request.user_id
-        service, _, _ = gmail_integration.get_gmail_service(user_id)
+        mailbox = request.args.get('mailbox', '').strip() or None
+        resolved = database.get_db().resolve_mailbox_email(user_id, mailbox)
+        service, _, _ = gmail_integration.get_gmail_service(user_id, mailbox=resolved)
         if not service:
             return jsonify({'error': 'Gmail not connected'}), 401
         days = int(request.args.get('days', '365'))
@@ -448,7 +511,12 @@ def gmail_mailbox_probe():
                         'date': d.get('date'),
                     })
             out[broker] = {'count': len(msgs), 'samples': samples}
-        return jsonify({'user_id': user_id, 'days': days, 'brokers': out})
+        return jsonify({
+            'user_id': user_id,
+            'mailbox': resolved,
+            'days': days,
+            'brokers': out,
+        })
     except Exception as e:
         logger.exception('mailbox-probe failed')
         return jsonify({'error': str(e)}), 500
@@ -457,12 +525,16 @@ def gmail_mailbox_probe():
 @app.route(f'/api/{API_VERSION}/gmail/disconnect', methods=['DELETE'])
 @require_jwt
 def gmail_disconnect():
-    """Disconnect Gmail account"""
+    """Disconnect one mailbox (?mailbox=email) or all if omitted."""
     try:
         user_id = request.user_id
-        database.get_db().delete_user_token(user_id)
-        return jsonify({'message': 'Gmail disconnected successfully'})
-            
+        mailbox = request.args.get('mailbox', '').strip() or None
+        database.get_db().delete_user_token(user_id, email=mailbox)
+        return jsonify({
+            'message': 'Gmail disconnected successfully',
+            'mailboxes': database.get_db().list_mailboxes(user_id),
+        })
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -490,15 +562,21 @@ def extract_from_gmail(broker):
             sys.stderr.write("DEBUG: Missing PAN number\n")
             return jsonify({'error': 'PAN number is required'}), 400
         
-        # Get Gmail service
+        # Get Gmail service (optional ?mailbox=email)
         user_id = request.user_id
-        sys.stderr.write(f"DEBUG: Getting Gmail service for user: {user_id}\n")
-        service, _, _ = gmail_integration.get_gmail_service(user_id)
-        
+        mailbox = request.args.get('mailbox', '').strip() or None
+        resolved = database.get_db().resolve_mailbox_email(user_id, mailbox)
+        if mailbox and not resolved:
+            return jsonify({'error': f'Mailbox not connected: {mailbox}'}), 400
+        sys.stderr.write(
+            f"DEBUG: Getting Gmail service for user: {user_id} mailbox={resolved}\n"
+        )
+        service, _, _ = gmail_integration.get_gmail_service(user_id, mailbox=resolved)
+
         if not service:
             sys.stderr.write("DEBUG: Gmail not connected\n")
             return jsonify({'error': 'Gmail not connected. Please connect Gmail first.'}), 401
-        
+
         # Fetch latest statement
         sys.stderr.write(f"DEBUG: Fetching latest email from {broker}...\n")
         result = gmail_integration.get_latest_statement(service, broker)
@@ -529,7 +607,8 @@ def extract_from_gmail(broker):
             'email_subject': result['email']['subject'],
             'email_date': result['email']['date'],
             'filename': result['attachment']['filename'],
-            'source': 'gmail'
+            'source': 'gmail',
+            'mailbox': resolved,
         }
         
         sys.stderr.write("DEBUG: Saving to MongoDB...\n")
@@ -539,8 +618,11 @@ def extract_from_gmail(broker):
         # Prepare Kafka Payload (EquityModel / MutualFundModel JSON shape for am-portfolio)
         import uuid
         process_id = str(uuid.uuid4())
-        equities, mutual_funds = holdings_for_portfolio_event(holdings, broker)
-        
+        auth_header = request.headers.get("Authorization")
+        equities, mutual_funds = holdings_for_portfolio_event(
+            holdings, broker, authorization=auth_header
+        )
+
         # Send notification to Kafka
         sys.stderr.write("DEBUG: Sending Kafka event...\n")
         kafka_producer.get_producer().send_update_event(
@@ -611,13 +693,20 @@ def extract_from_upload(broker):
                 'filename': filename
             }
             doc_id = database.get_db().save_holdings(request.user_id, broker, holdings, metadata)
-            
-            # Send notification to Kafka
+
+            import uuid
+            process_id = str(uuid.uuid4())
+            auth_header = request.headers.get("Authorization")
+            equities, mutual_funds = holdings_for_portfolio_event(
+                holdings, broker, authorization=auth_header
+            )
             kafka_producer.get_producer().send_update_event(
+                process_id=process_id,
                 user_id=request.user_id,
-                status="SUCCESS",
-                db_id=doc_id,
-                broker=broker
+                broker=broker,
+                portfolio_id=doc_id,
+                equities=equities,
+                mutual_funds=mutual_funds,
             )
             
             # Clean up
@@ -674,40 +763,67 @@ def _holding_float(value, default=0.0):
         return default
 
 
-def to_portfolio_asset(holding):
-    """Map extractor dict → am-portfolio EquityModel-compatible JSON."""
+def to_portfolio_asset(holding, enrich=None):
+    """
+    Map extractor dict → slim EquityModel JSON for Kafka.
+
+    Statement path has no avg buy — do not invent cost from closing rate.
+    symbol / sector / name come from market-data enrichment (AM security names).
+    """
+    enrich = enrich or {}
     isin = (holding.get('isin') or holding.get('isin_code') or '').strip().upper()
-    name = (holding.get('companyName') or holding.get('company_name') or holding.get('name') or '').strip()
+    pdf_name = (
+        holding.get('companyName') or holding.get('company_name') or holding.get('name') or ''
+    ).strip()
+    name = (enrich.get('name') or enrich.get('companyName') or pdf_name or None)
+    if isinstance(name, str):
+        name = name.strip() or None
     qty = _holding_float(holding.get('quantity', holding.get('current_bal')))
-    price = _holding_float(holding.get('currentPrice', holding.get('avgBuyingPrice', holding.get('rate'))))
-    value = _holding_float(holding.get('currentValue', holding.get('investmentValue', holding.get('value'))))
-    if value <= 0 and qty > 0 and price > 0:
-        value = qty * price
-    return {
+    symbol = (enrich.get('symbol') or None)
+    if isinstance(symbol, str):
+        symbol = symbol.strip() or None
+    sector = (enrich.get('sector') or None)
+    if isinstance(sector, str):
+        sector = sector.strip() or None
+
+    asset = {
         'isin': isin or None,
-        'companyName': name or None,
-        'name': name or None,
-        'symbol': isin or name or None,
+        'companyName': name,
+        'name': name,
+        'symbol': symbol,
         'quantity': qty,
-        'avgBuyingPrice': price,
-        'currentPrice': price,
-        'currentValue': value,
-        'investmentValue': value,
     }
+    if sector:
+        asset['sector'] = sector
+    industry = enrich.get('industry')
+    if industry:
+        asset['industry'] = industry
+    return asset
 
 
-def holdings_for_portfolio_event(holdings, broker):
+def holdings_for_portfolio_event(holdings, broker, authorization=None):
     """
     Split/map holdings for Kafka am-portfolio consumer.
     Demat brokers (e.g. Dhan): keep INF* ETFs as equities — they are listed demat units.
+    Enrich symbol/sector/name via market-data batch-search (fail-open).
     """
+    from security_enrichment import enrich_by_isins
+
     equities = []
     mutual_funds = []
     demat_all_equity = broker in ('dhan',)
-    for holding in holdings or []:
-        asset = to_portfolio_asset(holding)
-        isin = asset.get('isin') or ''
-        if not demat_all_equity and isin.startswith('INF'):
+    holdings = holdings or []
+    isins = [
+        (h.get('isin') or h.get('isin_code') or '').strip().upper()
+        for h in holdings
+    ]
+    enrichment = enrich_by_isins(isins, authorization=authorization)
+
+    for holding in holdings:
+        isin = (holding.get('isin') or holding.get('isin_code') or '').strip().upper()
+        asset = to_portfolio_asset(holding, enrichment.get(isin))
+        out_isin = asset.get('isin') or ''
+        if not demat_all_equity and out_isin.startswith('INF'):
             mutual_funds.append(asset)
         else:
             equities.append(asset)

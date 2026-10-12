@@ -40,3 +40,4 @@ env:
   # Must be under env: (universal-chart ignores config.app for container env)
   GMAIL_REDIRECT_URI: "https://am-preprod.asrax.in/email/api/v1/gmail/callback"
   GMAIL_UI_SUCCESS_URL: "https://am-preprod.asrax.in/app/doc-intel/email-extractor"
+  MARKET_DATA_BASE_URL: "https://am-preprod.asrax.in/market"

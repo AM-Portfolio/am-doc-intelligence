@@ -8,6 +8,8 @@ except ImportError:  # local unit tests without pdfminer
         pass
 
 # Indian / western thousand separators, optional trailing %
+
+
 _NUM = r'[\d,]+\.?\d*%?'
 # Current Dhan Demat Holding Summary rows, e.g.:
 # 1 listed INE931S01010 Adani Energy Solutions 18.00 0.00 ... 18.00 1,436.10 25,849.80 1.01%
