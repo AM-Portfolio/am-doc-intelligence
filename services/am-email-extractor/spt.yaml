@@ -18,7 +18,11 @@ source:
 traces:
   - name: configmap
     ref: spt-catalog-am-email-extractor
+  - name: openapi
+    ref: /v3/api-docs
 targets:
   dev: "https://am-dev.asrax.in/email"
   preprod: "https://am-preprod.asrax.in/email"
   prod: "https://am.asrax.in/email"
+openapi:
+  path: /v3/api-docs

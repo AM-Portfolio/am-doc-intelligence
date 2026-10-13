@@ -29,17 +29,17 @@ vault:
     identity-oidc:
       path: "apps/data/prod/services/am-identity"
     service-oauth:
-      path: "apps/data/prod/services/am-doc-intelligence"
-    # Vault UI: apps â†’ prod â†’ shared â†’ google  (KV v2 â†’ apps/data/â€¦)
+      path: "apps/data/prod/services/am-email-extractor"
+    # Same Web client as Keycloak / modern-ui
     google:
-      path: "apps/data/prod/shared/google"
+      path: "apps/data/prod/services/am-identity"
 
 env:
   ALLOWED_ORIGINS: "https://am.asrax.in,http://localhost:3000"
-
-config:
-  app:
-    GMAIL_REDIRECT_URI: "https://am.asrax.in/email/api/v1/gmail/callback"
+  # Must be under env: (universal-chart ignores config.app for container env)
+  GMAIL_REDIRECT_URI: "https://am.asrax.in/email/api/v1/gmail/callback"
+  GMAIL_UI_SUCCESS_URL: "https://am.asrax.in/app/doc-intel/email-extractor"
+  MARKET_DATA_BASE_URL: "https://am.asrax.in/market"
 
 global:
   image:

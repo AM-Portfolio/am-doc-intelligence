@@ -1,5 +1,7 @@
 import os
 import base64
+import json
+import logging
 import pickle
 import tempfile
 from datetime import datetime, timedelta
@@ -11,6 +13,8 @@ from google.oauth2.credentials import Credentials
 # Allow OAuth over HTTP when behind a reverse proxy (like Replit)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
+logger = logging.getLogger(__name__)
+
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -18,44 +22,111 @@ SCOPES = [
     'openid'
 ]
 
-# Broker email patterns
-BROKER_PATTERNS = {
+# Code defaults — overridden at startup by Vault/env GMAIL_BROKER_PATTERNS_JSON
+DEFAULT_BROKER_PATTERNS = {
     'zerodha': {
-        'from': 'no-reply-transaction-with-holding-statement@reportsmailer.zerodha.net',
-        'subject': 'Monthly Demat Transaction with Holding Statement for',
-        'file_pattern': '.pdf'
+        'from': 'zerodha.net',
+        'subject': 'Holding Statement',
+        'file_pattern': ['.pdf'],
     },
     'groww': {
-        'from': 'noreply@groww.in',
-        'subject': 'Transaction and Holding Statement',
-        'file_pattern': '.pdf'
+        'from': 'groww.in',
+        'subject': 'Holding Statement',
+        'file_pattern': ['.pdf'],
     },
     'dhan': {
         'from': 'statements@dhan.co',
-        'subject': 'Demat Transaction and Holding Statement for the Month ending',
-        'file_pattern': '.pdf'
+        'subject': 'Demat Holding Summary',
+        'file_pattern': ['.pdf', '.xlsx', '.xls'],
     },
     'mstock': {
-        'from': 'no-reply@mstock.com',
+        'from': 'mstock.com',
         'subject': 'TRANSACTION STATEMENT',
-        'file_pattern': '.pdf'
+        'file_pattern': ['.pdf'],
     },
     'angleone': {
-        'from': 'noreply@angelone.in',
+        'from': 'angelone.in',
         'subject': 'Holdings',
-        'file_pattern': '.xlsx'
-    }
+        'file_pattern': ['.xlsx'],
+    },
 }
 
-def get_credentials(user_id=None):
-    """Get Gmail API credentials for a specific user"""
+
+def _normalize_pattern(raw: dict) -> dict:
+    """Normalize one broker pattern; file_pattern always a list of lowercase extensions."""
+    fp = raw.get('file_pattern', ['.pdf'])
+    if isinstance(fp, str):
+        exts = [fp]
+    else:
+        exts = list(fp or ['.pdf'])
+    exts = [e if str(e).startswith('.') else f'.{e}' for e in exts]
+    exts = [str(e).lower() for e in exts]
+    return {
+        'from': (raw.get('from') or '').strip(),
+        'subject': (raw.get('subject') or '').strip(),
+        'file_pattern': exts,
+    }
+
+
+def load_broker_patterns() -> dict:
+    """Merge Vault/env JSON over code defaults. Change Vault → restart pod."""
+    patterns = {
+        k: _normalize_pattern(v) for k, v in DEFAULT_BROKER_PATTERNS.items()
+    }
+    raw = (os.environ.get('GMAIL_BROKER_PATTERNS_JSON') or '').strip()
+    if not raw:
+        logger.info(
+            'GMAIL_BROKER_PATTERNS_JSON unset; using code defaults for brokers: %s',
+            sorted(patterns.keys()),
+        )
+        return patterns
+    try:
+        overlay = json.loads(raw)
+        if not isinstance(overlay, dict):
+            raise ValueError('GMAIL_BROKER_PATTERNS_JSON must be a JSON object')
+        for broker, cfg in overlay.items():
+            if not isinstance(cfg, dict):
+                continue
+            key = str(broker).lower().strip()
+            base = patterns.get(key, {})
+            merged = {**base, **cfg}
+            patterns[key] = _normalize_pattern(merged)
+        summary = {
+            k: {
+                'from': v.get('from'),
+                'subject': v.get('subject'),
+                'file_pattern': v.get('file_pattern'),
+            }
+            for k, v in sorted(patterns.items())
+        }
+        logger.info('Loaded broker mail filters from GMAIL_BROKER_PATTERNS_JSON: %s', summary)
+        print(f'DEBUG: Loaded broker mail filters from Vault/env: {summary}')
+    except Exception as e:
+        logger.error(
+            'Invalid GMAIL_BROKER_PATTERNS_JSON (%s); using code defaults',
+            e,
+        )
+        print(f'DEBUG: Invalid GMAIL_BROKER_PATTERNS_JSON ({e}); using code defaults')
+    return patterns
+
+
+BROKER_PATTERNS = load_broker_patterns()
+
+
+def get_credentials(user_id=None, mailbox=None, *, force_new_flow=False):
+    """Get Gmail API credentials for a user mailbox (optional email).
+
+    force_new_flow=True skips existing tokens and starts OAuth (add another mailbox).
+    """
     creds = None
     import database
-    
-    # Use database for token storage if user_id is provided
-    if user_id:
+    mailbox_email = (mailbox or '').strip().lower() or None
+
+    if force_new_flow:
+        creds = None
+    elif user_id:
         try:
-            token_data = database.get_db().get_user_token(user_id)
+            token_data = database.get_db().get_user_token(user_id, email=mailbox_email)
             if token_data:
                 creds = pickle.loads(token_data)
         except Exception as e:
@@ -66,14 +137,20 @@ def get_credentials(user_id=None):
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 creds = pickle.load(token)
-    
+
     # If credentials are invalid or don't exist
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
             # Save refreshed credentials
             if user_id:
-                database.get_db().save_user_token(user_id, pickle.dumps(creds))
+                email_for_save = mailbox_email
+                if not email_for_save:
+                    info = get_user_info(creds)
+                    email_for_save = (info or {}).get('email')
+                database.get_db().save_user_token(
+                    user_id, pickle.dumps(creds), email=email_for_save
+                )
             else:
                 with open('token.pickle', 'wb') as token:
                     pickle.dump(creds, token)
@@ -119,21 +196,30 @@ def get_credentials(user_id=None):
             )
             
             # We don't save here yet, as we need the flow to complete
-            return None, flow, None # No token file path needed anymore
-        
+            return None, flow, None  # No token file path needed anymore
+
         # Save credentials for next time (re-save if valid)
         if user_id and creds and creds.valid:
-            database.get_db().save_user_token(user_id, pickle.dumps(creds))
-    
+            email_for_save = mailbox_email
+            if not email_for_save:
+                info = get_user_info(creds)
+                email_for_save = (info or {}).get('email')
+            database.get_db().save_user_token(
+                user_id, pickle.dumps(creds), email=email_for_save
+            )
+
     return creds, None, None
 
-def get_gmail_service(user_id=None):
-    """Get authenticated Gmail API service for a specific user"""
-    creds, flow, _ = get_credentials(user_id)
-    
+
+def get_gmail_service(user_id=None, mailbox=None, *, force_new_flow=False):
+    """Get authenticated Gmail API service for a user mailbox."""
+    creds, flow, _ = get_credentials(
+        user_id, mailbox=mailbox, force_new_flow=force_new_flow
+    )
+
     if flow:
         return None, flow, None
-    
+
     return build('gmail', 'v1', credentials=creds), None, None
 
 def get_user_info(creds):
@@ -153,7 +239,7 @@ def get_user_info(creds):
 def search_emails(service, broker, days_back=180):
     """Search for emails from a specific broker"""
     pattern = BROKER_PATTERNS.get(broker.lower())
-    if not pattern:
+    if not pattern or not pattern.get('from'):
         return []
     
     # Calculate date for search
@@ -166,7 +252,7 @@ def search_emails(service, broker, days_back=180):
         f'after:{date_from}'
     ]
     
-    if pattern['subject']:
+    if pattern.get('subject'):
         # Use quoted subject for partial match
         query_parts.append(f'subject:"{pattern["subject"]}"')
     
@@ -188,7 +274,7 @@ def search_emails(service, broker, days_back=180):
         print(f"Found {len(messages)} messages matching query")
         
         # If no results with subject filter, try without it
-        if not messages and pattern['subject']:
+        if not messages and pattern.get('subject'):
             print(f"No results with subject filter, trying without subject...")
             query_parts_no_subject = [
                 f'from:{pattern["from"]}',
@@ -257,8 +343,35 @@ def download_attachment(service, msg_id, attachment_id, filename, store_dir):
         print(f"Error downloading attachment: {e}")
         return None
 
+
+def _file_extensions_for_broker(broker: str) -> list:
+    pattern = BROKER_PATTERNS.get((broker or '').lower())
+    if not pattern:
+        return ['.pdf']
+    fp = pattern.get('file_pattern') or ['.pdf']
+    if isinstance(fp, str):
+        return [fp.lower() if fp.startswith('.') else f'.{fp.lower()}']
+    return [str(e).lower() for e in fp]
+
+
+def _filename_matches(filename: str, extensions: list) -> bool:
+    lower = filename.lower()
+    return any(lower.endswith(ext) for ext in extensions)
+
+
+def pick_extract_attachment(attachments: list):
+    """Prefer PDF for extractors that use PAN-locked PDFs; else first attachment."""
+    if not attachments:
+        return None
+    for att in attachments:
+        name = (att.get('filename') or '').lower()
+        if name.endswith('.pdf'):
+            return att
+    return attachments[0]
+
+
 def get_attachments(service, msg_id, broker, store_dir='temp_downloads'):
-    """Get attachments from a message"""
+    """Get attachments from a message (supports multiple file_pattern extensions)."""
     try:
         message = service.users().messages().get(
             userId='me',
@@ -268,8 +381,7 @@ def get_attachments(service, msg_id, broker, store_dir='temp_downloads'):
         if not os.path.exists(store_dir):
             os.makedirs(store_dir)
         
-        pattern = BROKER_PATTERNS.get(broker.lower())
-        file_ext = pattern['file_pattern'] if pattern else '.pdf'
+        extensions = _file_extensions_for_broker(broker)
         
         attachments = []
         parts = [message['payload']]
@@ -283,8 +395,7 @@ def get_attachments(service, msg_id, broker, store_dir='temp_downloads'):
             if part.get('filename'):
                 filename = part['filename']
                 
-                # Filter by file extension
-                if not filename.lower().endswith(file_ext):
+                if not _filename_matches(filename, extensions):
                     continue
                 
                 if 'data' in part['body']:
@@ -328,10 +439,12 @@ def get_latest_statement(service, broker):
     temp_dir = tempfile.mkdtemp()
     attachments = get_attachments(service, latest_msg['id'], broker, temp_dir)
     
-    if attachments:
+    chosen = pick_extract_attachment(attachments)
+    if chosen:
         return {
             'email': msg_details,
-            'attachment': attachments[0],
+            'attachment': chosen,
+            'attachments': attachments,  # PDF + spreadsheet when both present
             'temp_dir': temp_dir  # Return temp dir so caller can clean up
         }
     
