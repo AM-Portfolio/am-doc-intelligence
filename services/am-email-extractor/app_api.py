@@ -543,6 +543,24 @@ def gmail_disconnect():
 # Extraction Endpoints
 # ============================================================================
 
+@app.route(f'/api/{API_VERSION}/extract/history', methods=['GET'])
+@require_jwt
+def list_extract_history():
+    """List recent extract runs for the authenticated user (metadata only)."""
+    try:
+        user_id = request.user_id
+        raw_limit = request.args.get('limit', '50')
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'limit must be an integer'}), 400
+        items = database.get_db().list_extractions(user_id, limit=limit)
+        return jsonify({'items': items}), 200
+    except Exception as e:
+        logger.exception('Failed to list extract history')
+        return jsonify({'error': f'Failed to list extract history: {e}'}), 500
+
+
 @app.route(f'/api/{API_VERSION}/extract/gmail/<broker>', methods=['GET'])
 @require_jwt
 def extract_from_gmail(broker):

@@ -295,6 +295,40 @@ public class DocumentProcessorService {
         return toBatchSyncStatus(record);
     }
 
+    /**
+     * Lists batch sync history for the authenticated user, newest first.
+     *
+     * @param userId caller identity (never from query)
+     * @param limit  max batches to return (clamped 1..100)
+     * @param status optional overall-status filter (case-insensitive enum name)
+     */
+    public BatchSyncHistoryResponse listBatchSyncHistory(String userId, int limit, String status) {
+        int capped = Math.max(1, Math.min(limit, 100));
+        BatchProcessingStatus statusFilter = parseOverallStatus(status);
+
+        List<BatchSyncRecord> records =
+                batchSyncRecordRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        List<BatchSyncStatus> items = records.stream()
+                .filter(r -> statusFilter == null || r.getOverallStatus() == statusFilter)
+                .limit(capped)
+                .map(this::toBatchSyncStatus)
+                .collect(Collectors.toList());
+
+        return BatchSyncHistoryResponse.builder().items(items).build();
+    }
+
+    private static BatchProcessingStatus parseOverallStatus(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return BatchProcessingStatus.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status filter: " + raw);
+        }
+    }
+
     // =========================================================================
     // Legacy batch endpoint (kept for backward compatibility — @Deprecated)
     // =========================================================================
