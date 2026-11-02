@@ -71,11 +71,29 @@ class NotificationProducer:
         if not as_of_date:
             as_of_date = timestamp_str[:10] if len(timestamp_str) >= 10 else None
 
+        # portfolioId on the event is the broker book label in am-portfolio, not the
+        # email holdings Mongo _id (ObjectIds leaked into the UI selector as "name").
+        broker_label = (broker or "").strip()
+        label = broker_label.upper() if broker_label else (portfolio_id or "")
+        # Prefer human broker names when we know them
+        _broker_names = {
+            "DHAN": "Dhan",
+            "ZERODHA": "Zerodha",
+            "GROWW": "Groww",
+            "GROW": "Groww",
+            "ANGELONE": "Angel One",
+            "ANGLEONE": "Angel One",
+            "UPSTOX": "Upstox",
+            "KOTAK": "Kotak",
+            "MSTOCK": "MStock",
+        }
+        display_name = _broker_names.get(label, label.title() if label else portfolio_id)
+
         payload = {
             "id": process_id,
             "userId": user_id,
-            "brokerType": broker.upper(),
-            "portfolioId": portfolio_id,
+            "brokerType": broker.upper() if broker else None,
+            "portfolioId": display_name,
             "timestamp": timestamp_str,
             "equities": equities,
             "mutualFunds": mutual_funds
