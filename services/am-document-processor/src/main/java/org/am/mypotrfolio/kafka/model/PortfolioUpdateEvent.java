@@ -1,5 +1,6 @@
 package org.am.mypotrfolio.kafka.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -31,4 +32,6 @@ public class PortfolioUpdateEvent {
     private List<EquityModel> equities;
     private List<MutualFundModel> mutualFunds;
     private LocalDateTime timestamp;
+    /** Optional Gmail/statement as-of day; null for upload-now paths. */
+    private LocalDate asOfDate;
 }

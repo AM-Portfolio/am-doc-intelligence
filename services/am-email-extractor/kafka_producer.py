@@ -39,9 +39,22 @@ class NotificationProducer:
             logging.error(f"Failed to connect to Kafka: {e}")
             self.producer = None
 
-    def send_update_event(self, process_id, user_id, broker, portfolio_id, equities, mutual_funds):
+    def send_update_event(
+        self,
+        process_id,
+        user_id,
+        broker,
+        portfolio_id,
+        equities,
+        mutual_funds,
+        as_of_date=None,
+        timestamp=None,
+    ):
         """
-        Send a notification event to Kafka with strict schema and headers
+        Send a notification event to Kafka with strict schema and headers.
+
+        as_of_date: optional YYYY-MM-DD (Gmail message day) for portfolio history window.
+        timestamp: optional ISO datetime; defaults to utcnow when omitted.
         """
         if not self.producer:
             logging.warning("Kafka producer not available, attempting to reconnect...")
@@ -51,9 +64,13 @@ class NotificationProducer:
             logging.error("Could not send event: Kafka unavailable")
             return False
 
-        timestamp_str = datetime.utcnow().isoformat()
+        timestamp_str = timestamp if timestamp else datetime.utcnow().isoformat()
 
-        # Construct specific payload
+        # Construct specific payload — always include asOfDate so portfolio stamps
+        # equity createdAt and HistoryJob FULL builds TF charts without manual fill.
+        if not as_of_date:
+            as_of_date = timestamp_str[:10] if len(timestamp_str) >= 10 else None
+
         payload = {
             "id": process_id,
             "userId": user_id,
@@ -63,6 +80,8 @@ class NotificationProducer:
             "equities": equities,
             "mutualFunds": mutual_funds
         }
+        if as_of_date:
+            payload["asOfDate"] = as_of_date
 
         # Required headers (Byte arrays)
         headers = [

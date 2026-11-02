@@ -620,6 +620,9 @@ def extract_from_gmail(broker):
         holdings = extract_broker_holdings(broker, attachment_path, password)
         sys.stderr.write(f"DEBUG: Extracted {len(holdings)} holdings\n")
         
+        from as_of_date import resolve_as_of
+        as_of_date, as_of_ts = resolve_as_of(result.get('email'))
+
         # Save to MongoDB
         metadata = {
             'email_subject': result['email']['subject'],
@@ -628,6 +631,10 @@ def extract_from_gmail(broker):
             'source': 'gmail',
             'mailbox': resolved,
         }
+        if as_of_date:
+            metadata['as_of_date'] = as_of_date
+        if result['email'].get('internal_date_ms') is not None:
+            metadata['internal_date_ms'] = result['email'].get('internal_date_ms')
         
         sys.stderr.write("DEBUG: Saving to MongoDB...\n")
         doc_id = database.get_db().save_holdings(user_id, broker, holdings, metadata)
@@ -642,14 +649,16 @@ def extract_from_gmail(broker):
         )
 
         # Send notification to Kafka
-        sys.stderr.write("DEBUG: Sending Kafka event...\n")
+        sys.stderr.write(f"DEBUG: Sending Kafka event asOfDate={as_of_date}...\n")
         kafka_producer.get_producer().send_update_event(
             process_id=process_id,
             user_id=user_id,
             broker=broker,
             portfolio_id=doc_id,
             equities=equities,
-            mutual_funds=mutual_funds
+            mutual_funds=mutual_funds,
+            as_of_date=as_of_date,
+            timestamp=as_of_ts,
         )
         sys.stderr.write("DEBUG: Kafka event sent.\n")
         
