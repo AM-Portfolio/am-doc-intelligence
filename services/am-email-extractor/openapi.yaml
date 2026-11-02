@@ -72,6 +72,39 @@ components:
           type: object
         db_id:
           type: string
+    ExtractHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        broker:
+          type: string
+        extracted_at:
+          type: string
+          format: date-time
+        source:
+          type: string
+        filename:
+          type: string
+        mailbox:
+          type: string
+        holdings_count:
+          type: integer
+        metadata:
+          type: object
+      required:
+        - id
+        - broker
+        - extracted_at
+    ExtractHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractHistoryItem'
+      required:
+        - items
 paths:
   /api/v1/health:
     get:
@@ -119,6 +152,32 @@ paths:
       responses:
         '200':
           description: Disconnected successfully
+  /api/v1/extract/history:
+    get:
+      summary: List recent extract history for current user
+      description: |
+        Returns recent Gmail/upload extract runs for the authenticated user
+        (newest first). Holdings payloads are omitted — metadata and counts only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: History retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractHistoryResponse'
+        '401':
+          description: Unauthorized
   /api/v1/extract/gmail/{broker}:
     get:
       summary: Fetch statement from Gmail and extract holdings

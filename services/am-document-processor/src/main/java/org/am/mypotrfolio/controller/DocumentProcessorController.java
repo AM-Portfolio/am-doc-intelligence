@@ -222,6 +222,39 @@ public class DocumentProcessorController {
     }
 
     @Operation(
+        summary = "List batch sync history for current user",
+        description = "Returns recent multi-broker batch syncs for the authenticated user "
+                + "(newest first). Each item includes per-file status. Does not accept userId "
+                + "from the client — identity comes from the JWT.",
+        security = @SecurityRequirement(name = "Bearer"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "History retrieved",
+                    content = @Content(schema = @Schema(implementation = BatchSyncHistoryResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid status filter"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @GetMapping("/sync")
+    public ResponseEntity<?> listBatchSyncHistory(
+            @Parameter(description = "Max batches to return (default 50, max 100)")
+            @RequestParam(value = "limit", required = false, defaultValue = "50") int limit,
+            @Parameter(description = "Optional overall status filter (QUEUED|PROCESSING|COMPLETED|FAILED|PARTIAL)")
+            @RequestParam(value = "status", required = false) String status) {
+
+        String userId = resolveUserId();
+        try {
+            BatchSyncHistoryResponse body =
+                    documentProcessorService.listBatchSyncHistory(userId, limit, status);
+            return ResponseEntity.ok(body);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error listing batch sync history for user: {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to list batch sync history"));
+        }
+    }
+
+    @Operation(
         summary = "Get batch sync status",
         description = "Returns the current status of a multi-broker batch sync, including per-file results.",
         security = @SecurityRequirement(name = "Bearer"))

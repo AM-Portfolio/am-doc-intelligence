@@ -543,6 +543,24 @@ def gmail_disconnect():
 # Extraction Endpoints
 # ============================================================================
 
+@app.route(f'/api/{API_VERSION}/extract/history', methods=['GET'])
+@require_jwt
+def list_extract_history():
+    """List recent extract runs for the authenticated user (metadata only)."""
+    try:
+        user_id = request.user_id
+        raw_limit = request.args.get('limit', '50')
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'limit must be an integer'}), 400
+        items = database.get_db().list_extractions(user_id, limit=limit)
+        return jsonify({'items': items}), 200
+    except Exception as e:
+        logger.exception('Failed to list extract history')
+        return jsonify({'error': f'Failed to list extract history: {e}'}), 500
+
+
 @app.route(f'/api/{API_VERSION}/extract/gmail/<broker>', methods=['GET'])
 @require_jwt
 def extract_from_gmail(broker):
@@ -602,6 +620,9 @@ def extract_from_gmail(broker):
         holdings = extract_broker_holdings(broker, attachment_path, password)
         sys.stderr.write(f"DEBUG: Extracted {len(holdings)} holdings\n")
         
+        from as_of_date import resolve_as_of
+        as_of_date, as_of_ts = resolve_as_of(result.get('email'))
+
         # Save to MongoDB
         metadata = {
             'email_subject': result['email']['subject'],
@@ -610,6 +631,10 @@ def extract_from_gmail(broker):
             'source': 'gmail',
             'mailbox': resolved,
         }
+        if as_of_date:
+            metadata['as_of_date'] = as_of_date
+        if result['email'].get('internal_date_ms') is not None:
+            metadata['internal_date_ms'] = result['email'].get('internal_date_ms')
         
         sys.stderr.write("DEBUG: Saving to MongoDB...\n")
         doc_id = database.get_db().save_holdings(user_id, broker, holdings, metadata)
@@ -624,14 +649,16 @@ def extract_from_gmail(broker):
         )
 
         # Send notification to Kafka
-        sys.stderr.write("DEBUG: Sending Kafka event...\n")
+        sys.stderr.write(f"DEBUG: Sending Kafka event asOfDate={as_of_date}...\n")
         kafka_producer.get_producer().send_update_event(
             process_id=process_id,
             user_id=user_id,
             broker=broker,
             portfolio_id=doc_id,
             equities=equities,
-            mutual_funds=mutual_funds
+            mutual_funds=mutual_funds,
+            as_of_date=as_of_date,
+            timestamp=as_of_ts,
         )
         sys.stderr.write("DEBUG: Kafka event sent.\n")
         
