@@ -19,10 +19,10 @@ traces:
   - name: configmap
     ref: spt-catalog-am-document-processor
   - name: openapi
-    ref: /v3/api-docs
+    ref: /api-docs
 targets:
   dev: "https://am-dev.asrax.in/doc/processor"
   preprod: "https://am-preprod.asrax.in/doc/processor"
   prod: "https://am.asrax.in/doc/processor"
 openapi:
-  path: /v3/api-docs
+  path: /api-docs

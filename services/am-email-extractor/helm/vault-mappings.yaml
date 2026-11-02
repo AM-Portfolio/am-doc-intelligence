@@ -20,3 +20,5 @@ vault:
       mappings:
         OAUTH2_CLIENT_ID: "AM_DOC_INTELLIGENCE_CLIENT_ID"
         OAUTH2_CLIENT_SECRET: "AM_DOC_INTELLIGENCE_CLIENT_SECRET"
+        # Broker Gmail search filters (JSON). Edit Vault → restart pod; no image rebuild.
+        GMAIL_BROKER_PATTERNS_JSON: "GMAIL_BROKER_PATTERNS_JSON"
