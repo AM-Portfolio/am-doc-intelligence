@@ -27,7 +27,7 @@ DEFAULT_BROKER_PATTERNS = {
     'zerodha': {
         'from': 'zerodha.net',
         'subject': 'Holding Statement',
-        'file_pattern': ['.pdf'],
+        'file_pattern': ['.pdf', '.xlsx', '.xls'],
     },
     'groww': {
         'from': 'groww.in',
