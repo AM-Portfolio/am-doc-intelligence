@@ -53,5 +53,11 @@ token.pickle
 # Environment variables (contains sensitive credentials)
 .env
 
+# Local CAS / NPS samples / verification dumps (PAN-locked PII)
+.local/
+CDSL.pdf
+nps-statements.pdf
+*.CAS.pdf
+
 # Staged at docker build time from am-platform
 third_party/
