@@ -1,4 +1,4 @@
-"""Unit tests for market-data ISIN enrichment and slim Kafka equity mapping."""
+"""Unit tests for market-data ISIN enrichment and Kafka equity mapping."""
 from __future__ import annotations
 
 import sys
@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from security_enrichment import enrich_by_isins  # noqa: E402
-from app_api import holdings_for_portfolio_event, to_portfolio_asset  # noqa: E402
+from portfolio_asset_mapper import holdings_for_portfolio_event, to_portfolio_asset  # noqa: E402
 
 
 def _match(isin, symbol, company_name, sector, industry="Banks"):
@@ -105,7 +105,7 @@ class TestEnrichByIsins:
 
 
 class TestToPortfolioAsset:
-    def test_no_fake_avg_from_rate(self):
+    def test_ltp_broker_emits_current_not_fake_avg(self):
         holding = {
             "isin_code": "INE040A01034",
             "company_name": "PDF NAME WRONG",
@@ -119,7 +119,7 @@ class TestToPortfolioAsset:
             "name": "HDFC Bank Limited",
             "companyName": "HDFC Bank Limited",
         }
-        asset = to_portfolio_asset(holding, enrich)
+        asset = to_portfolio_asset(holding, enrich, broker="zerodha")
         assert asset["isin"] == "INE040A01034"
         assert asset["quantity"] == 10.0
         assert asset["symbol"] == "HDFCBANK"
@@ -128,8 +128,36 @@ class TestToPortfolioAsset:
         assert asset["companyName"] == "HDFC Bank Limited"
         assert "avgBuyingPrice" not in asset
         assert "investmentValue" not in asset
-        assert "currentPrice" not in asset
-        assert "currentValue" not in asset
+        assert asset["currentValue"] == 15005.0
+        assert asset["currentPrice"] == pytest.approx(1500.5)
+
+    def test_angleone_rate_is_avg_cost(self):
+        holding = {
+            "isin_code": "INE040A01034",
+            "company_name": "HDFC",
+            "current_bal": "10",
+            "rate": "100.0",
+            "value": "1500",
+        }
+        asset = to_portfolio_asset(holding, None, broker="angleone")
+        assert asset["avgBuyingPrice"] == 100.0
+        assert asset["investmentValue"] == 1000.0
+        assert asset["currentValue"] == 1500.0
+        assert asset["currentPrice"] == pytest.approx(150.0)
+
+    def test_explicit_avg_from_excel_wins(self):
+        holding = {
+            "isin_code": "INE040A01034",
+            "company_name": "HDFC",
+            "current_bal": "5",
+            "avg_price": "200",
+            "rate": "250",
+            "value": "1250",
+        }
+        asset = to_portfolio_asset(holding, None, broker="zerodha")
+        assert asset["avgBuyingPrice"] == 200.0
+        assert asset["investmentValue"] == 1000.0
+        assert asset["currentValue"] == 1250.0
 
     def test_pdf_name_fallback_when_enrich_misses(self):
         holding = {
@@ -138,10 +166,12 @@ class TestToPortfolioAsset:
             "current_bal": "1",
             "rate": "10",
         }
-        asset = to_portfolio_asset(holding, None)
+        asset = to_portfolio_asset(holding, None, broker="groww")
         assert asset["name"] == "Only From PDF"
         assert asset.get("symbol") is None
         assert "avgBuyingPrice" not in asset
+        assert asset["currentPrice"] == 10.0
+        assert asset["currentValue"] == 10.0
 
 
 class TestHoldingsForPortfolioEvent:
@@ -188,7 +218,9 @@ class TestHoldingsForPortfolioEvent:
         by_isin = {e["isin"]: e for e in equities}
         assert by_isin["INF204KB17I5"]["sector"] == "ETF"
         assert by_isin["INF204KB17I5"]["symbol"] == "NIFTYBEES"
+        # Dhan PDF rate is LTP/close — current mark, not avg
         assert "avgBuyingPrice" not in by_isin["INE040A01034"]
+        assert by_isin["INE040A01034"]["currentValue"] == 2.0
         assert by_isin["INE040A01034"]["name"] == "HDFC Bank Limited"
 
     def test_non_dhan_inf_to_mutual_funds(self, monkeypatch):

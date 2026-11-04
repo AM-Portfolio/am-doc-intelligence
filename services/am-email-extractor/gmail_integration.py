@@ -27,7 +27,7 @@ DEFAULT_BROKER_PATTERNS = {
     'zerodha': {
         'from': 'zerodha.net',
         'subject': 'Holding Statement',
-        'file_pattern': ['.pdf'],
+        'file_pattern': ['.pdf', '.xlsx', '.xls'],
     },
     'groww': {
         'from': 'groww.in',
@@ -311,12 +311,14 @@ def get_message_details(service, msg_id):
         subject = next((h['value'] for h in headers if h['name'] == 'Subject'), 'No Subject')
         sender = next((h['value'] for h in headers if h['name'] == 'From'), 'Unknown')
         date = next((h['value'] for h in headers if h['name'] == 'Date'), 'Unknown')
+        internal_date_ms = message.get('internalDate')
         
         return {
             'id': msg_id,
             'subject': subject,
             'from': sender,
             'date': date,
+            'internal_date_ms': internal_date_ms,
             'payload': message['payload']
         }
     except Exception as e:

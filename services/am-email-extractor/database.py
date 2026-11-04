@@ -82,6 +82,45 @@ class Database:
         # Sort by extraction time descending
         return collection.find_one(query, sort=[('extracted_at', -1)])
 
+    def list_extractions(self, user_id, limit=50):
+        """List recent extract runs for a user (metadata only — no holdings blob)."""
+        db = self.get_db()
+        collection = db['portfolio_holdings']
+        capped = max(1, min(int(limit or 50), 100))
+        pipeline = [
+            {'$match': {'user_id': user_id}},
+            {'$sort': {'extracted_at': -1}},
+            {'$limit': capped},
+            {
+                '$project': {
+                    'broker': 1,
+                    'extracted_at': 1,
+                    'metadata': 1,
+                    'source': 1,
+                    'holdings_count': {
+                        '$size': {'$ifNull': ['$holdings', []]},
+                    },
+                }
+            },
+        ]
+        items = []
+        for doc in collection.aggregate(pipeline):
+            extracted = doc.get('extracted_at')
+            if hasattr(extracted, 'isoformat'):
+                extracted = extracted.isoformat() + 'Z'
+            meta = doc.get('metadata') or {}
+            items.append({
+                'id': str(doc.get('_id')),
+                'broker': doc.get('broker'),
+                'extracted_at': extracted,
+                'source': (meta.get('source') or doc.get('source') or 'gmail'),
+                'filename': meta.get('filename'),
+                'mailbox': meta.get('mailbox'),
+                'holdings_count': int(doc.get('holdings_count') or 0),
+                'metadata': meta,
+            })
+        return items
+
     def list_mailboxes(self, user_id):
         """Return mailbox summaries for a user (email, is_default, updated_at)."""
         self._migrate_legacy_tokens(user_id)
