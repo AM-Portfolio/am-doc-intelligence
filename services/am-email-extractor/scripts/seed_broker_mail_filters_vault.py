@@ -23,7 +23,7 @@ PATTERNS = {
     "zerodha": {
         "from": "zerodha.net",
         "subject": "Holding Statement",
-        "file_pattern": [".pdf"],
+        "file_pattern": [".pdf", ".xlsx", ".xls"],
     },
     "angleone": {
         "from": "angelone.in",

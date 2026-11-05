@@ -62,8 +62,14 @@ JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
 API_VERSION = os.environ.get('API_VERSION', 'v1')
 PORT = int(os.environ.get('PORT', 8080))
 
-ALLOWED_EXTENSIONS = {'pdf', 'xlsx'}
+ALLOWED_EXTENSIONS = {'pdf', 'xlsx', 'xls'}
 from brokers.registry import SUPPORTED_BROKERS  # noqa: E402  includes cdsl
+
+from portfolio_asset_mapper import (  # noqa: E402
+    AVG_COST_BROKERS,
+    holdings_for_portfolio_event,
+    to_portfolio_asset,
+)
 
 
 def allowed_file(filename):
@@ -689,6 +695,18 @@ def extract_from_gmail(broker):
         sys.stderr.write(f"DEBUG: Extracting holdings with password length: {len(password) if password else 0}\n")
         holdings = extract_broker_holdings(broker, attachment_path, password)
         sys.stderr.write(f"DEBUG: Extracted {len(holdings)} holdings\n")
+
+        # Fail closed: never publish an empty book (creates ghost portfolios).
+        if not holdings:
+            cleanup_temp_files(attachment_path, temp_dir)
+            return jsonify({
+                'error': (
+                    f'No holdings parsed from {broker.upper()} statement. '
+                    'Check password/PAN and statement format; Kafka was not published.'
+                ),
+                'broker': broker,
+                'count': 0,
+            }), 422
         
         from as_of_date import resolve_as_of
         as_of_date, as_of_ts = resolve_as_of(result.get('email'))
@@ -800,7 +818,13 @@ def extract_from_upload(broker):
         
         # Save to temporary file
         filename = file.filename or ''
-        file_ext = '.pdf' if filename.endswith('.pdf') else '.xlsx'
+        lower = filename.lower()
+        if lower.endswith('.xls') and not lower.endswith('.xlsx'):
+            file_ext = '.xls'
+        elif lower.endswith('.xlsx'):
+            file_ext = '.xlsx'
+        else:
+            file_ext = '.pdf'
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
             file.save(tmp_file.name)
             tmp_path = tmp_file.name
@@ -821,6 +845,17 @@ def extract_from_upload(broker):
             # Extract holdings
             pwd = password if password else None
             holdings = extract_broker_holdings(broker, tmp_path, pwd)
+
+            if not holdings:
+                os.unlink(tmp_path)
+                return jsonify({
+                    'error': (
+                        f'No holdings parsed from {broker.upper()} file. '
+                        'Kafka was not published.'
+                    ),
+                    'broker': broker,
+                    'count': 0,
+                }), 422
             
             # Save to MongoDB
             metadata = {
@@ -984,82 +1019,6 @@ def publish_extract_to_kafka(
         timestamp=as_of_ts,
     )
     return ok, None
-
-
-def _holding_float(value, default=0.0):
-    try:
-        if value is None or value == '':
-            return default
-        return float(str(value).replace(',', '').replace('%', '').strip())
-    except (TypeError, ValueError):
-        return default
-
-
-def to_portfolio_asset(holding, enrich=None):
-    """
-    Map extractor dict → slim EquityModel JSON for Kafka.
-
-    Statement path has no avg buy — do not invent cost from closing rate.
-    symbol / sector / name come from market-data enrichment (AM security names).
-    """
-    enrich = enrich or {}
-    isin = (holding.get('isin') or holding.get('isin_code') or '').strip().upper()
-    pdf_name = (
-        holding.get('companyName') or holding.get('company_name') or holding.get('name') or ''
-    ).strip()
-    name = (enrich.get('name') or enrich.get('companyName') or pdf_name or None)
-    if isinstance(name, str):
-        name = name.strip() or None
-    qty = _holding_float(holding.get('quantity', holding.get('current_bal')))
-    symbol = (enrich.get('symbol') or None)
-    if isinstance(symbol, str):
-        symbol = symbol.strip() or None
-    sector = (enrich.get('sector') or None)
-    if isinstance(sector, str):
-        sector = sector.strip() or None
-
-    asset = {
-        'isin': isin or None,
-        'companyName': name,
-        'name': name,
-        'symbol': symbol,
-        'quantity': qty,
-    }
-    if sector:
-        asset['sector'] = sector
-    industry = enrich.get('industry')
-    if industry:
-        asset['industry'] = industry
-    return asset
-
-
-def holdings_for_portfolio_event(holdings, broker, authorization=None):
-    """
-    Split/map holdings for Kafka am-portfolio consumer.
-    Demat brokers (e.g. Dhan): keep INF* ETFs as equities — they are listed demat units.
-    Enrich symbol/sector/name via market-data batch-search (fail-open).
-    """
-    from security_enrichment import enrich_by_isins
-
-    equities = []
-    mutual_funds = []
-    demat_all_equity = broker in ('dhan',)
-    holdings = holdings or []
-    isins = [
-        (h.get('isin') or h.get('isin_code') or '').strip().upper()
-        for h in holdings
-    ]
-    enrichment = enrich_by_isins(isins, authorization=authorization)
-
-    for holding in holdings:
-        isin = (holding.get('isin') or holding.get('isin_code') or '').strip().upper()
-        asset = to_portfolio_asset(holding, enrichment.get(isin))
-        out_isin = asset.get('isin') or ''
-        if not demat_all_equity and out_isin.startswith('INF'):
-            mutual_funds.append(asset)
-        else:
-            equities.append(asset)
-    return equities, mutual_funds
 
 
 def cleanup_temp_files(file_path, temp_dir=None):
