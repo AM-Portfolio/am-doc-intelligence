@@ -148,6 +148,7 @@ class CasDocument:
     mf_folios: list[MfFolioExtract] = field(default_factory=list)
     statement_asset_classes: dict[str, Any] = field(default_factory=dict)
     document_source: str = "CDSL_CAS"
+    holder_pan: Optional[str] = None
 
     def flat_holdings_legacy(self) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []

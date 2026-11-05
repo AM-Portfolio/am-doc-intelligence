@@ -40,6 +40,10 @@ def to_portfolio_update_payload(
     user_id: str,
     process_id: str | None = None,
     timestamp: str | None = None,
+    identity_match: str | None = None,
+    holder_name: str | None = None,
+    holder_email: str | None = None,
+    holder_pan: str | None = None,
 ) -> dict[str, Any]:
     pran = (doc.get("subscriber") or {}).get("pran")
     nps_holdings = []
@@ -61,6 +65,14 @@ def to_portfolio_update_payload(
         "npsHoldings": nps_holdings,
         "totalValue": total,
     }
+    if identity_match:
+        payload["identityMatch"] = identity_match
+    if holder_name:
+        payload["holderName"] = holder_name
+    if holder_email:
+        payload["holderEmail"] = holder_email
+    if holder_pan:
+        payload["holderPan"] = holder_pan
     if timestamp:
         payload["timestamp"] = timestamp
     return payload
@@ -72,6 +84,10 @@ def to_nps_document_payload(
     user_id: str,
     process_id: str | None = None,
     timestamp: str | None = None,
+    identity_match: str | None = None,
+    holder_name: str | None = None,
+    holder_email: str | None = None,
+    holder_pan: str | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "id": process_id or str(uuid4()),
@@ -86,6 +102,14 @@ def to_nps_document_payload(
         "tiers": doc.get("tiers"),
         "validation": doc.get("validation"),
     }
+    if identity_match:
+        payload["identityMatch"] = identity_match
+    if holder_name:
+        payload["holderName"] = holder_name
+    if holder_email:
+        payload["holderEmail"] = holder_email
+    if holder_pan:
+        payload["holderPan"] = holder_pan
     if timestamp:
         payload["timestamp"] = timestamp
     return payload

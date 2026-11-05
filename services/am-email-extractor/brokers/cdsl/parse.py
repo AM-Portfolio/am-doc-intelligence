@@ -249,8 +249,35 @@ def parse_mf_folios(text: str) -> list[dict]:
     body = re.sub(r"[\uf000-\uf8ff\ufffd\xad]", "", body)
     body = re.sub(r"(\d)\s*\n\s*(\d+/\d+)", r"\1\2", body)
     folios: list[dict] = []
+
+    def _append_folio(
+        scheme_code: str | None,
+        scheme_name: str | None,
+        isin: str,
+        folio: str,
+        units: str | None,
+        nav: str | None,
+        invested: str | None,
+        value: str | None,
+    ) -> None:
+        folios.append(
+            {
+                "schemeCode": scheme_code,
+                "scheme_name": scheme_name,
+                "isin_code": isin,
+                "folio": folio,
+                "units": fnum(units),
+                "nav": fnum(nav),
+                "amountInvested": fnum(invested),
+                "value": fnum(value),
+                "asOfDate": as_of,
+                "assetClass": "mutual_fund_folio",
+            }
+        )
+
+    # Legacy layout: scheme - name / ISIN / folio / DIRECT / units nav invested value
     for sm in re.finditer(
-        r"([A-Z0-9]{3,4})\s*-\s*([\s\S]*?)(INF[A-Z0-9]{9})\s*"
+        r"([A-Z0-9]{2,6})\s*-\s*([\s\S]*?)(INF[A-Z0-9]{9})\s*"
         r"([\d/]+)\s*DIRECT\s*"
         r"([\d,]+\.?\d*)\s+"
         r"([\d,]+\.?\d*)\s+"
@@ -259,24 +286,37 @@ def parse_mf_folios(text: str) -> list[dict]:
         body,
     ):
         name = re.sub(r"\s+", " ", sm.group(2)).strip()
-        folios.append(
-            {
-                "schemeCode": sm.group(1),
-                "scheme_name": name,
-                "isin_code": sm.group(3),
-                "folio": sm.group(4),
-                "units": fnum(sm.group(5)),
-                "nav": fnum(sm.group(6)),
-                "amountInvested": fnum(sm.group(7)),
-                "value": fnum(sm.group(8)),
-                "asOfDate": as_of,
-                "assetClass": "mutual_fund_folio",
-            }
+        _append_folio(
+            sm.group(1), name, sm.group(3), sm.group(4),
+            sm.group(5), sm.group(6), sm.group(7), sm.group(8),
         )
     if folios:
         return folios
+
+    # TXN / modern CAS: no standalone DIRECT token — "Direct Plan" is inside scheme name.
+    # scheme - name\nISIN\nfolio\nunits\nnav\ninvested\nvalue[\nPnL\nPnL%]
     for sm in re.finditer(
-        r"(INF[A-Z0-9]{9})\s*([\d/]+)\s*DIRECT\s*([\d.,\s]+?)(?=\n[A-Z0-9]{3,4}\s*-|\nINF|\Z)",
+        r"([A-Z0-9]{2,6})\s*-\s*([\s\S]*?)(INF[A-Z0-9]{9})\s*"
+        r"([\d/]+)\s+"
+        r"([\d,]+\.?\d*)\s+"
+        r"([\d,]+\.?\d*)\s+"
+        r"([\d,]+\.?\d*)\s+"
+        r"([\d,]+\.?\d*)",
+        body,
+    ):
+        name = re.sub(r"\s+", " ", sm.group(2)).strip()
+        # Skip if we accidentally matched a header / junk name without fund words
+        if not name or name.lower() in {"scheme name", "isin"}:
+            continue
+        _append_folio(
+            sm.group(1), name, sm.group(3), sm.group(4),
+            sm.group(5), sm.group(6), sm.group(7), sm.group(8),
+        )
+    if folios:
+        return folios
+
+    for sm in re.finditer(
+        r"(INF[A-Z0-9]{9})\s*([\d/]+)\s*DIRECT\s*([\d.,\s]+?)(?=\n[A-Z0-9]{2,6}\s*-|\nINF|\Z)",
         body,
     ):
         nums = [n for n in NUM_TOKEN.findall(sm.group(3)) if n != "--"]
@@ -287,19 +327,67 @@ def parse_mf_folios(text: str) -> list[dict]:
         else:
             units, invested, value = nums[0], nums[1], nums[2]
             nav = None
-        folios.append(
-            {
-                "isin_code": sm.group(1),
-                "folio": sm.group(2),
-                "units": fnum(units),
-                "nav": fnum(nav),
-                "amountInvested": fnum(invested),
-                "value": fnum(value),
-                "asOfDate": as_of,
-                "assetClass": "mutual_fund_folio",
-            }
-        )
+        _append_folio(None, None, sm.group(1), sm.group(2), units, nav, invested, value)
     return folios
+
+
+_PAN_RE = re.compile(
+    r"\(\s*PAN\s*[:\-]?\s*([A-Z]{5}\d{4}[A-Z])\s*\)",
+    re.IGNORECASE,
+)
+_PAN_BARE_RE = re.compile(
+    r"\bPAN\s*[:\-]?\s*([A-Z]{5}\d{4}[A-Z])\b",
+    re.IGNORECASE,
+)
+
+
+def parse_holder_pan(text: str) -> str | None:
+    """Primary holder PAN from CDSL cover (e.g. ``( PAN :JYQPK9320A )``)."""
+    if not text:
+        return None
+    m = _PAN_RE.search(text) or _PAN_BARE_RE.search(text)
+    if not m:
+        return None
+    return m.group(1).strip().upper()
+
+
+def parse_holder_name(text: str) -> str | None:
+    """Best-effort primary holder from CAS cover / PAN line."""
+    m = re.search(
+        r"name of\s*\n?\s*([A-Z][A-Z .'-]{1,80}?)\s*\(\s*PAN",
+        text,
+        re.IGNORECASE,
+    )
+    if m:
+        return re.sub(r"\s+", " ", m.group(1)).strip(" .")
+    m = re.search(
+        r"Name/Joint Name\s*\(s\)\s*\n(?:Portfolio Valuation[^\n]*\n)?([A-Z][A-Za-z .'-]{1,80})",
+        text,
+    )
+    if m:
+        name = re.sub(r"\s+", " ", m.group(1)).strip(" .")
+        if name.lower() not in {"portfolio valuation", "view statement", "cdsl demat accounts"}:
+            return name
+    return None
+
+
+def _join_wrapped_email(value: str, rest: str) -> str:
+    """CDSL wraps emails across lines: ``user@gmail.\\nCOM`` or ``user@\\ngmail.com``."""
+    v = (value or "").strip()
+    if not v or "@" not in v:
+        return v
+    # Already looks complete
+    if re.search(r"@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", v):
+        return v
+    cont = re.match(r"\s*\n\s*([A-Za-z0-9.-]{2,40})\b", rest)
+    if not cont:
+        return v
+    piece = cont.group(1).strip()
+    if v.endswith(".") or v.endswith("@"):
+        return f"{v}{piece}"
+    if "." not in v.split("@", 1)[-1]:
+        return f"{v}.{piece}" if not piece.startswith(".") else f"{v}{piece}"
+    return v
 
 
 def _field(seg: str, *labels: str) -> str | None:
@@ -307,8 +395,11 @@ def _field(seg: str, *labels: str) -> str | None:
         m = re.search(rf"{re.escape(lab)}[ \t]*:[ \t]*([^\n]*)", seg, re.IGNORECASE)
         if m:
             v = m.group(1).strip()
-            if v:
-                return v
+            if not v:
+                continue
+            if lab.lower().startswith("email"):
+                v = _join_wrapped_email(v, seg[m.end() :])
+            return v if v else None
     return None
 
 

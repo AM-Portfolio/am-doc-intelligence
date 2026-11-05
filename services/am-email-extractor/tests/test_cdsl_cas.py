@@ -16,6 +16,11 @@ def test_map_raise_to_dhan():
     assert kafka_broker_code("dhan") == "DHAN"
 
 
+def test_map_kotak_securities():
+    assert map_broker("KOTAK SECURITIES LIMITED") == "kotak"
+    assert kafka_broker_code("kotak") == "KOTAK"
+
+
 def test_kafka_broker_code_unknown_is_none():
     """Unknown DPs must not invent enum codes (broke CAS_DOCUMENT on dig)."""
     assert map_broker("FOURDEGREEWATER CAPITAL") == "nsdl_fourdegreewater"
@@ -91,6 +96,41 @@ def test_extract_and_fanout_from_snippet():
     assert any(row.get("nomineeRegistered") is False for row in cas["accountDirectory"])
 
 
+def test_txn_mf_layout_without_direct_token():
+    """AUG2026 TXN-style MF table: Direct Plan is inside scheme name, no DIRECT column."""
+    from brokers._common.identity_match import cas_holder_from_doc
+
+    text = (Path(__file__).parent / "fixtures" / "cdsl" / "txn_mf_no_direct_snippet.txt").read_text(
+        encoding="utf-8"
+    )
+    doc = extract_document_from_text(text)
+    assert doc.mf_folios
+    assert sum(f.holdings_value_sum for f in doc.mf_folios) >= 11000
+    email, name, pan = cas_holder_from_doc(doc)
+    assert name and "PRIYANSHU" in name.upper()
+    assert email and email.lower() == "priyanshukpd@gmail.com"
+    assert any(a.mapped_broker == "kotak" for a in doc.demat_accounts)
+    assert any(a.mapped_broker == "zerodha" for a in doc.demat_accounts)
+
+    msgs = fanout_messages(
+        doc,
+        user_id="u1",
+        identity_match="FAMILY",
+        holder_name=name,
+        holder_email=email,
+        holder_pan=pan or doc.holder_pan,
+    )
+    brokers = {m.get("brokerType") for m in msgs if m.get("eventType") is None}
+    assert "KOTAK" in brokers
+    assert "ZERODHA" in brokers
+    cds = next(m for m in msgs if m.get("brokerType") == "CDSL")
+    assert cds.get("mutualFunds")
+    assert cds.get("identityMatch") == "FAMILY"
+    assert cds.get("holderName") and "PRIYANSHU" in cds["holderName"].upper()
+    if pan or doc.holder_pan:
+        assert cds.get("holderPan") == (pan or doc.holder_pan)
+
+
 def test_live_pdf_optional():
     """If CDSL.pdf + pymupdf present locally, assert cover total and Rais→dhan."""
     root = Path(__file__).resolve().parents[1]
@@ -110,3 +150,27 @@ def test_live_pdf_optional():
     assert sum(1 for a in doc.demat_accounts if a.mapped_broker == "dhan") >= 1
     assert len(doc.demat_accounts) >= 5
     assert len(doc.mf_folios) >= 1
+
+
+def test_live_txn_pdf_optional():
+    """If AUG2026 TXN PDF present, assert MF + holder + Kotak fan-out."""
+    root = Path(__file__).resolve().parents[1]
+    pdf = root / "AUG2026_AA49039213_TXN.pdf"
+    if not pdf.exists():
+        return
+    try:
+        from brokers._common.identity_match import cas_holder_from_doc
+        from brokers.cdsl.extractor import extract_document
+    except Exception:
+        return
+    try:
+        doc = extract_document(str(pdf), "JYQPK9320A")
+    except Exception:
+        return
+    email, name, pan = cas_holder_from_doc(doc)
+    assert name and "PRIYANSHU" in name.upper()
+    assert email and "priyanshukpd" in email.lower()
+    assert (pan or doc.holder_pan) == "JYQPK9320A"
+    assert len(doc.mf_folios) >= 10
+    assert abs(sum(f.holdings_value_sum for f in doc.mf_folios) - 127188.22) < 1.0
+    assert any(a.mapped_broker == "kotak" for a in doc.demat_accounts)

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from brokers._common.models import CasDocument, HoldingLine
+from brokers._common.models import CasDocument
 from brokers.cdsl.mapping import kafka_broker_code
 from brokers.cdsl.wire import (
     holding_to_equity_dict,
@@ -20,10 +20,20 @@ def fanout_messages(
     user_id: str,
     as_of_date: str | None = None,
     timestamp: str | None = None,
+    identity_match: str | None = None,
+    holder_name: str | None = None,
+    holder_email: str | None = None,
+    holder_pan: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return Kafka-ready dicts: mapped DP holdings first, then CAS envelope."""
     as_of = as_of_date or doc.as_of_date
     messages: list[dict[str, Any]] = []
+    id_kw = dict(
+        identity_match=identity_match,
+        holder_name=holder_name,
+        holder_email=holder_email,
+        holder_pan=holder_pan or doc.holder_pan,
+    )
 
     for acct in doc.demat_accounts:
         # Only fan out brokers that map to a Java BrokerType code; unknown DPs
@@ -40,6 +50,7 @@ def fanout_messages(
                 demat=acct,
                 process_id=str(uuid4()),
                 timestamp=timestamp,
+                **id_kw,
             )
         )
 
@@ -73,6 +84,7 @@ def fanout_messages(
                 process_id=str(uuid4()),
                 timestamp=timestamp,
                 portfolio_name="CDSL CAS",
+                **id_kw,
             )
         )
 
@@ -82,6 +94,7 @@ def fanout_messages(
             user_id=user_id,
             process_id=str(uuid4()),
             timestamp=timestamp,
+            **id_kw,
         )
     )
     return messages

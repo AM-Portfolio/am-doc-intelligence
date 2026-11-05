@@ -186,7 +186,9 @@ def list_brokers():
             {'id': 'zerodha', 'name': 'Zerodha', 'format': 'PDF'},
             {'id': 'angleone', 'name': 'AngelOne', 'format': 'Excel'},
             {'id': 'dhan', 'name': 'Dhan', 'format': 'PDF'},
-            {'id': 'mstock', 'name': 'Mstock', 'format': 'PDF'}
+            {'id': 'mstock', 'name': 'Mstock', 'format': 'PDF'},
+            {'id': 'cdsl', 'name': 'CDSL CAS', 'format': 'PDF'},
+            {'id': 'nps', 'name': 'NPS', 'format': 'PDF'},
         ]
     }
     return jsonify(broker_info)
@@ -720,6 +722,7 @@ def extract_from_gmail(broker):
             authorization=auth_header,
             file_path=attachment_path if broker in ("cdsl", "nps") else None,
             password=password if broker in ("cdsl", "nps") else None,
+            jwt_claims=getattr(request, 'jwt_payload', None),
         )
         sys.stderr.write("DEBUG: Kafka event(s) sent.\n")
         
@@ -739,6 +742,38 @@ def extract_from_gmail(broker):
         import sys
         import traceback
         sys.stderr.write(f"ERROR CRASH: {str(e)}\n")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route(f'/api/{API_VERSION}/extract/probe/<broker>', methods=['POST'])
+@require_jwt
+def probe_upload(broker):
+    """Return whether an uploaded PDF is encrypted (no full parse)."""
+    try:
+        if broker not in SUPPORTED_BROKERS:
+            return jsonify({'error': f'Invalid broker. Supported: {SUPPORTED_BROKERS}'}), 400
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        file = request.files['file']
+        filename = file.filename or ''
+        if not filename:
+            return jsonify({'error': 'No file selected'}), 400
+        if not filename.lower().endswith('.pdf'):
+            return jsonify({'encrypted': False, 'broker': broker})
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            file.save(tmp_file.name)
+            tmp_path = tmp_file.name
+        try:
+            from brokers._common.pdf_text import is_pdf_encrypted
+
+            encrypted = is_pdf_encrypted(tmp_path)
+            return jsonify({'encrypted': encrypted, 'broker': broker})
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+    except Exception as e:
+        import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
@@ -771,6 +806,18 @@ def extract_from_upload(broker):
             tmp_path = tmp_file.name
         
         try:
+            # Pre-check encrypted PDFs for CDSL/NPS so empty password is a 400.
+            if broker in ("cdsl", "nps") and filename.lower().endswith('.pdf'):
+                from brokers._common.pdf_text import PdfPasswordError, is_pdf_encrypted
+
+                if is_pdf_encrypted(tmp_path) and not password:
+                    msg = (
+                        'NPS statement password is required'
+                        if broker == 'nps'
+                        else 'PAN is required to unlock this CAS PDF'
+                    )
+                    return jsonify({'error': msg, 'code': 'PASSWORD_REQUIRED'}), 400
+
             # Extract holdings
             pwd = password if password else None
             holdings = extract_broker_holdings(broker, tmp_path, pwd)
@@ -783,6 +830,7 @@ def extract_from_upload(broker):
             doc_id = database.get_db().save_holdings(request.user_id, broker, holdings, metadata)
 
             auth_header = request.headers.get("Authorization")
+            jwt_claims = getattr(request, 'jwt_payload', None)
             publish_extract_to_kafka(
                 broker=broker,
                 user_id=request.user_id,
@@ -791,6 +839,7 @@ def extract_from_upload(broker):
                 authorization=auth_header,
                 file_path=tmp_path if broker in ("cdsl", "nps") else None,
                 password=pwd if broker in ("cdsl", "nps") else None,
+                jwt_claims=jwt_claims,
             )
             
             # Clean up
@@ -808,9 +857,17 @@ def extract_from_upload(broker):
             # Clean up on error
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
+            from brokers._common.pdf_text import PdfPasswordError
+
+            if isinstance(e, PdfPasswordError):
+                return jsonify({'error': e.message, 'code': e.code}), 400
             raise e
             
     except Exception as e:
+        from brokers._common.pdf_text import PdfPasswordError
+
+        if isinstance(e, PdfPasswordError):
+            return jsonify({'error': e.message, 'code': e.code}), 400
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -838,23 +895,46 @@ def publish_extract_to_kafka(
     authorization=None,
     file_path=None,
     password=None,
+    jwt_claims=None,
 ):
     """
     Single holdings event for legacy brokers; CDSL/NPS fan-out on same am-portfolio topic.
     """
     import uuid
 
+    from brokers._common.identity_match import (
+        cas_holder_from_doc,
+        nps_holder_from_doc,
+        profile_from_jwt,
+        resolve_identity_match,
+    )
+
     producer = kafka_producer.get_producer()
+    profile_email, profile_name, profile_pan = profile_from_jwt(jwt_claims)
+
     if broker == "cdsl" and file_path:
         from brokers.cdsl.extractor import extract_document
         from brokers.cdsl.fanout import fanout_messages
 
         doc = extract_document(file_path, password)
+        holder_email, holder_name, holder_pan = cas_holder_from_doc(doc)
+        identity_match = resolve_identity_match(
+            profile_email=profile_email,
+            profile_name=profile_name,
+            doc_email=holder_email,
+            doc_name=holder_name,
+            profile_pan=profile_pan,
+            doc_pan=holder_pan,
+        )
         messages = fanout_messages(
             doc,
             user_id=user_id,
             as_of_date=as_of_date or doc.as_of_date,
             timestamp=as_of_ts,
+            identity_match=identity_match,
+            holder_name=holder_name,
+            holder_email=holder_email,
+            holder_pan=holder_pan,
         )
         ok = True
         for msg in messages:
@@ -866,7 +946,24 @@ def publish_extract_to_kafka(
         from brokers.nps.fanout import fanout_messages
 
         doc = extract_document(file_path, password)
-        messages = fanout_messages(doc, user_id=user_id, timestamp=as_of_ts)
+        holder_email, holder_name, holder_pan = nps_holder_from_doc(doc)
+        identity_match = resolve_identity_match(
+            profile_email=profile_email,
+            profile_name=profile_name,
+            doc_email=holder_email,
+            doc_name=holder_name,
+            profile_pan=profile_pan,
+            doc_pan=holder_pan,
+        )
+        messages = fanout_messages(
+            doc,
+            user_id=user_id,
+            timestamp=as_of_ts,
+            identity_match=identity_match,
+            holder_name=holder_name,
+            holder_email=holder_email,
+            holder_pan=holder_pan,
+        )
         ok = True
         for msg in messages:
             ok = producer.send_payload(msg) and ok

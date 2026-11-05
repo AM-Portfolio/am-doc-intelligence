@@ -74,6 +74,10 @@ def to_portfolio_update_payload(
     process_id: str | None = None,
     timestamp: str | None = None,
     portfolio_name: str | None = None,
+    identity_match: str | None = None,
+    holder_name: str | None = None,
+    holder_email: str | None = None,
+    holder_pan: str | None = None,
 ) -> dict[str, Any]:
     code = kafka_broker_code(broker_internal)
     if not code:
@@ -93,6 +97,14 @@ def to_portfolio_update_payload(
         "equities": equities,
         "mutualFunds": mutual_funds or [],
     }
+    if identity_match:
+        payload["identityMatch"] = identity_match
+    if holder_name:
+        payload["holderName"] = holder_name
+    if holder_email:
+        payload["holderEmail"] = holder_email
+    if holder_pan:
+        payload["holderPan"] = holder_pan
     if as_of_date:
         payload["asOfDate"] = as_of_date
     if timestamp:
@@ -112,6 +124,10 @@ def to_cas_document_payload(
     user_id: str,
     process_id: str | None = None,
     timestamp: str | None = None,
+    identity_match: str | None = None,
+    holder_name: str | None = None,
+    holder_email: str | None = None,
+    holder_pan: str | None = None,
 ) -> dict[str, Any]:
     unmapped: list[dict[str, Any]] = []
     for acct in doc.demat_accounts:
@@ -202,6 +218,14 @@ def to_cas_document_payload(
         "mfFolios": mf_folios,
         "unmappedDematHoldings": unmapped,
     }
+    if identity_match:
+        payload["identityMatch"] = identity_match
+    if holder_name:
+        payload["holderName"] = holder_name
+    if holder_email:
+        payload["holderEmail"] = holder_email
+    if holder_pan:
+        payload["holderPan"] = holder_pan
     if timestamp:
         payload["timestamp"] = timestamp
     return payload

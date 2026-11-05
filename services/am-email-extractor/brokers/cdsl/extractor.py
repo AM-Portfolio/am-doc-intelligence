@@ -22,6 +22,8 @@ from brokers.cdsl.parse import (
     extract_accounts,
     merge_mf_folio_profiles,
     parse_cover_buckets,
+    parse_holder_name,
+    parse_holder_pan,
     parse_mf_folio_profiles,
     parse_mf_folios,
     parse_statement_asset_classes,
@@ -179,6 +181,18 @@ def extract_document_from_text(text: str) -> CasDocument:
 
     demat = [_demat_from_raw(a) for a in accounts_raw]
     mf_folios = _group_mf_folios(folios_raw)
+    holder_name = parse_holder_name(text)
+    holder_pan = parse_holder_pan(text)
+    if holder_name:
+        for acct in demat:
+            if not acct.holder_name:
+                acct.holder_name = holder_name
+        for row in accounts_raw:
+            if not row.get("holderName") and not row.get("name"):
+                row["holderName"] = holder_name
+        for p in mf_profiles:
+            if not p.get("holderName") and not p.get("name"):
+                p["holderName"] = holder_name
     cover = CasCover(
         cdsl_demat_accounts=cover_raw.get("cdslDematAccounts"),
         nsdl_demat_accounts=cover_raw.get("nsdlDematAccounts"),
@@ -213,6 +227,7 @@ def extract_document_from_text(text: str) -> CasDocument:
         demat_accounts=demat,
         mf_folios=mf_folios,
         statement_asset_classes=statement_ac,
+        holder_pan=holder_pan,
     )
 
 
