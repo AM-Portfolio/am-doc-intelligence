@@ -78,6 +78,8 @@ def to_portfolio_update_payload(
     holder_name: str | None = None,
     holder_email: str | None = None,
     holder_pan: str | None = None,
+    include_demat_ref: bool = True,
+    demat_boid_override: str | None = None,
 ) -> dict[str, Any]:
     code = kafka_broker_code(broker_internal)
     if not code:
@@ -86,12 +88,17 @@ def to_portfolio_update_payload(
             "fanout must skip unknown DPs"
         )
     default_name = code.replace("_", " ").title()
+    if code == "GROWW":
+        default_name = "Groww"
+    elif code == "CAS_DEMAT":
+        default_name = "Demat"
+    display = portfolio_name or default_name
     payload: dict[str, Any] = {
         "id": process_id or str(uuid4()),
         "userId": user_id,
         "brokerType": code,
-        "portfolioId": portfolio_name or default_name,
-        "name": portfolio_name or default_name,
+        "portfolioId": display,
+        "name": display,
         "source": "DOCUMENT",
         "documentSource": "CDSL_CAS",
         "equities": equities,
@@ -109,10 +116,14 @@ def to_portfolio_update_payload(
         payload["asOfDate"] = as_of_date
     if timestamp:
         payload["timestamp"] = timestamp
-    if demat:
+    if include_demat_ref and demat_boid_override:
+        payload["dematRef"] = {"boid": demat_boid_override, "dpName": display}
+    elif include_demat_ref and demat:
         payload["dematRef"] = demat_ref(demat)
         if total_value is None:
             total_value = demat.holdings_value_sum
+    elif demat is not None and total_value is None:
+        total_value = demat.holdings_value_sum
     if total_value is not None:
         payload["totalValue"] = total_value
     return payload

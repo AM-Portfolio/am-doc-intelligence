@@ -6,7 +6,12 @@ from pathlib import Path
 from brokers.cdsl.detect import is_cdsl_cas
 from brokers.cdsl.extractor import extract_document_from_text
 from brokers.cdsl.fanout import fanout_messages
-from brokers.cdsl.mapping import kafka_broker_code, map_broker
+from brokers.cdsl.mapping import (
+    kafka_broker_code,
+    map_broker,
+    resolve_fanout_broker,
+    short_dp_name,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "cdsl" / "sample_cas_snippet.txt"
 
@@ -21,11 +26,43 @@ def test_map_kotak_securities():
     assert kafka_broker_code("kotak") == "KOTAK"
 
 
-def test_kafka_broker_code_unknown_is_none():
-    """Unknown DPs must not invent enum codes (broke CAS_DOCUMENT on dig)."""
+def test_mirae_finwizard_map_to_cas_demat():
+    assert map_broker("MIRAE ASSET SHAREKHAN") == "mirae"
+    assert kafka_broker_code("mirae") == "CAS_DEMAT"
+    assert map_broker("FINWIZARD SOLUTIONS PRIVATE LIMITED") == "finwizard"
+    assert kafka_broker_code("finwizard") == "CAS_DEMAT"
+
+
+def test_short_dp_name():
+    assert short_dp_name("MIRAE ASSET SHAREKHAN LIMITED") == "Mirae"
+    assert short_dp_name("FINWIZARD SOLUTIONS PRIVATE LIMITED") == "Finwizard"
+    assert short_dp_name("CDSL") == "Demat"
+    assert short_dp_name("") == "Demat"
+
+
+def test_resolve_valued_unmapped_to_cas_demat():
+    resolved = resolve_fanout_broker(
+        mapped_broker=None,
+        dp_name="SOME UNKNOWN DP NAME",
+        has_holdings=True,
+    )
+    assert resolved is not None
+    assert resolved[1] == "CAS_DEMAT"
+    assert resolved[2] == "Some"
+
+
+def test_kafka_broker_code_unknown_nsdl_still_none():
+    """NSDL Fourdegreewater stays unmapped at kafka code; fanout uses CAS_DEMAT via resolve."""
     assert map_broker("FOURDEGREEWATER CAPITAL") == "nsdl_fourdegreewater"
     assert kafka_broker_code("nsdl_fourdegreewater") is None
-    assert kafka_broker_code("mirae") is None
+    resolved = resolve_fanout_broker(
+        mapped_broker="nsdl_fourdegreewater",
+        dp_name="FOURDEGREEWATER CAPITAL",
+        has_holdings=True,
+    )
+    assert resolved is not None
+    assert resolved[1] == "CAS_DEMAT"
+    assert resolved[2] == "Fourdegreewater"
 
 
 def test_normalize_nominee_clears_placeholders():
@@ -83,9 +120,14 @@ def test_extract_and_fanout_from_snippet():
     holdings_msgs = [m for m in msgs if m.get("eventType") is None]
     brokers = {m.get("brokerType") for m in holdings_msgs}
     assert "DHAN" in brokers
-    assert any(m.get("portfolioId") == "CAS Mutual Funds" for m in holdings_msgs) or any(
-        m.get("mutualFunds") for m in holdings_msgs
-    )
+    # Always emit CDSL residual/clear (may be empty).
+    assert "CDSL" in brokers
+    mf_msgs = [m for m in holdings_msgs if m.get("mutualFunds")]
+    if mf_msgs:
+        assert any(m.get("name") == "Mutual Funds" for m in mf_msgs)
+        assert any(
+            (m.get("dematRef") or {}).get("boid") == "mf:cas" for m in mf_msgs
+        )
     cas = msgs[-1]
     assert cas["accountDirectory"]
     assert cas["validation"]["allOk"] is not None
@@ -120,15 +162,20 @@ def test_txn_mf_layout_without_direct_token():
         holder_email=email,
         holder_pan=pan or doc.holder_pan,
     )
-    brokers = {m.get("brokerType") for m in msgs if m.get("eventType") is None}
+    holdings = [m for m in msgs if m.get("eventType") is None]
+    brokers = {m.get("brokerType") for m in holdings}
     assert "KOTAK" in brokers
     assert "ZERODHA" in brokers
-    cds = next(m for m in msgs if m.get("brokerType") == "CDSL")
-    assert cds.get("mutualFunds")
-    assert cds.get("identityMatch") == "FAMILY"
-    assert cds.get("holderName") and "PRIYANSHU" in cds["holderName"].upper()
+    mf_book = next(m for m in holdings if m.get("name") == "Mutual Funds")
+    assert mf_book.get("brokerType") == "CAS_DEMAT"
+    assert mf_book.get("mutualFunds")
+    assert (mf_book.get("dematRef") or {}).get("boid") == "mf:cas"
+    assert mf_book.get("identityMatch") == "FAMILY"
+    assert mf_book.get("holderName") and "PRIYANSHU" in mf_book["holderName"].upper()
     if pan or doc.holder_pan:
-        assert cds.get("holderPan") == (pan or doc.holder_pan)
+        assert mf_book.get("holderPan") == (pan or doc.holder_pan)
+    cds = next(m for m in holdings if m.get("brokerType") == "CDSL")
+    assert cds.get("mutualFunds") == []
 
 
 def test_live_pdf_optional():

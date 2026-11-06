@@ -220,6 +220,8 @@ def parse_holding_block(block: str, depository: str | None) -> list[dict]:
             free = fnum(nums[-3]) if nums[-3] != "--" else current
             price = fnum(nums[-2])
             value = fnum(nums[-1])
+        if (value is None or value <= 0) and price and current and price > 0 and current > 0:
+            value = round(price * current, 2)
         if current is None or current <= 0:
             continue
         name = " ".join(name_parts).strip()
@@ -488,7 +490,24 @@ def parse_mf_folio_profiles(text: str) -> list[dict]:
     return profiles
 
 
-def _account(bo, dp, depository, holds, as_of, note, profile: dict | None = None):
+def _segment_portfolio_value(seg: str) -> float | None:
+    """Per-account 'Portfolio Value' line. The holding parser treats it as a stop."""
+    match = re.search(r"Portfolio Value\s*\n\s*([\d,]+\.?\d*)", seg, re.I)
+    if not match:
+        match = re.search(r"Portfolio Value\s+([\d,]+\.?\d*)", seg, re.I)
+    return fnum(match.group(1)) if match else None
+
+
+def _resolved_holdings_value(holds: list[dict], portfolio_value: float | None) -> float:
+    line_sum = round(sum(h.get("value") or 0.0 for h in holds), 2)
+    if line_sum > 0:
+        return line_sum
+    if portfolio_value and portfolio_value > 0:
+        return round(portfolio_value, 2)
+    return line_sum
+
+
+def _account(bo, dp, depository, holds, as_of, note, profile: dict | None = None, portfolio_value: float | None = None):
     by_class: dict[str, float] = {}
     for h in holds:
         ac = h.get("assetClass") or "unknown"
@@ -502,7 +521,7 @@ def _account(bo, dp, depository, holds, as_of, note, profile: dict | None = None
         "note": note,
         "holdings": holds,
         "holdingsCount": len(holds),
-        "holdingsValueSum": round(sum(h.get("value") or 0.0 for h in holds), 2),
+        "holdingsValueSum": _resolved_holdings_value(holds, portfolio_value),
         "valueByAssetClass": by_class,
     }
     if profile:
@@ -550,7 +569,9 @@ def extract_accounts(text: str, as_of: str | None) -> list[dict]:
             holds = parse_holding_block(hm.group(1) if hm else "", "CDSL")
         else:
             note = "no_holding_statement"
-        accounts.append(_account(bo, dp, "CDSL", holds, as_of, note, profiles.get(bo)))
+        accounts.append(_account(
+            bo, dp, "CDSL", holds, as_of, note, profiles.get(bo), _segment_portfolio_value(seg),
+        ))
 
     ns = re.search(
         r"DEMAT ACCOUNTS HELD WITH NSDL\s*DPID\s*:\s*(\S+)\s*\nDP Name\s*:\s*([^\n]+)",
@@ -566,7 +587,9 @@ def extract_accounts(text: str, as_of: str | None) -> list[dict]:
         if "HOLDING STATEMENT AS ON" in seg:
             hm = re.search(r"HOLDING STATEMENT AS ON\s*[\d-]+\s*(.*)", seg, re.DOTALL)
             holds = parse_holding_block(hm.group(1) if hm else "", "NSDL")
-        accounts.append(_account(dpid, dp, "NSDL", holds, as_of, None, profiles.get(dpid)))
+        accounts.append(_account(
+            dpid, dp, "NSDL", holds, as_of, None, profiles.get(dpid), _segment_portfolio_value(seg),
+        ))
 
     seen = {a["boId"] for a in accounts}
     for bo, prof in profiles.items():

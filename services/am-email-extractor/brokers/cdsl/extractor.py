@@ -63,6 +63,7 @@ def _demat_from_raw(a: dict[str, Any]) -> DematAccountExtract:
         mapped_broker=a.get("broker"),
         as_of_date=a.get("asOfDate"),
         note=a.get("note"),
+        statement_value=a.get("holdingsValueSum"),
         holdings=[_holding_from_dict(h) for h in (a.get("holdings") or [])],
     )
 

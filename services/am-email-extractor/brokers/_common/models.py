@@ -60,11 +60,17 @@ class DematAccountExtract:
     mapped_broker: Optional[str] = None
     as_of_date: Optional[str] = None
     note: Optional[str] = None
+    statement_value: Optional[float] = None
     holdings: list[HoldingLine] = field(default_factory=list)
 
     @property
     def holdings_value_sum(self) -> float:
-        return round(sum(h.current_value or 0.0 for h in self.holdings), 2)
+        line = round(sum(h.current_value or 0.0 for h in self.holdings), 2)
+        if line > 0:
+            return line
+        if self.statement_value and self.statement_value > 0:
+            return round(float(self.statement_value), 2)
+        return line
 
 
 @dataclass

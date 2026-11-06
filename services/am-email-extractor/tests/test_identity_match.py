@@ -2,6 +2,34 @@ from brokers._common.identity_match import resolve_identity_match
 from brokers.cdsl.parse import parse_holder_pan
 
 
+def test_same_email_different_pan_is_family():
+    assert (
+        resolve_identity_match(
+            profile_email="me@x.com",
+            profile_name="Md Sahim",
+            doc_email="me@x.com",
+            doc_name="Priyanshu Kumar",
+            profile_pan="NJFPS2843C",
+            doc_pan="JYQPK9320A",
+        )
+        == "FAMILY"
+    )
+
+
+def test_same_email_same_pan_is_self():
+    assert (
+        resolve_identity_match(
+            profile_email="me@x.com",
+            profile_name="Md Sahim",
+            doc_email="me@x.com",
+            doc_name="Md Sahim",
+            profile_pan="NJFPS2843C",
+            doc_pan="njfps2843c",
+        )
+        == "SELF"
+    )
+
+
 def test_email_match_is_self():
     assert (
         resolve_identity_match(

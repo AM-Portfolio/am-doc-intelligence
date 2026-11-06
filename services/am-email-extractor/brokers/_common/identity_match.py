@@ -26,9 +26,10 @@ def resolve_identity_match(
     doc_pan: str | None = None,
 ) -> str:
     """
-    Match order: email → PAN → name.
+    Match order: PAN → email → name.
+    - both PANs present and differ → FAMILY (even when the email matches)
     - email differs → FAMILY
-    - email matches → SELF (even if name differs — shared mailbox edge)
+    - email matches and PAN does not contradict → SELF
     - email absent, both PANs present and equal → SELF
     - email absent, both PANs present and differ → FAMILY
     - email absent, name differs → FAMILY
@@ -43,6 +44,10 @@ def resolve_identity_match(
 
     if not de and not dn and not dp:
         return "UNKNOWN"
+
+    # A different PAN is another person even when the CAS arrived in this inbox.
+    if dp and pp and dp != pp:
+        return "FAMILY"
 
     if de and pe:
         return "SELF" if de == pe else "FAMILY"
