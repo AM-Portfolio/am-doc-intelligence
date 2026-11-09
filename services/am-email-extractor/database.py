@@ -19,7 +19,13 @@ def _norm_email(email):
 class Database:
     def __init__(self):
         self.mongo_uri = os.environ.get('MONGODB_URL', 'mongodb://admin:password123@localhost:27017/portfolio?authSource=admin')
-        self.db_name = os.environ.get('MONGO_DATABASE', 'portfolio')
+        db_name = (os.environ.get('MONGO_DATABASE') or '').strip()
+        if not db_name:
+            raise RuntimeError(
+                'MONGO_DATABASE is required (e.g. am_doc_intel_dev). '
+                'Refusing silent default to unauthorized DB name portfolio.'
+            )
+        self.db_name = db_name
         self.client = None
         self.db = None
         
@@ -281,8 +287,9 @@ class Database:
         return
 
 
-# Global instance
-db_instance = Database()
+# Lazy singleton — constructed on first get_db() so import works in tests/tooling
+# while still failing fast when MONGO_DATABASE is unset at runtime.
+db_instance = None
 
 def get_db():
     """Return the Database helper (methods: get_user_token, save_holdings, …).
@@ -290,4 +297,7 @@ def get_db():
     Callers must not treat this as a raw pymongo Database — use helper.get_db()
     if you need the pymongo db object.
     """
+    global db_instance
+    if db_instance is None:
+        db_instance = Database()
     return db_instance

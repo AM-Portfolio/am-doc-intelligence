@@ -87,6 +87,7 @@ class FakeCollection:
 
 @pytest.fixture
 def helper(monkeypatch):
+    monkeypatch.setenv('MONGO_DATABASE', 'am_doc_intel_dev')
     coll = FakeCollection()
     helper = dbmod.Database()
     helper.client = object()

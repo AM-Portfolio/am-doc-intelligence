@@ -51,6 +51,105 @@ def test_resolve_valued_unmapped_to_cas_demat():
     assert resolved[2] == "Some"
 
 
+def test_resolve_statement_value_without_holding_lines():
+    """Cover/statement value alone is enough to fan out a book."""
+    assert (
+        resolve_fanout_broker(
+            mapped_broker="groww",
+            dp_name="GROWW INVEST TECH PRIVATE LIMITED",
+            has_holdings=False,
+            statement_value=0,
+        )
+        is None
+    )
+    groww = resolve_fanout_broker(
+        mapped_broker="groww",
+        dp_name="GROWW INVEST TECH PRIVATE LIMITED",
+        has_holdings=False,
+        statement_value=106711.35,
+    )
+    assert groww is not None
+    assert groww[1] == "GROWW"
+    mirae = resolve_fanout_broker(
+        mapped_broker="mirae",
+        dp_name="MIRAE ASSET CAPITAL MARKETS",
+        has_holdings=False,
+        statement_value=43425.87,
+    )
+    assert mirae is not None
+    assert mirae[1] == "CAS_DEMAT"
+    assert mirae[2] == "Mirae"
+
+
+def test_fanout_summary_only_valued_demats():
+    """Summary-only Groww + Mirae + MF emit books even with empty holding lines."""
+    from brokers._common.models import (
+        CasDocument,
+        CasCover,
+        DematAccountExtract,
+        MfFolioExtract,
+        HoldingLine,
+    )
+
+    doc = CasDocument(
+        document_source="CDSL_CAS",
+        as_of_date="2026-08-31",
+        cover=CasCover(total_portfolio_value=277325.44),
+        demat_accounts=[
+            DematAccountExtract(
+                boid="1208160000000001",
+                dp_name="GROWW INVEST TECH PRIVATE LIMITED",
+                depository="CDSL",
+                mapped_broker="groww",
+                statement_value=106711.35,
+                holdings=[],
+            ),
+            DematAccountExtract(
+                boid="1208870000000002",
+                dp_name="MIRAE ASSET CAPITAL MARKETS (INDIA) PRIVATE LIMITED",
+                depository="CDSL",
+                mapped_broker="mirae",
+                statement_value=43425.87,
+                holdings=[],
+            ),
+            DematAccountExtract(
+                boid="1208160000000099",
+                dp_name="PAYTM MONEY LIMITED",
+                depository="CDSL",
+                mapped_broker=None,
+                statement_value=0.0,
+                holdings=[],
+            ),
+        ],
+        mf_folios=[
+            MfFolioExtract(
+                folio="F1",
+                holdings=[
+                    HoldingLine(
+                        isin="INF123",
+                        name="Test Fund",
+                        quantity=10,
+                        current_value=127188.22,
+                    )
+                ],
+            )
+        ],
+    )
+    msgs = fanout_messages(doc, user_id="u1", identity_match="FAMILY")
+    holdings = [m for m in msgs if m.get("eventType") is None]
+    by_broker = {m.get("brokerType"): m for m in holdings}
+    assert "GROWW" in by_broker
+    assert by_broker["GROWW"].get("totalValue") == 106711.35
+    assert by_broker["GROWW"].get("equities") == [] or by_broker["GROWW"].get("equities") is None or len(by_broker["GROWW"].get("equities") or []) == 0
+    cas_demat = [m for m in holdings if m.get("brokerType") == "CAS_DEMAT"]
+    names = {m.get("name") for m in cas_demat}
+    assert "Mirae" in names
+    assert "Mutual Funds" in names
+    assert not any(
+        (m.get("name") or "").upper().startswith("PAYTM") for m in holdings
+    )
+
+
 def test_kafka_broker_code_unknown_nsdl_still_none():
     """NSDL Fourdegreewater stays unmapped at kafka code; fanout uses CAS_DEMAT via resolve."""
     assert map_broker("FOURDEGREEWATER CAPITAL") == "nsdl_fourdegreewater"

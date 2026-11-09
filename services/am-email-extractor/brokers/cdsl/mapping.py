@@ -13,6 +13,8 @@ DP_MAP = [
     ("KOTAK SECURITIES", "kotak"),
     ("MIRAE ASSET", "mirae"),
     ("FINWIZARD", "finwizard"),
+    ("INDSTOCKS", "indstocks"),
+    ("5PAISA", "fivepaisa"),
     ("HDFC BANK", "hdfc"),
     ("HDFC SECURITIES", "hdfc"),
     ("FOURDEGREEWATER", "nsdl_fourdegreewater"),
@@ -36,6 +38,8 @@ BROKER_KAFKA_CODE = {
     "cas_demat": "CAS_DEMAT",
     "mirae": "CAS_DEMAT",
     "finwizard": "CAS_DEMAT",
+    "indstocks": "CAS_DEMAT",
+    "fivepaisa": "CAS_DEMAT",
 }
 
 _FIRST_CLASS = frozenset(
@@ -107,12 +111,16 @@ def resolve_fanout_broker(
     mapped_broker: str | None,
     dp_name: str | None,
     has_holdings: bool,
+    statement_value: float | None = None,
 ) -> tuple[str, str, str] | None:
     """
     Return (internal, kafka_code, portfolio_name) for a valued demat, or None to skip.
+
+    Valued means holding lines exist OR statement/cover value is greater than 0.
     Unmapped / non-first-class valued demats → CAS_DEMAT + short_dp_name.
     """
-    if not has_holdings:
+    valued = bool(has_holdings) or (statement_value is not None and float(statement_value) > 0)
+    if not valued:
         return None
     code = kafka_broker_code(mapped_broker) if mapped_broker else None
     if code and is_first_class_kafka(code):

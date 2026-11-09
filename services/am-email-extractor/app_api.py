@@ -156,6 +156,7 @@ def health_check():
         db.get_db()  # ensure connected
         db.client.admin.command('ping')
         health_status['infrastructure']['mongodb'] = 'connected'
+        health_status['infrastructure']['mongodb_database'] = db.db_name
     except Exception as e:
         logger.error(f"Health check MongoDB failure: {str(e)}")
         health_status['infrastructure']['mongodb'] = f'disconnected: {str(e)}'
@@ -725,12 +726,13 @@ def extract_from_gmail(broker):
             metadata['internal_date_ms'] = result['email'].get('internal_date_ms')
         
         sys.stderr.write("DEBUG: Saving to MongoDB...\n")
-        doc_id = database.get_db().save_holdings(user_id, broker, holdings, metadata)
+        db_helper = database.get_db()
+        doc_id = db_helper.save_holdings(user_id, broker, holdings, metadata)
         sys.stderr.write(f"DEBUG: Saved to MongoDB. Doc ID: {doc_id}\n")
         
         auth_header = request.headers.get("Authorization")
         sys.stderr.write(f"DEBUG: Sending Kafka event(s) asOfDate={as_of_date}...\n")
-        publish_extract_to_kafka(
+        kafka_ok, identity_match = _publish_and_observe(
             broker=broker,
             user_id=user_id,
             holdings=holdings,
@@ -741,11 +743,23 @@ def extract_from_gmail(broker):
             file_path=attachment_path if broker in ("cdsl", "nps") else None,
             password=password if broker in ("cdsl", "nps") else None,
             jwt_claims=getattr(request, 'jwt_payload', None),
+            mongo_db=db_helper.db_name,
         )
-        sys.stderr.write("DEBUG: Kafka event(s) sent.\n")
+        sys.stderr.write(f"DEBUG: Kafka event(s) kafka_ok={kafka_ok}.\n")
         
         # Clean up
         cleanup_temp_files(attachment_path, temp_dir)
+
+        if not kafka_ok:
+            return jsonify({
+                'success': False,
+                'error': 'Holdings saved to document store but Kafka publish failed',
+                'code': 'KAFKA_PUBLISH_FAILED',
+                'broker': broker,
+                'count': len(holdings),
+                'db_id': doc_id,
+                'identity_match': identity_match,
+            }), 502
         
         return jsonify({
             'success': True,
@@ -753,7 +767,8 @@ def extract_from_gmail(broker):
             'count': len(holdings),
             'holdings': holdings,
             'metadata': metadata,
-            'db_id': doc_id
+            'db_id': doc_id,
+            'identity_match': identity_match,
         })
         
     except Exception as e:
@@ -862,11 +877,12 @@ def extract_from_upload(broker):
                 'source': 'upload',
                 'filename': filename
             }
-            doc_id = database.get_db().save_holdings(request.user_id, broker, holdings, metadata)
+            db_helper = database.get_db()
+            doc_id = db_helper.save_holdings(request.user_id, broker, holdings, metadata)
 
             auth_header = request.headers.get("Authorization")
             jwt_claims = getattr(request, 'jwt_payload', None)
-            publish_extract_to_kafka(
+            kafka_ok, identity_match = _publish_and_observe(
                 broker=broker,
                 user_id=request.user_id,
                 holdings=holdings,
@@ -875,17 +891,30 @@ def extract_from_upload(broker):
                 file_path=tmp_path if broker in ("cdsl", "nps") else None,
                 password=pwd if broker in ("cdsl", "nps") else None,
                 jwt_claims=jwt_claims,
+                mongo_db=db_helper.db_name,
             )
             
             # Clean up
             os.unlink(tmp_path)
+
+            if not kafka_ok:
+                return jsonify({
+                    'success': False,
+                    'error': 'Holdings saved to document store but Kafka publish failed',
+                    'code': 'KAFKA_PUBLISH_FAILED',
+                    'broker': broker,
+                    'count': len(holdings),
+                    'db_id': doc_id,
+                    'identity_match': identity_match,
+                }), 502
             
             return jsonify({
                 'success': True,
                 'broker': broker,
                 'count': len(holdings),
                 'holdings': holdings,
-                'db_id': doc_id
+                'db_id': doc_id,
+                'identity_match': identity_match,
             })
             
         except Exception as e:
@@ -919,6 +948,51 @@ def extract_broker_holdings(broker, file_path, password=None):
     return _extract(broker, file_path, password)
 
 
+def _publish_and_observe(
+    *,
+    broker,
+    user_id,
+    holdings,
+    portfolio_id,
+    as_of_date=None,
+    as_of_ts=None,
+    authorization=None,
+    file_path=None,
+    password=None,
+    jwt_claims=None,
+    mongo_db=None,
+):
+    """Publish extract to Kafka and emit structured observability logs."""
+    import os
+
+    kafka_ok, identity_match = publish_extract_to_kafka(
+        broker=broker,
+        user_id=user_id,
+        holdings=holdings,
+        portfolio_id=portfolio_id,
+        as_of_date=as_of_date,
+        as_of_ts=as_of_ts,
+        authorization=authorization,
+        file_path=file_path,
+        password=password,
+        jwt_claims=jwt_claims,
+    )
+    broker_addr = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or os.environ.get(
+        'SPRING_KAFKA_BOOTSTRAP_SERVERS', 'unknown'
+    )
+    logger.info(
+        "extract_publish broker=%s db=%s holdings_count=%s mongo_id=%s kafka_ok=%s identity_match=%s kafka_bootstrap=%s",
+        broker,
+        mongo_db,
+        len(holdings or []),
+        portfolio_id,
+        kafka_ok,
+        identity_match,
+        broker_addr,
+    )
+    return kafka_ok, identity_match
+
+
 def publish_extract_to_kafka(
     *,
     broker,
@@ -934,6 +1008,8 @@ def publish_extract_to_kafka(
 ):
     """
     Single holdings event for legacy brokers; CDSL/NPS fan-out on same am-portfolio topic.
+
+    Returns (kafka_ok: bool, identity_match: str|None).
     """
     import uuid
 
@@ -974,7 +1050,7 @@ def publish_extract_to_kafka(
         ok = True
         for msg in messages:
             ok = producer.send_payload(msg) and ok
-        return ok, doc
+        return ok, identity_match
 
     if broker == "nps" and file_path:
         from brokers.nps.extractor import extract_document
@@ -1002,7 +1078,7 @@ def publish_extract_to_kafka(
         ok = True
         for msg in messages:
             ok = producer.send_payload(msg) and ok
-        return ok, doc
+        return ok, identity_match
 
     process_id = str(uuid.uuid4())
     equities, mutual_funds = holdings_for_portfolio_event(

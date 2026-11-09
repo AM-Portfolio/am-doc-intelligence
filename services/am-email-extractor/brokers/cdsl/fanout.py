@@ -43,6 +43,7 @@ def fanout_messages(
             mapped_broker=acct.mapped_broker,
             dp_name=acct.dp_name,
             has_holdings=bool(acct.holdings),
+            statement_value=acct.holdings_value_sum,
         )
         if not resolved:
             continue
@@ -68,13 +69,14 @@ def fanout_messages(
         if acct.boid:
             placed_boids.add(acct.boid)
 
-    # MF folios → named Mutual Funds book (never CDSL label)
+    # MF folios → named Mutual Funds book (never CDSL label).
+    # Emit when scheme lines exist OR folio/cover value is greater than 0.
     mfs: list[dict[str, Any]] = []
     for folio in doc.mf_folios:
         for h in folio.holdings:
             mfs.append(holding_to_mf_dict(h, folio))
-    if mfs:
-        mf_total = round(sum(f.holdings_value_sum for f in doc.mf_folios), 2)
+    mf_total = round(sum(f.holdings_value_sum for f in doc.mf_folios), 2)
+    if mfs or mf_total > 0:
         messages.append(
             to_portfolio_update_payload(
                 user_id=user_id,
@@ -104,6 +106,7 @@ def fanout_messages(
             mapped_broker=acct.mapped_broker,
             dp_name=acct.dp_name,
             has_holdings=True,
+            statement_value=acct.holdings_value_sum,
         ):
             continue
         residual_eq.extend(holding_to_equity_dict(h) for h in acct.holdings)
