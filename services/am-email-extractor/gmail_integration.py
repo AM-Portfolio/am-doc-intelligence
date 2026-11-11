@@ -49,6 +49,18 @@ DEFAULT_BROKER_PATTERNS = {
         'subject': 'Holdings',
         'file_pattern': ['.xlsx'],
     },
+    # CDSL CAS / NPS — real mailboxes use statement relays (not corporate domains).
+    # Override via Vault GMAIL_BROKER_PATTERNS_JSON if senders differ.
+    'cdsl': {
+        'from': 'cdslstatement.com',  # eCAS@cdslstatement.com
+        'subject': 'Consolidated Account Statement',
+        'file_pattern': ['.pdf'],
+    },
+    'nps': {
+        'from': 'proteantech.in',  # nps-statements@mailer.proteantech.in
+        'subject': 'Monthly Transaction Statement',
+        'file_pattern': ['.pdf'],
+    },
 }
 
 
@@ -236,64 +248,64 @@ def get_user_info(creds):
         print(f"Error fetching user info: {e}")
         return None
 
+def _list_messages(service, query: str, max_results: int = 10):
+    print(f"Search Query: {query}")
+    results = service.users().messages().list(
+        userId='me',
+        q=query,
+        maxResults=max_results,
+    ).execute()
+    messages = results.get('messages', [])
+    print(f"Found {len(messages)} messages matching query")
+    return messages
+
+
 def search_emails(service, broker, days_back=180):
-    """Search for emails from a specific broker"""
+    """Search for emails from a specific broker.
+
+    Order: from+subject → subject-only (correct when sender relay differs) →
+    from-only. Avoids matching unrelated corporate notices on broad domains.
+    """
     pattern = BROKER_PATTERNS.get(broker.lower())
-    if not pattern or not pattern.get('from'):
+    if not pattern:
         return []
-    
-    # Calculate date for search
+
     date_from = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
-    
-    # Build search query
-    query_parts = [
-        f'from:{pattern["from"]}',
-        'has:attachment',
-        f'after:{date_from}'
-    ]
-    
-    if pattern.get('subject'):
-        # Use quoted subject for partial match
-        query_parts.append(f'subject:"{pattern["subject"]}"')
-    
-    query = ' '.join(query_parts)
-    
+    from_part = (pattern.get('from') or '').strip()
+    subject = (pattern.get('subject') or '').strip()
+
     print(f"=== Gmail Search Debug ===")
     print(f"Broker: {broker.upper()}")
-    print(f"Search Query: {query}")
     print(f"Searching emails from {date_from} onwards...")
-    
+
     try:
-        results = service.users().messages().list(
-            userId='me',
-            q=query,
-            maxResults=10
-        ).execute()
-        
-        messages = results.get('messages', [])
-        print(f"Found {len(messages)} messages matching query")
-        
-        # If no results with subject filter, try without it
-        if not messages and pattern.get('subject'):
-            print(f"No results with subject filter, trying without subject...")
-            query_parts_no_subject = [
-                f'from:{pattern["from"]}',
-                'has:attachment',
-                f'after:{date_from}'
-            ]
-            query_no_subject = ' '.join(query_parts_no_subject)
-            print(f"Retry Query: {query_no_subject}")
-            
-            results = service.users().messages().list(
-                userId='me',
-                q=query_no_subject,
-                maxResults=10
-            ).execute()
-            
-            messages = results.get('messages', [])
-            print(f"Found {len(messages)} messages without subject filter")
-        
-        return messages
+        if from_part and subject:
+            messages = _list_messages(
+                service,
+                f'from:{from_part} has:attachment after:{date_from} subject:"{subject}"',
+            )
+            if messages:
+                return messages
+
+        # Subject-only: CDSL/NPS often come from statement relays, not corporate domains.
+        if subject:
+            print('No from+subject hits; trying subject-only…')
+            messages = _list_messages(
+                service,
+                f'has:attachment after:{date_from} subject:"{subject}"',
+            )
+            if messages:
+                return messages
+
+        if from_part:
+            print('No subject hits; trying from-only…')
+            messages = _list_messages(
+                service,
+                f'from:{from_part} has:attachment after:{date_from}',
+            )
+            return messages
+
+        return []
     except Exception as e:
         print(f"Error searching emails: {e}")
         return []
@@ -424,30 +436,56 @@ def get_attachments(service, msg_id, broker, store_dir='temp_downloads'):
         return []
 
 def get_latest_statement(service, broker):
-    """Get the latest portfolio statement for a broker"""
+    """Get the latest portfolio statement for a broker.
+
+    Walks search hits until a message with a matching attachment is found
+    (skips unrelated PDFs / notice mail that share a broad from: domain).
+    """
     messages = search_emails(service, broker)
-    
     if not messages:
         return None
-    
-    # Get the most recent message
-    latest_msg = messages[0]
-    msg_details = get_message_details(service, latest_msg['id'])
-    
-    if not msg_details:
-        return None
-    
-    # Download attachments - don't use context manager to keep files available
+
+    subject_hint = (
+        (BROKER_PATTERNS.get((broker or '').lower()) or {}).get('subject') or ''
+    ).strip().lower()
+
     temp_dir = tempfile.mkdtemp()
-    attachments = get_attachments(service, latest_msg['id'], broker, temp_dir)
-    
-    chosen = pick_extract_attachment(attachments)
-    if chosen:
-        return {
-            'email': msg_details,
-            'attachment': chosen,
-            'attachments': attachments,  # PDF + spreadsheet when both present
-            'temp_dir': temp_dir  # Return temp dir so caller can clean up
-        }
-    
+    try:
+        for msg in messages:
+            msg_details = get_message_details(service, msg['id'])
+            if not msg_details:
+                continue
+            if subject_hint:
+                subj = (msg_details.get('subject') or '').lower()
+                if subject_hint not in subj:
+                    print(
+                        f"Skip msg subject mismatch: {msg_details.get('subject')!r}"
+                    )
+                    continue
+            attachments = get_attachments(service, msg['id'], broker, temp_dir)
+            chosen = pick_extract_attachment(attachments)
+            if chosen:
+                return {
+                    'email': msg_details,
+                    'attachment': chosen,
+                    'attachments': attachments,
+                    'temp_dir': temp_dir,
+                }
+            print(
+                f"Skip msg with no matching attachment: {msg_details.get('subject')!r}"
+            )
+    except Exception:
+        # Caller still owns cleanup of temp_dir if we already returned; here abort.
+        try:
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception:
+            pass
+        raise
+
+    try:
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except Exception:
+        pass
     return None

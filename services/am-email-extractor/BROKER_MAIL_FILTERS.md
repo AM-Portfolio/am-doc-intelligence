@@ -15,7 +15,7 @@ Change values → restart the pod. No code deploy required for filter tweaks.
 
 ## JSON shape
 
-Object keyed by broker API id (`groww`, `zerodha`, `angleone`, `dhan`, `mstock`):
+Object keyed by broker API id (`groww`, `zerodha`, `angleone`, `dhan`, `mstock`, `cdsl`, `nps`):
 
 ```json
 {
@@ -44,6 +44,8 @@ Code defaults in `gmail_integration.py` apply when the Vault key is missing or i
 | AngelOne | `angelone.in` | Holdings | Excel | none |
 | Dhan | `statements@dhan.co` | Demat Holding Summary | PDF + spreadsheet | PAN |
 | Mstock | `mstock.com` | TRANSACTION STATEMENT | PDF | PAN |
+| CDSL | `cdslstatement.com` (`eCAS@…`) | Consolidated Account Statement | PDF | PAN |
+| NPS | `proteantech.in` (`nps-statements@mailer.…`) | Monthly Transaction Statement | PDF | first4(name)+DDMM (case-sensitive) |
 
 **Dhan primary query:**  
 `from:statements@dhan.co has:attachment after:{YYYY/MM/DD} subject:"Demat Holding Summary"`

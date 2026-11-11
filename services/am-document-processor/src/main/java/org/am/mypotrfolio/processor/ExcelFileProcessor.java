@@ -561,21 +561,7 @@ public class ExcelFileProcessor extends AbstractFileProcessor {
                 }
             } catch (org.apache.poi.EncryptedDocumentException e) {
                 log.warn("Failed to open workbook. Encrypted? Password provided? Error: {}", e.getMessage());
-                // Retry with hardcoded "JYQPK9320A" if user didn't provide one, just in case
-                // (legacy support)
-                if (password == null || password.isEmpty()) {
-                    try {
-                        inputStream.close();
-                        inputStream = file.getInputStream();
-                        workbook = WorkbookFactory.create(inputStream, "JYQPK9320A");
-                        log.info("Opened workbook with legacy hardcoded password.");
-                    } catch (Exception ex) {
-                        // Rethrow original if fallback fails
-                        throw e;
-                    }
-                } else {
-                    throw e;
-                }
+                throw e;
             } catch (Exception e) {
                 log.warn("Failed to open workbook: {}", e.getMessage());
                 // If it fails or is not encrypted, try opening normally (re-open stream)

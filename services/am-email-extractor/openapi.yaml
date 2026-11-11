@@ -72,6 +72,55 @@ components:
           type: object
         db_id:
           type: string
+    ProbeResponse:
+      type: object
+      properties:
+        encrypted:
+          type: boolean
+        broker:
+          type: string
+      required:
+        - encrypted
+        - broker
+    DiscoverResponse:
+      type: object
+      properties:
+        found:
+          type: boolean
+        broker:
+          type: string
+        mailbox:
+          type: string
+          nullable: true
+        needs_password:
+          type: boolean
+        error:
+          type: string
+        email:
+          type: object
+          properties:
+            subject:
+              type: string
+            date:
+              type: string
+            from:
+              type: string
+        attachment:
+          type: object
+          properties:
+            filename:
+              type: string
+      required:
+        - found
+    ExtractError:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          description: e.g. PASSWORD_REQUIRED or INVALID
+          enum: [PASSWORD_REQUIRED, INVALID]
     ExtractHistoryItem:
       type: object
       properties:
@@ -178,6 +227,52 @@ paths:
                 $ref: '#/components/schemas/ExtractHistoryResponse'
         '401':
           description: Unauthorized
+  /api/v1/discover/gmail/{broker}:
+    get:
+      summary: Discover latest Gmail statement without unlock or extract
+      description: |
+        Preview subject/filename for Import holdings before asking for password.
+        Does not persist holdings or publish Kafka events.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: broker
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]
+        - name: mailbox
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional connected mailbox email
+      responses:
+        '200':
+          description: Statement found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '400':
+          description: Invalid broker or mailbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '401':
+          description: Unauthorized or Gmail not connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '404':
+          description: No matching statement email found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
   /api/v1/extract/gmail/{broker}:
     get:
       summary: Fetch statement from Gmail and extract holdings
@@ -189,9 +284,9 @@ paths:
           required: true
           schema:
             type: string
-            enum: [groww, zerodha, angleone, dhan, mstock]
-            example: "[groww, zerodha, angleone, dhan, mstock]"
-            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock]"
+            enum: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]
+            example: "[groww, zerodha, angleone, dhan, mstock, cdsl, nps]"
+            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]"
         - name: pan
           in: query
           required: false
@@ -204,9 +299,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtractionResponse'
-  /api/v1/extract/upload/{broker}:
+  /api/v1/extract/probe/{broker}:
     post:
-      summary: Upload file and extract holdings
+      summary: Probe whether uploaded PDF is encrypted
+      description: |
+        Returns whether the PDF needs a password before full extract.
+        Use for CDSL CAS / NPS statements. No holdings parse.
       security:
         - bearerAuth: []
       parameters:
@@ -215,9 +313,45 @@ paths:
           required: true
           schema:
             type: string
-            enum: [groww, zerodha, angleone, dhan, mstock]
-            example: "[groww, zerodha, angleone, dhan, mstock]"
-            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock]"
+            enum: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]
+            example: cdsl
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Probe result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProbeResponse'
+        '400':
+          description: Invalid broker or missing file
+  /api/v1/extract/upload/{broker}:
+    post:
+      summary: Upload file and extract holdings
+      description: |
+        For CDSL/NPS encrypted PDFs, password is required (CDSL uses PAN).
+        Missing password on encrypted PDF returns 400 with code PASSWORD_REQUIRED.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: broker
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]
+            example: "[groww, zerodha, angleone, dhan, mstock, cdsl, nps]"
+            description: "Allowed values: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]"
       requestBody:
         content:
           multipart/form-data:
@@ -229,6 +363,7 @@ paths:
                   format: binary
                 password:
                   type: string
+                  description: Required for encrypted CDSL/NPS PDFs (CDSL = PAN)
       responses:
         '200':
           description: Extraction successful
@@ -236,3 +371,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtractionResponse'
+        '400':
+          description: PASSWORD_REQUIRED / INVALID password or bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractError'

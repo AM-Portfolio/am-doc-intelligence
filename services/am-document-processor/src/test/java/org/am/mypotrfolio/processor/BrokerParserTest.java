@@ -1,5 +1,6 @@
 package org.am.mypotrfolio.processor;
 
+import org.apache.poi.EncryptedDocumentException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -267,7 +268,15 @@ class BrokerParserTest {
     @Test
     void testParseAngelOneCombinedPortfolio() throws Exception {
         MockMultipartFile file = createMockFile("docs/Your Holding Details - P824583.xlsx");
-        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, "JYQPK9320A");
+        String password = System.getenv("ANGELONE_TEST_XLSX_PASSWORD");
+        if (password == null || password.isBlank()) {
+            assertThrows(
+                    EncryptedDocumentException.class,
+                    () -> excelProcessor.parseAngelOneFile(file, null),
+                    "Encrypted Angel One holdings must fail closed without a password");
+            return;
+        }
+        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, password);
         assertNotNull(result);
         assertFalse(result.isEmpty(), "Angel One combined portfolio should not be empty");
         printResults("Angel One Combined Portfolio", result);
