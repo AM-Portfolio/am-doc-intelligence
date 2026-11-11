@@ -6,7 +6,7 @@ Summary of Investments
 Name/Joint Name (s)
 Portfolio Valuation (In `)
 View Statement
-PRIYANSHU  KUMAR
+Test Holder
 CDSL Demat Accounts
 NSDL Demat Accounts
 Mutual Fund Folios
@@ -16,24 +16,24 @@ Mutual Fund Folios
 Total Portfolio Value
 128688.22
 name of
-PRIYANSHU  KUMAR ( PAN :JYQPK9320A )
+Test Holder ( PAN :ABCDE1234F )
 Account Details
 DP Name : ZERODHA BROKING LIMITED
-DP ID : 12081601 CLIENT ID : 12680093
-Email Id : PRIYANSHUKPD@GMAIL.
+DP ID : 12000000 CLIENT ID : 10000000
+Email Id : USER@EXAMPLE.
 COM
-Mobile No : XXXXXX5395
+Mobile No : XXXXXX0000
 Account Status : Active
 Frozen Status : Not Frozen
 Nominee : Not Registered
 DP Name : KOTAK SECURITIES LIMITED
-DP ID : IN300214 CLIENT ID : 53930937
-Email Id : priyanshukpd@gmail.com
+DP ID : IN300214 CLIENT ID : 10000001
+Email Id : user@example.com
 Account Status : Active
 Frozen Status : Not Frozen
 Nominee : Not Registered
 DEMAT ACCOUNTS HELD WITH CDSL
-BO ID : 1208160112680093
+BO ID : 1200000010000000
 DP Name : ZERODHA BROKING LIMITED
 HOLDING STATEMENT AS ON 31-08-2026
 ISIN

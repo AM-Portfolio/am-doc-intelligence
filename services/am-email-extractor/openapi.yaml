@@ -82,6 +82,36 @@ components:
       required:
         - encrypted
         - broker
+    DiscoverResponse:
+      type: object
+      properties:
+        found:
+          type: boolean
+        broker:
+          type: string
+        mailbox:
+          type: string
+          nullable: true
+        needs_password:
+          type: boolean
+        error:
+          type: string
+        email:
+          type: object
+          properties:
+            subject:
+              type: string
+            date:
+              type: string
+            from:
+              type: string
+        attachment:
+          type: object
+          properties:
+            filename:
+              type: string
+      required:
+        - found
     ExtractError:
       type: object
       properties:
@@ -197,6 +227,52 @@ paths:
                 $ref: '#/components/schemas/ExtractHistoryResponse'
         '401':
           description: Unauthorized
+  /api/v1/discover/gmail/{broker}:
+    get:
+      summary: Discover latest Gmail statement without unlock or extract
+      description: |
+        Preview subject/filename for Import holdings before asking for password.
+        Does not persist holdings or publish Kafka events.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: broker
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [groww, zerodha, angleone, dhan, mstock, cdsl, nps]
+        - name: mailbox
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional connected mailbox email
+      responses:
+        '200':
+          description: Statement found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '400':
+          description: Invalid broker or mailbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '401':
+          description: Unauthorized or Gmail not connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
+        '404':
+          description: No matching statement email found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverResponse'
   /api/v1/extract/gmail/{broker}:
     get:
       summary: Fetch statement from Gmail and extract holdings

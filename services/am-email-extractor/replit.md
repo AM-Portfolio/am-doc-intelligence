@@ -12,13 +12,13 @@ A Flask-based web application that extracts portfolio holdings data from passwor
 
 ### Groww
 - **Status**: ✅ Fully functional and tested
-- **Test Data**: September and August 2025 portfolio statements (password: JYQPK9320A)
+- **Test Data**: September and August 2025 portfolio statements (password: local env only)
 - **Extraction Logic**: Parses "HOLDINGS BALANCE" sections from Groww PDF statements
 - **Sample Files**: `attached_assets/groww/`
 
 ### Zerodha
 - **Status**: ✅ Fully functional and tested
-- **Test Data**: September 2025 transaction with holding statements (password: JYQPK9320A)
+- **Test Data**: September 2025 transaction with holding statements (password: local env only)
 - **Extraction Logic**: Parses "Holdings as on" sections from Zerodha PDF statements
 - **Sample Files**: `attached_assets/zerodha/`
 - **Extraction Count**: Successfully extracts 59 holdings from test documents
@@ -33,14 +33,14 @@ A Flask-based web application that extracts portfolio holdings data from passwor
 
 ### Dhan
 - **Status**: ✅ Fully functional and tested
-- **Test Data**: September and August 2025 CDSL statements (password: BWKPM5493A)
+- **Test Data**: September and August 2025 CDSL statements (password: local env only)
 - **Extraction Logic**: Parses "Holding as on" sections from Dhan CDSL PDF statements
 - **Sample Files**: `attached_assets/dhan/`
 - **Extraction Count**: Successfully extracts 40 holdings (Sep) and 36 holdings (Aug) from test documents
 
 ### MSTOCK
 - **Status**: ✅ Fully functional and tested
-- **Test Data**: September and August 2025 transaction statements (password: JYQPK9320A)
+- **Test Data**: September and August 2025 transaction statements (password: local env only)
 - **Extraction Logic**: Parses "STATEMENT OF HOLDINGS" sections from MSTOCK CDSL transaction statements
 - **Sample Files**: `attached_assets/mstock/`
 - **Extraction Count**: Successfully extracts 14 holdings (Sep) and 14 holdings (Aug) from test documents

@@ -344,7 +344,7 @@ _PAN_BARE_RE = re.compile(
 
 
 def parse_holder_pan(text: str) -> str | None:
-    """Primary holder PAN from CDSL cover (e.g. ``( PAN :JYQPK9320A )``)."""
+    """Primary holder PAN from CDSL cover (e.g. ``( PAN :ABCDE1234F )``)."""
     if not text:
         return None
     m = _PAN_RE.search(text) or _PAN_BARE_RE.search(text)

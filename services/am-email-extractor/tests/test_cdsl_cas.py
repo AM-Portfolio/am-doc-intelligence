@@ -248,8 +248,9 @@ def test_txn_mf_layout_without_direct_token():
     assert doc.mf_folios
     assert sum(f.holdings_value_sum for f in doc.mf_folios) >= 11000
     email, name, pan = cas_holder_from_doc(doc)
-    assert name and "PRIYANSHU" in name.upper()
-    assert email and email.lower() == "priyanshukpd@gmail.com"
+    assert name and "TEST HOLDER" in name.upper()
+    assert email and email.lower() == "user@example.com"
+    assert pan == "ABCDE1234F"
     assert any(a.mapped_broker == "kotak" for a in doc.demat_accounts)
     assert any(a.mapped_broker == "zerodha" for a in doc.demat_accounts)
 
@@ -270,7 +271,7 @@ def test_txn_mf_layout_without_direct_token():
     assert mf_book.get("mutualFunds")
     assert (mf_book.get("dematRef") or {}).get("boid") == "mf:cas"
     assert mf_book.get("identityMatch") == "FAMILY"
-    assert mf_book.get("holderName") and "PRIYANSHU" in mf_book["holderName"].upper()
+    assert mf_book.get("holderName") and "TEST HOLDER" in mf_book["holderName"].upper()
     if pan or doc.holder_pan:
         assert mf_book.get("holderPan") == (pan or doc.holder_pan)
     cds = next(m for m in holdings if m.get("brokerType") == "CDSL")
@@ -278,31 +279,35 @@ def test_txn_mf_layout_without_direct_token():
 
 
 def test_live_pdf_optional():
-    """If CDSL.pdf + pymupdf present locally, assert cover total and Rais→dhan."""
+    """If CDSL.pdf + CDSL_TEST_PDF_PASSWORD env present, smoke structural asserts only."""
+    import os
+
     root = Path(__file__).resolve().parents[1]
     pdf = root / "CDSL.pdf"
-    if not pdf.exists():
+    password = (os.environ.get("CDSL_TEST_PDF_PASSWORD") or "").strip()
+    if not pdf.exists() or not password:
         return
     try:
         from brokers.cdsl.extractor import extract_document
     except Exception:
         return
     try:
-        doc = extract_document(str(pdf), "BWKPM5493A")
+        doc = extract_document(str(pdf), password)
     except Exception:
         return
-    assert doc.cover.total_portfolio_value == 2992753.0
+    assert doc.cover.total_portfolio_value is not None
     assert doc.validation.all_ok is True
-    assert sum(1 for a in doc.demat_accounts if a.mapped_broker == "dhan") >= 1
-    assert len(doc.demat_accounts) >= 5
-    assert len(doc.mf_folios) >= 1
+    assert len(doc.demat_accounts) >= 1
 
 
 def test_live_txn_pdf_optional():
-    """If AUG2026 TXN PDF present, assert MF + holder + Kotak fan-out."""
+    """If TXN PDF + CDSL_TXN_TEST_PDF_PASSWORD env present, smoke structural asserts only."""
+    import os
+
     root = Path(__file__).resolve().parents[1]
     pdf = root / "AUG2026_AA49039213_TXN.pdf"
-    if not pdf.exists():
+    password = (os.environ.get("CDSL_TXN_TEST_PDF_PASSWORD") or "").strip()
+    if not pdf.exists() or not password:
         return
     try:
         from brokers._common.identity_match import cas_holder_from_doc
@@ -310,13 +315,10 @@ def test_live_txn_pdf_optional():
     except Exception:
         return
     try:
-        doc = extract_document(str(pdf), "JYQPK9320A")
+        doc = extract_document(str(pdf), password)
     except Exception:
         return
     email, name, pan = cas_holder_from_doc(doc)
-    assert name and "PRIYANSHU" in name.upper()
-    assert email and "priyanshukpd" in email.lower()
-    assert (pan or doc.holder_pan) == "JYQPK9320A"
-    assert len(doc.mf_folios) >= 10
-    assert abs(sum(f.holdings_value_sum for f in doc.mf_folios) - 127188.22) < 1.0
-    assert any(a.mapped_broker == "kotak" for a in doc.demat_accounts)
+    assert name
+    assert len(doc.mf_folios) >= 1
+    assert any(a.mapped_broker for a in doc.demat_accounts)

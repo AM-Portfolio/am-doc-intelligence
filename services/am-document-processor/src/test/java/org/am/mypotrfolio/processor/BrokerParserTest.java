@@ -267,7 +267,7 @@ class BrokerParserTest {
     @Test
     void testParseAngelOneCombinedPortfolio() throws Exception {
         MockMultipartFile file = createMockFile("docs/Your Holding Details - P824583.xlsx");
-        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, "JYQPK9320A");
+        List<Map<String, String>> result = excelProcessor.parseAngelOneFile(file, "ABCDE1234F");
         assertNotNull(result);
         assertFalse(result.isEmpty(), "Angel One combined portfolio should not be empty");
         printResults("Angel One Combined Portfolio", result);
