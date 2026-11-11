@@ -63,7 +63,7 @@ API_VERSION = os.environ.get('API_VERSION', 'v1')
 PORT = int(os.environ.get('PORT', 8080))
 
 ALLOWED_EXTENSIONS = {'pdf', 'xlsx', 'xls'}
-SUPPORTED_BROKERS = ['groww', 'zerodha', 'angleone', 'dhan', 'mstock']
+from brokers.registry import SUPPORTED_BROKERS  # noqa: E402  includes cdsl
 
 from portfolio_asset_mapper import (  # noqa: E402
     AVG_COST_BROKERS,
@@ -156,6 +156,7 @@ def health_check():
         db.get_db()  # ensure connected
         db.client.admin.command('ping')
         health_status['infrastructure']['mongodb'] = 'connected'
+        health_status['infrastructure']['mongodb_database'] = db.db_name
     except Exception as e:
         logger.error(f"Health check MongoDB failure: {str(e)}")
         health_status['infrastructure']['mongodb'] = f'disconnected: {str(e)}'
@@ -192,7 +193,9 @@ def list_brokers():
             {'id': 'zerodha', 'name': 'Zerodha', 'format': 'PDF'},
             {'id': 'angleone', 'name': 'AngelOne', 'format': 'Excel'},
             {'id': 'dhan', 'name': 'Dhan', 'format': 'PDF'},
-            {'id': 'mstock', 'name': 'Mstock', 'format': 'PDF'}
+            {'id': 'mstock', 'name': 'Mstock', 'format': 'PDF'},
+            {'id': 'cdsl', 'name': 'CDSL CAS', 'format': 'PDF'},
+            {'id': 'nps', 'name': 'NPS', 'format': 'PDF'},
         ]
     }
     return jsonify(broker_info)
@@ -567,6 +570,71 @@ def list_extract_history():
         return jsonify({'error': f'Failed to list extract history: {e}'}), 500
 
 
+@app.route(f'/api/{API_VERSION}/discover/gmail/<broker>', methods=['GET'])
+@require_jwt
+def discover_from_gmail(broker):
+    """Find latest matching statement in Gmail without unlock / extract.
+
+    Used by Import holdings to preview subject/filename before asking for password.
+    """
+    try:
+        if broker not in SUPPORTED_BROKERS:
+            return jsonify({
+                'found': False,
+                'error': f'Invalid broker. Supported: {SUPPORTED_BROKERS}',
+            }), 400
+
+        user_id = request.user_id
+        mailbox = request.args.get('mailbox', '').strip() or None
+        resolved = database.get_db().resolve_mailbox_email(user_id, mailbox)
+        if mailbox and not resolved:
+            return jsonify({
+                'found': False,
+                'error': f'Mailbox not connected: {mailbox}',
+            }), 400
+
+        service, _, _ = gmail_integration.get_gmail_service(user_id, mailbox=resolved)
+        if not service:
+            return jsonify({
+                'found': False,
+                'error': 'Gmail not connected. Please connect Gmail first.',
+            }), 401
+
+        result = gmail_integration.get_latest_statement(service, broker)
+        if not result:
+            return jsonify({
+                'found': False,
+                'broker': broker,
+                'error': f'No recent emails found from {broker.upper()}',
+            }), 404
+
+        email_meta = result.get('email') or {}
+        attachment = result.get('attachment') or {}
+        temp_dir = result.get('temp_dir')
+        attachment_path = attachment.get('path')
+        # Metadata-only: discard downloaded bytes; extract re-fetches on Process.
+        cleanup_temp_files(attachment_path, temp_dir)
+
+        return jsonify({
+            'found': True,
+            'broker': broker,
+            'mailbox': resolved,
+            'needs_password': broker not in ('angleone',),
+            'email': {
+                'subject': email_meta.get('subject'),
+                'date': email_meta.get('date'),
+                'from': email_meta.get('from'),
+            },
+            'attachment': {
+                'filename': attachment.get('filename'),
+            },
+        }), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'found': False, 'error': str(e)}), 500
+
+
 @app.route(f'/api/{API_VERSION}/extract/gmail/<broker>', methods=['GET'])
 @require_jwt
 def extract_from_gmail(broker):
@@ -575,16 +643,19 @@ def extract_from_gmail(broker):
         if broker not in SUPPORTED_BROKERS:
             return jsonify({'error': f'Invalid broker. Supported: {SUPPORTED_BROKERS}'}), 400
         
-        # Get PAN from query parameter
-        pan_number = request.args.get('pan', '').strip().upper()
+        # Unlock string: PAN for brokers/CDSL (uppercased); NPS password is case-sensitive.
+        raw_unlock = request.args.get('pan', '').strip()
+        pan_number = raw_unlock if broker == 'nps' else raw_unlock.upper()
         
         # Debug Log
         import sys
         sys.stderr.write(f"DEBUG: Starting extraction for broker: {broker}\n")
         
-        if not pan_number and broker != 'angleone':
-            sys.stderr.write("DEBUG: Missing PAN number\n")
-            return jsonify({'error': 'PAN number is required'}), 400
+        if not pan_number and broker not in ('angleone',):
+            sys.stderr.write("DEBUG: Missing unlock password\n")
+            return jsonify({
+                'error': 'NPS password is required' if broker == 'nps' else 'PAN number is required',
+            }), 400
         
         # Get Gmail service (optional ?mailbox=email)
         user_id = request.user_id
@@ -615,7 +686,7 @@ def extract_from_gmail(broker):
         sys.stderr.write(f"DEBUG: Email found. Subject: {result['email']['subject']}\n")
         sys.stderr.write(f"DEBUG: Attachment saved to: {attachment_path}\n")
         
-        # Determine password
+        # Determine password (CDSL/Dhan = PAN; NPS = statement password, keep case)
         if broker == 'angleone':
             password = None  # Excel files typically don't have password
         else:
@@ -655,33 +726,40 @@ def extract_from_gmail(broker):
             metadata['internal_date_ms'] = result['email'].get('internal_date_ms')
         
         sys.stderr.write("DEBUG: Saving to MongoDB...\n")
-        doc_id = database.get_db().save_holdings(user_id, broker, holdings, metadata)
+        db_helper = database.get_db()
+        doc_id = db_helper.save_holdings(user_id, broker, holdings, metadata)
         sys.stderr.write(f"DEBUG: Saved to MongoDB. Doc ID: {doc_id}\n")
         
-        # Prepare Kafka Payload (EquityModel / MutualFundModel JSON shape for am-portfolio)
-        import uuid
-        process_id = str(uuid.uuid4())
         auth_header = request.headers.get("Authorization")
-        equities, mutual_funds = holdings_for_portfolio_event(
-            holdings, broker, authorization=auth_header
-        )
-
-        # Send notification to Kafka
-        sys.stderr.write(f"DEBUG: Sending Kafka event asOfDate={as_of_date}...\n")
-        kafka_producer.get_producer().send_update_event(
-            process_id=process_id,
-            user_id=user_id,
+        sys.stderr.write(f"DEBUG: Sending Kafka event(s) asOfDate={as_of_date}...\n")
+        kafka_ok, identity_match = _publish_and_observe(
             broker=broker,
+            user_id=user_id,
+            holdings=holdings,
             portfolio_id=doc_id,
-            equities=equities,
-            mutual_funds=mutual_funds,
             as_of_date=as_of_date,
-            timestamp=as_of_ts,
+            as_of_ts=as_of_ts,
+            authorization=auth_header,
+            file_path=attachment_path if broker in ("cdsl", "nps") else None,
+            password=password if broker in ("cdsl", "nps") else None,
+            jwt_claims=getattr(request, 'jwt_payload', None),
+            mongo_db=db_helper.db_name,
         )
-        sys.stderr.write("DEBUG: Kafka event sent.\n")
+        sys.stderr.write(f"DEBUG: Kafka event(s) kafka_ok={kafka_ok}.\n")
         
         # Clean up
         cleanup_temp_files(attachment_path, temp_dir)
+
+        if not kafka_ok:
+            return jsonify({
+                'success': False,
+                'error': 'Holdings saved to document store but Kafka publish failed',
+                'code': 'KAFKA_PUBLISH_FAILED',
+                'broker': broker,
+                'count': len(holdings),
+                'db_id': doc_id,
+                'identity_match': identity_match,
+            }), 502
         
         return jsonify({
             'success': True,
@@ -689,13 +767,46 @@ def extract_from_gmail(broker):
             'count': len(holdings),
             'holdings': holdings,
             'metadata': metadata,
-            'db_id': doc_id
+            'db_id': doc_id,
+            'identity_match': identity_match,
         })
         
     except Exception as e:
         import sys
         import traceback
         sys.stderr.write(f"ERROR CRASH: {str(e)}\n")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route(f'/api/{API_VERSION}/extract/probe/<broker>', methods=['POST'])
+@require_jwt
+def probe_upload(broker):
+    """Return whether an uploaded PDF is encrypted (no full parse)."""
+    try:
+        if broker not in SUPPORTED_BROKERS:
+            return jsonify({'error': f'Invalid broker. Supported: {SUPPORTED_BROKERS}'}), 400
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        file = request.files['file']
+        filename = file.filename or ''
+        if not filename:
+            return jsonify({'error': 'No file selected'}), 400
+        if not filename.lower().endswith('.pdf'):
+            return jsonify({'encrypted': False, 'broker': broker})
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+            file.save(tmp_file.name)
+            tmp_path = tmp_file.name
+        try:
+            from brokers._common.pdf_text import is_pdf_encrypted
+
+            encrypted = is_pdf_encrypted(tmp_path)
+            return jsonify({'encrypted': encrypted, 'broker': broker})
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+    except Exception as e:
+        import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
@@ -734,6 +845,18 @@ def extract_from_upload(broker):
             tmp_path = tmp_file.name
         
         try:
+            # Pre-check encrypted PDFs for CDSL/NPS so empty password is a 400.
+            if broker in ("cdsl", "nps") and filename.lower().endswith('.pdf'):
+                from brokers._common.pdf_text import PdfPasswordError, is_pdf_encrypted
+
+                if is_pdf_encrypted(tmp_path) and not password:
+                    msg = (
+                        'NPS statement password is required'
+                        if broker == 'nps'
+                        else 'PAN is required to unlock this CAS PDF'
+                    )
+                    return jsonify({'error': msg, 'code': 'PASSWORD_REQUIRED'}), 400
+
             # Extract holdings
             pwd = password if password else None
             holdings = extract_broker_holdings(broker, tmp_path, pwd)
@@ -754,41 +877,61 @@ def extract_from_upload(broker):
                 'source': 'upload',
                 'filename': filename
             }
-            doc_id = database.get_db().save_holdings(request.user_id, broker, holdings, metadata)
+            db_helper = database.get_db()
+            doc_id = db_helper.save_holdings(request.user_id, broker, holdings, metadata)
 
-            import uuid
-            process_id = str(uuid.uuid4())
             auth_header = request.headers.get("Authorization")
-            equities, mutual_funds = holdings_for_portfolio_event(
-                holdings, broker, authorization=auth_header
-            )
-            kafka_producer.get_producer().send_update_event(
-                process_id=process_id,
-                user_id=request.user_id,
+            jwt_claims = getattr(request, 'jwt_payload', None)
+            kafka_ok, identity_match = _publish_and_observe(
                 broker=broker,
+                user_id=request.user_id,
+                holdings=holdings,
                 portfolio_id=doc_id,
-                equities=equities,
-                mutual_funds=mutual_funds,
+                authorization=auth_header,
+                file_path=tmp_path if broker in ("cdsl", "nps") else None,
+                password=pwd if broker in ("cdsl", "nps") else None,
+                jwt_claims=jwt_claims,
+                mongo_db=db_helper.db_name,
             )
             
             # Clean up
             os.unlink(tmp_path)
+
+            if not kafka_ok:
+                return jsonify({
+                    'success': False,
+                    'error': 'Holdings saved to document store but Kafka publish failed',
+                    'code': 'KAFKA_PUBLISH_FAILED',
+                    'broker': broker,
+                    'count': len(holdings),
+                    'db_id': doc_id,
+                    'identity_match': identity_match,
+                }), 502
             
             return jsonify({
                 'success': True,
                 'broker': broker,
                 'count': len(holdings),
                 'holdings': holdings,
-                'db_id': doc_id
+                'db_id': doc_id,
+                'identity_match': identity_match,
             })
             
         except Exception as e:
             # Clean up on error
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
+            from brokers._common.pdf_text import PdfPasswordError
+
+            if isinstance(e, PdfPasswordError):
+                return jsonify({'error': e.message, 'code': e.code}), 400
             raise e
             
     except Exception as e:
+        from brokers._common.pdf_text import PdfPasswordError
+
+        if isinstance(e, PdfPasswordError):
+            return jsonify({'error': e.message, 'code': e.code}), 400
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -799,21 +942,159 @@ def extract_from_upload(broker):
 # ============================================================================
 
 def extract_broker_holdings(broker, file_path, password=None):
-    """Import and run the appropriate broker extractor"""
-    if broker == 'groww':
-        from brokers.groww.extractor import extract_holdings
-    elif broker == 'zerodha':
-        from brokers.zerodha.extractor import extract_holdings
-    elif broker == 'angleone':
-        from brokers.angleone.extractor import extract_holdings
-    elif broker == 'dhan':
-        from brokers.dhan.extractor import extract_holdings
-    elif broker == 'mstock':
-        from brokers.mstock.extractor import extract_holdings
-    else:
-        raise ValueError(f"Unsupported broker: {broker}")
-    
-    return extract_holdings(file_path, password)
+    """Import and run the appropriate broker extractor via registry."""
+    from brokers.registry import extract_broker_holdings as _extract
+
+    return _extract(broker, file_path, password)
+
+
+def _publish_and_observe(
+    *,
+    broker,
+    user_id,
+    holdings,
+    portfolio_id,
+    as_of_date=None,
+    as_of_ts=None,
+    authorization=None,
+    file_path=None,
+    password=None,
+    jwt_claims=None,
+    mongo_db=None,
+):
+    """Publish extract to Kafka and emit structured observability logs."""
+    import os
+
+    kafka_ok, identity_match = publish_extract_to_kafka(
+        broker=broker,
+        user_id=user_id,
+        holdings=holdings,
+        portfolio_id=portfolio_id,
+        as_of_date=as_of_date,
+        as_of_ts=as_of_ts,
+        authorization=authorization,
+        file_path=file_path,
+        password=password,
+        jwt_claims=jwt_claims,
+    )
+    broker_addr = os.environ.get('KAFKA_BOOTSTRAP_SERVERS') or os.environ.get(
+        'SPRING_KAFKA_BOOTSTRAP_SERVERS', 'unknown'
+    )
+    logger.info(
+        "extract_publish broker=%s db=%s holdings_count=%s mongo_id=%s kafka_ok=%s identity_match=%s kafka_bootstrap=%s",
+        broker,
+        mongo_db,
+        len(holdings or []),
+        portfolio_id,
+        kafka_ok,
+        identity_match,
+        broker_addr,
+    )
+    return kafka_ok, identity_match
+
+
+def publish_extract_to_kafka(
+    *,
+    broker,
+    user_id,
+    holdings,
+    portfolio_id,
+    as_of_date=None,
+    as_of_ts=None,
+    authorization=None,
+    file_path=None,
+    password=None,
+    jwt_claims=None,
+):
+    """
+    Single holdings event for legacy brokers; CDSL/NPS fan-out on same am-portfolio topic.
+
+    Returns (kafka_ok: bool, identity_match: str|None).
+    """
+    import uuid
+
+    from brokers._common.identity_match import (
+        cas_holder_from_doc,
+        nps_holder_from_doc,
+        profile_from_jwt,
+        resolve_identity_match,
+    )
+
+    producer = kafka_producer.get_producer()
+    profile_email, profile_name, profile_pan = profile_from_jwt(jwt_claims)
+
+    if broker == "cdsl" and file_path:
+        from brokers.cdsl.extractor import extract_document
+        from brokers.cdsl.fanout import fanout_messages
+
+        doc = extract_document(file_path, password)
+        holder_email, holder_name, holder_pan = cas_holder_from_doc(doc)
+        identity_match = resolve_identity_match(
+            profile_email=profile_email,
+            profile_name=profile_name,
+            doc_email=holder_email,
+            doc_name=holder_name,
+            profile_pan=profile_pan,
+            doc_pan=holder_pan,
+        )
+        messages = fanout_messages(
+            doc,
+            user_id=user_id,
+            as_of_date=as_of_date or doc.as_of_date,
+            timestamp=as_of_ts,
+            identity_match=identity_match,
+            holder_name=holder_name,
+            holder_email=holder_email,
+            holder_pan=holder_pan,
+        )
+        ok = True
+        for msg in messages:
+            ok = producer.send_payload(msg) and ok
+        return ok, identity_match
+
+    if broker == "nps" and file_path:
+        from brokers.nps.extractor import extract_document
+        from brokers.nps.fanout import fanout_messages
+
+        doc = extract_document(file_path, password)
+        holder_email, holder_name, holder_pan = nps_holder_from_doc(doc)
+        identity_match = resolve_identity_match(
+            profile_email=profile_email,
+            profile_name=profile_name,
+            doc_email=holder_email,
+            doc_name=holder_name,
+            profile_pan=profile_pan,
+            doc_pan=holder_pan,
+        )
+        messages = fanout_messages(
+            doc,
+            user_id=user_id,
+            timestamp=as_of_ts,
+            identity_match=identity_match,
+            holder_name=holder_name,
+            holder_email=holder_email,
+            holder_pan=holder_pan,
+        )
+        ok = True
+        for msg in messages:
+            ok = producer.send_payload(msg) and ok
+        return ok, identity_match
+
+    process_id = str(uuid.uuid4())
+    equities, mutual_funds = holdings_for_portfolio_event(
+        holdings, broker, authorization=authorization
+    )
+    ok = producer.send_update_event(
+        process_id=process_id,
+        user_id=user_id,
+        broker=broker,
+        portfolio_id=portfolio_id,
+        equities=equities,
+        mutual_funds=mutual_funds,
+        as_of_date=as_of_date,
+        timestamp=as_of_ts,
+    )
+    return ok, None
 
 
 def cleanup_temp_files(file_path, temp_dir=None):

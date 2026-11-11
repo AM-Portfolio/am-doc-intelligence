@@ -40,6 +40,16 @@ PATTERNS = {
         "subject": "TRANSACTION STATEMENT",
         "file_pattern": [".pdf"],
     },
+    "cdsl": {
+        "from": "cdslstatement.com",
+        "subject": "Consolidated Account Statement",
+        "file_pattern": [".pdf"],
+    },
+    "nps": {
+        "from": "proteantech.in",
+        "subject": "Monthly Transaction Statement",
+        "file_pattern": [".pdf"],
+    },
 }
 
 
