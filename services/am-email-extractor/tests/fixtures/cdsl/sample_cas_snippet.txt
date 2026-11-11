@@ -1,0 +1,123 @@
+CONSOLIDATED ACCOUNT STATEMENT FROM CENTRAL DEPOSITORY SERVICES (INDIA) LIMITED
+FOR THE PERIOD FROM 01-09-2026 TO 30-09-2026
+YOUR CONSOLIDATED ACCOUNT STATEMENT
+Summary of Investments
+CDSL Demat Accounts
+NSDL Demat Accounts
+Mutual Fund Folios
+1000.00
+500.00
+250.00
+Total Portfolio Value
+1750.00
+Consolidated Portfolio for Accounts for the Month
+Asset Class
+Value
+Percentage
+Debts
+500.00
+28.57
+Equity
+800.00
+45.71
+Mutual Fund Folios
+250.00
+14.29
+Mutual Funds Held in Demat Form
+200.00
+11.43
+Total
+1750.00
+99.99
+Account Details
+DP Name : RAISE SECURITIES TRADING PRIVATE LIMITED
+DP ID : 12081600 CLIENT ID : 00123456
+Email Id : user@example.com
+Account Status : Active
+Frozen Status : Not Frozen
+Nominee : Not Registered
+DP Name : RELIGARE BROKING LIMITED
+DP ID : 12044700 CLIENT ID : 00999999
+Email Id : user@example.com
+Account Status : Active
+Frozen Status : Not Frozen
+Nominee : Not Registered
+AMC Name : TEST AMC
+Scheme Name : Test Growth Fund
+Scheme Code : TST1
+Folio No : 1234/56
+Email id : user@example.com
+Nominee : Opt-Out
+UCC :
+RTA : CAMS
+ISIN : INF123456789
+DEMAT ACCOUNTS HELD WITH CDSL
+BO ID : 1208160000123456
+DP Name : RAISE SECURITIES TRADING PRIVATE LIMITED
+HOLDING STATEMENT AS ON 30-09-2026
+ISIN
+Security
+INE002A01018
+RELIANCE INDUSTRIES LTD
+10
+--
+--
+--
+10
+100.00
+1000.00
+Portfolio Value
+1000.00
+BO ID : 1204470000999999
+DP Name : RELIGARE BROKING LIMITED
+HOLDING STATEMENT AS ON 30-09-2026
+ISIN
+Security
+INE009A01021
+INFOSYS LIMITED
+5
+--
+--
+--
+5
+100.00
+500.00
+Portfolio Value
+500.00
+DEMAT ACCOUNTS HELD WITH NSDL
+DPID : IN300513
+DP Name : HDFC BANK LIMITED
+HOLDING STATEMENT AS ON 30-09-2026
+ISIN
+Security
+INE123A07019
+TEST NCD SEC NGRT
+20.02.2028
+1
+--
+--
+--
+--
+--
+--
+--
+--
+--
+1
+500.00
+500.00
+Portfolio Value
+500.00
+MUTUAL FUND UNITS HELD WITH MF/RTA
+MUTUAL FUND UNITS HELD AS ON 30-09-2026
+TST1 - Test Growth Fund
+INF123456789
+1234/56
+DIRECT
+10.000
+25.0000
+200.00
+250.00
+Grand Total
+Notes
+About CDSL

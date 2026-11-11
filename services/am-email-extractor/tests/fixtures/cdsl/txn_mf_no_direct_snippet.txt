@@ -1,0 +1,117 @@
+CONSOLIDATED ACCOUNT STATEMENT FROM CENTRAL DEPOSITORY SERVICES (INDIA) LIMITED
+FOR THE PERIOD FROM 01-08-2026 TO 31-08-2026
+YOUR CONSOLIDATED ACCOUNT STATEMENT
+Summary of Investments
+(On the basis of PAN of first holder)
+Name/Joint Name (s)
+Portfolio Valuation (In `)
+View Statement
+Test Holder
+CDSL Demat Accounts
+NSDL Demat Accounts
+Mutual Fund Folios
+1000.00
+500.00
+127188.22
+Total Portfolio Value
+128688.22
+name of
+Test Holder ( PAN :ABCDE1234F )
+Account Details
+DP Name : ZERODHA BROKING LIMITED
+DP ID : 12000000 CLIENT ID : 10000000
+Email Id : USER@EXAMPLE.
+COM
+Mobile No : XXXXXX0000
+Account Status : Active
+Frozen Status : Not Frozen
+Nominee : Not Registered
+DP Name : KOTAK SECURITIES LIMITED
+DP ID : IN300214 CLIENT ID : 10000001
+Email Id : user@example.com
+Account Status : Active
+Frozen Status : Not Frozen
+Nominee : Not Registered
+DEMAT ACCOUNTS HELD WITH CDSL
+BO ID : 1200000010000000
+DP Name : ZERODHA BROKING LIMITED
+HOLDING STATEMENT AS ON 31-08-2026
+ISIN
+Security
+INE002A01018
+RELIANCE INDUSTRIES LTD
+10
+--
+--
+--
+10
+100.00
+1000.00
+Portfolio Value
+1000.00
+DEMAT ACCOUNTS HELD WITH NSDL
+DPID : IN300214
+DP Name : KOTAK SECURITIES LIMITED
+HOLDING STATEMENT AS ON 31-08-2026
+ISIN
+Security
+INE009A01021
+INFOSYS LIMITED
+5
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+--
+5
+100.00
+500.00
+Portfolio Value
+500.00
+MUTUAL FUND UNITS HELD WITH MF/RTA
+MUTUAL FUND UNITS HELD AS ON 31-08-2026
+Scheme Name
+ISIN
+Folio No.
+Closing
+Bal
+(Units)
+NAV (`)
+Cumulative
+Amount
+Invested (in
+INR)
+Valuation (`)
+16Z - Aditya Birla Sun
+Life Digital India Fund
+- Growth-Direct Plan
+INF209K01VF2
+1049761984
+17.781
+184.28
+3,000.00
+3,276.68
+276.68
+9.22
+GCD1 - Edelweiss
+Greater China Equity
+Off-shore Fund -
+Direct Plan Growth
+INF843K01AU1 91027537111/0
+114.296
+73.102
+5,000.00
+8,355.27
+3,355.27
+67.11
+Grand Total
+8,000.00
+11,631.95
+Notes
+About CDSL

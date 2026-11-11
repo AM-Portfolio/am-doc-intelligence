@@ -1,0 +1,98 @@
+# NPS scheme catalog: (pf, scheme, tier, option) → CRA schemeCode (NAV/ISIN key).
+# Local fallback when MARKET_DATA_BASE_URL /v1/nps/resolve is unreachable.
+# Live NAV + resolve SoT = am-market-data GET/POST /v1/nps/* (MARKET_DATA_BASE_URL).
+# Wire field `isin` carries schemeCode (SM00…) until classic INF ISINs are in market-data.
+
+version: 1
+entries:
+  # Tier I — POP / common (statement "POP")
+  - pf: hdfc
+    scheme: E
+    tier: I
+    option: POP
+    schemeCode: SM008001
+    isin: SM008001
+    name: HDFC Pension Scheme E - Tier I
+  - pf: hdfc
+    scheme: C
+    tier: I
+    option: POP
+    schemeCode: SM008002
+    isin: SM008002
+    name: HDFC Pension Scheme C - Tier I
+  - pf: hdfc
+    scheme: G
+    tier: I
+    option: POP
+    schemeCode: SM008003
+    isin: SM008003
+    name: HDFC Pension Scheme G - Tier I
+
+  # Tier I — DIRECT
+  - pf: hdfc
+    scheme: E
+    tier: I
+    option: DIRECT
+    schemeCode: SM008018
+    isin: SM008018
+    name: HDFC Pension Scheme E - Tier I DIRECT
+  - pf: hdfc
+    scheme: C
+    tier: I
+    option: DIRECT
+    schemeCode: SM008019
+    isin: SM008019
+    name: HDFC Pension Scheme C - Tier I DIRECT
+  - pf: hdfc
+    scheme: G
+    tier: I
+    option: DIRECT
+    schemeCode: SM008020
+    isin: SM008020
+    name: HDFC Pension Scheme G - Tier I DIRECT
+
+  # Tier II — common (POP-style naming on older feeds)
+  - pf: hdfc
+    scheme: E
+    tier: II
+    option: POP
+    schemeCode: SM008004
+    isin: SM008004
+    name: HDFC Pension Scheme E - Tier II
+  - pf: hdfc
+    scheme: C
+    tier: II
+    option: POP
+    schemeCode: SM008005
+    isin: SM008005
+    name: HDFC Pension Scheme C - Tier II
+  - pf: hdfc
+    scheme: G
+    tier: II
+    option: POP
+    schemeCode: SM008006
+    isin: SM008006
+    name: HDFC Pension Scheme G - Tier II
+
+  # Tier II — DIRECT (this sample PDF)
+  - pf: hdfc
+    scheme: E
+    tier: II
+    option: DIRECT
+    schemeCode: SM008021
+    isin: SM008021
+    name: HDFC Pension Scheme E - Tier II DIRECT
+  - pf: hdfc
+    scheme: C
+    tier: II
+    option: DIRECT
+    schemeCode: SM008022
+    isin: SM008022
+    name: HDFC Pension Scheme C - Tier II DIRECT
+  - pf: hdfc
+    scheme: G
+    tier: II
+    option: DIRECT
+    schemeCode: SM008023
+    isin: SM008023
+    name: HDFC Pension Scheme G - Tier II DIRECT
