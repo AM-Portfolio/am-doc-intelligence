@@ -370,6 +370,24 @@ def parse_holder_name(text: str) -> str | None:
         name = re.sub(r"\s+", " ", m.group(1)).strip(" .")
         if name.lower() not in {"portfolio valuation", "view statement", "cdsl demat accounts"}:
             return name
+    # Cover variants: "Client Name : FOO BAR" / "Holder Name FOO BAR"
+    m = re.search(
+        r"(?:Client|Holder|Account Holder)\s*Name\s*[:\-]?\s*\n?\s*([A-Z][A-Za-z .'-]{1,80})",
+        text,
+        re.IGNORECASE,
+    )
+    if m:
+        name = re.sub(r"\s+", " ", m.group(1)).strip(" .")
+        if name.lower() not in {
+            "portfolio valuation",
+            "view statement",
+            "cdsl demat accounts",
+            "pan",
+            "email",
+            "mobile",
+            "address",
+        }:
+            return name
     return None
 
 
