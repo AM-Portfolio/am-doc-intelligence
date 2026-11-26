@@ -50,6 +50,11 @@ def publish_extract_to_kafka(
             profile_pan=profile_pan,
             doc_pan=holder_pan,
         )
+        # SELF with missing PDF name: stamp JWT display name so Users hub is not blank.
+        if identity_match == "SELF" and not holder_name and profile_name:
+            holder_name = profile_name
+        if identity_match == "SELF" and not holder_email and profile_email:
+            holder_email = profile_email
         messages = fanout_messages(
             doc,
             user_id=user_id,
@@ -62,7 +67,7 @@ def publish_extract_to_kafka(
         )
         ok = True
         for msg in messages:
-            ok = producer.send_payload(msg) and ok
+            ok = producer.send_payload(msg, user_id=user_id) and ok
         return ok, identity_match
 
     if broker == "nps" and file_path:
@@ -79,6 +84,10 @@ def publish_extract_to_kafka(
             profile_pan=profile_pan,
             doc_pan=holder_pan,
         )
+        if identity_match == "SELF" and not holder_name and profile_name:
+            holder_name = profile_name
+        if identity_match == "SELF" and not holder_email and profile_email:
+            holder_email = profile_email
         messages = fanout_messages(
             doc,
             user_id=user_id,
@@ -90,7 +99,7 @@ def publish_extract_to_kafka(
         )
         ok = True
         for msg in messages:
-            ok = producer.send_payload(msg) and ok
+            ok = producer.send_payload(msg, user_id=user_id) and ok
         return ok, identity_match
 
     process_id = str(uuid.uuid4())

@@ -45,15 +45,19 @@ def resolve_identity_match(
     if not de and not dn and not dp:
         return "UNKNOWN"
 
-    # A different PAN is another person even when the CAS arrived in this inbox.
-    if dp and pp and dp != pp:
-        return "FAMILY"
-
-    if de and pe:
-        return "SELF" if de == pe else "FAMILY"
-
+    # PAN is the strongest identifier. Names and emails may be shared or stale.
     if dp and pp:
         return "SELF" if dp == pp else "FAMILY"
+
+    # Shared inbox / same email on a family statement: different holder name → FAMILY.
+    # Otherwise a family CAS would be SELF and overwrite the primary CAS envelope.
+    if de and pe and de == pe:
+        if dn and pn and dn != pn:
+            return "FAMILY"
+        return "SELF"
+
+    if de and pe:
+        return "FAMILY"
 
     if not de or not pe:
         if dn and pn:
@@ -77,11 +81,12 @@ def profile_from_jwt(claims: Mapping[str, Any] | None) -> tuple[str | None, str 
     if isinstance(email, str) and "@" not in email:
         # preferred_username may be a username; keep only if it looks like email
         email = claims.get("email")
-    name = (
-        claims.get("name")
-        or claims.get("given_name")
-        or claims.get("preferred_username")
-    )
+    name = claims.get("name")
+    if not name:
+        given_name = claims.get("given_name")
+        family_name = claims.get("family_name")
+        if given_name or family_name:
+            name = " ".join(str(part).strip() for part in (given_name, family_name) if part)
     pan_raw = claims.get("pan") or claims.get("pan_number") or claims.get("panNumber")
     pan = _norm_pan(str(pan_raw)) if pan_raw else None
     if pan and len(pan) != 10:
@@ -103,7 +108,7 @@ def _email_looks_complete(email: str | None) -> bool:
 def cas_holder_from_doc(doc: Any) -> tuple[str | None, str | None, str | None]:
     """Best-effort (email, name, pan) from CDSL CAS."""
     directory = getattr(doc, "account_directory", None) or []
-    name = None
+    name = getattr(doc, "holder_name", None)
     email = None
     for row in directory:
         row_email = getattr(row, "email", None)
