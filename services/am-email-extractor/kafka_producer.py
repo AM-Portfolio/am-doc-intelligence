@@ -108,16 +108,20 @@ class NotificationProducer:
             ('timestamp', timestamp_str.encode('utf-8'))
         ]
 
+        # Key by userId so one owner's fan-out stays ordered on a single partition.
+        partition_key = (user_id or process_id or "").strip() or process_id
         try:
             future = self.producer.send(
                 topic=self.topic, 
-                key=process_id, 
+                key=partition_key,
                 value=payload, 
                 headers=headers
             )
             # Block for result to ensure delivery
             record_metadata = future.get(timeout=10)
-            logging.info(f"Event sent to {record_metadata.topic}:{record_metadata.partition} with key {process_id}")
+            logging.info(
+                f"Event sent to {record_metadata.topic}:{record_metadata.partition} with key {partition_key}"
+            )
             return True
         except Exception as e:
             logging.error(f"Failed to send Kafka event: {e}")
@@ -152,19 +156,22 @@ class NotificationProducer:
         if payload.get("eventType"):
             headers.append(("eventType", str(payload["eventType"]).encode("utf-8")))
 
+        # Prefer userId so CDSL/NPS fan-out for one owner cannot race across partitions.
+        partition_key = (str(user_id).strip() if user_id else "") or str(process_id)
         try:
             future = self.producer.send(
                 topic=self.topic,
-                key=str(process_id),
+                key=partition_key,
                 value=payload,
                 headers=headers,
             )
             record_metadata = future.get(timeout=10)
             logging.info(
-                "Event %s sent to %s:%s key=%s",
+                "Event %s sent to %s:%s key=%s process_id=%s",
                 payload.get("eventType") or "PortfolioUpdate",
                 record_metadata.topic,
                 record_metadata.partition,
+                partition_key,
                 process_id,
             )
             return True

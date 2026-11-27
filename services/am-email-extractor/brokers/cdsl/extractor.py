@@ -229,6 +229,7 @@ def extract_document_from_text(text: str) -> CasDocument:
         mf_folios=mf_folios,
         statement_asset_classes=statement_ac,
         holder_pan=holder_pan,
+        holder_name=holder_name,
     )
 
 
